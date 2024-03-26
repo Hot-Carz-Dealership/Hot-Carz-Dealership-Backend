@@ -5,6 +5,7 @@ from flask import jsonify, request
 from sqlalchemy import Text, text, func
 from . import app
 from .models import *
+import re
 
 ''' all the route API's here '''
 
@@ -34,15 +35,34 @@ def addon_information():
         return jsonify(addon_information)
 
 
+
 '''This API returns all information on all vehicles in the database'''
 @app.route('/api/vehicles', methods=['GET'])
 def vehicle_information():
-    sql = "select * from Cars;"
-    with db.engine.connect() as connection:
-        result = connection.execute(text(sql))
-        result = result.fetchall()
-        addon_information = [dict(row._mapping) for row in result]
-        return jsonify(addon_information)
+
+    # Get the search query from the request
+    search_query = request.args.get('search_query')
+
+    if search_query:
+        # Define a regex pattern to match the search query (assuming case-insensitive matching)
+        regex_pattern = re.compile(search_query, re.IGNORECASE)
+
+        # Query the database for cars matching the search query
+        sql = """
+        SELECT * FROM Cars
+        WHERE make REGEXP :regex_pattern OR model REGEXP :regex_pattern;
+        """
+        with db.engine.connect() as connection:
+            result = connection.execute(text(sql), {'regex_pattern': regex_pattern})
+            cars_info = [dict(row._mapping) for row in result]
+    else:
+        # If no search query provided, retrieve all vehicles
+        sql = "SELECT * FROM Cars;"
+        with db.engine.connect() as connection:
+            result = connection.execute(text(sql))
+            cars_info = [dict(row._mapping) for row in result]
+
+    return jsonify(cars_info)
 
 
 '''This API returns all information on a specific vehicle based on their VIN number which is passed from the front end to the backend'''
@@ -176,12 +196,12 @@ def add_employee():
     address = data.get('address')
     employeeType = data.get('employeeType');
     sql = """
-            INSERT INTO Employee (first_name, last_name, email, phone, address, employeeType)
-            VALUES (:store_id, :first_name, :last_name, :email, :phone, :address_id, :employeeType)
+            INSERT INTO Employee (firstname, lastname, email, phone, address, employeeType)
+            VALUES (:firstname, :lastname, :email, :phone, :address_id, :employeeType)
           """
 
     with db.engine.connect() as connection:
-        connection.execute(text(sql), {'first_name': firstname, 'last_name': lastname,
+        connection.execute(text(sql), {'firstname': firstname, 'lastname': lastname,
                                        'email': email, 'phone': phone, 'address': address,
                                        'employeeType': employeeType})
         connection.commit()
