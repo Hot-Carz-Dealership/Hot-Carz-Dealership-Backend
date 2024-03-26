@@ -86,6 +86,73 @@ def get_all_employees():
         addon_information = [dict(row._mapping) for row in result]
         return jsonify(addon_information)
 
+@app.route('/api/testdrives', methods=['GET'])
+def get_test_drives():
+    sql = """
+    SELECT 
+    CONCAT(Member.first_name, ' ', Member.last_name) as fullname,
+    Member.phone,
+    TestDrive.car_id,
+    CONCAT(Cars.make, ' ', Cars.model) AS car_make_model,
+    TestDrive.appointment_date
+    FROM TestDrive
+    JOIN Member ON TestDrive.memberID = Member.memberID
+    JOIN Cars ON TestDrive.car_id = Cars.VIN_carID;
+    """
+    with db.engine.connect() as connection:
+        result = connection.execute(text(sql))
+        result = result.fetchall()
+        test_drive_info = [dict(row._mapping) for row in result]
+        return jsonify(test_drive_info)
+
+
+@app.route('/api/testdrives/confirmation/<string:confirmation>', methods=['POST'])
+def get_test_drives():
+    sql = """
+    SELECT 
+    CONCAT(Member.first_name, ' ', Member.last_name) as fullname,
+    Member.phone,
+    TestDrive.car_id,
+    CONCAT(Cars.make, ' ', Cars.model) AS car_make_model,
+    TestDrive.appointment_date
+    FROM TestDrive
+    JOIN Member ON TestDrive.memberID = Member.memberID
+    JOIN Cars ON TestDrive.car_id = Cars.VIN_carID;
+    """
+    with db.engine.connect() as connection:
+        result = connection.execute(text(sql))
+        result = result.fetchall()
+        test_drive_info = [dict(row._mapping) for row in result]
+        return jsonify(test_drive_info)
+
+
+@app.route('/api/testdrives/update_confirmation', methods=['POST'])
+def update_confirmation():
+    # Extract parameters from the request
+    data = request.json
+    testdrive_id = data.get('testdrive_id')
+    confirmation = data.get('confirmation')
+
+    # Check if both parameters are provided
+    if testdrive_id is None or confirmation is None:
+        return jsonify({'error': 'Both testdrive_id and confirmation parameters are required.'}), 400
+
+    # Map confirmation string to enum value
+    confirmation_value = 'Confirmed' if confirmation == '1' else 'Denied'
+
+    # Perform the update operation
+    update_sql = """
+    UPDATE TestDrive
+    SET confirmation = :confirmation_value
+    WHERE testdrive_id = :testdrive_id;
+    """
+
+    # Execute the update operation
+    with db.engine.connect() as connection:
+        connection.execute(text(update_sql), {'confirmation_value': confirmation_value, 'testdrive_id': testdrive_id})
+
+    return jsonify({'message': 'Confirmation updated successfully'})
+
 
 '''This API returns a specific employee based on their email address and password.'''
 @app.route('/api/employees/<string:email>/<string:passwd>', methods=['GET'])
