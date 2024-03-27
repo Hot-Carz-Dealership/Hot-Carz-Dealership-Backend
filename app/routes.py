@@ -249,59 +249,79 @@ def create_employee():
 
 @app.route('/api/members', methods=['GET'])
 def get_all_members():
-    sql = "select * from Member;"
-    with db.engine.connect() as connection:
-        result = connection.execute(text(sql))
-        result = result.fetchall()
-        addon_information = [dict(row._mapping) for row in result]
-        return jsonify(addon_information)
+    try:
+        # Query all members from the database
+        members = Member.query.all()
+
+        # Convert the query result to a list of dictionaries
+        members_info = [{'memberID': member.memberID,
+                         'first_name': member.first_name,
+                         'last_name': member.last_name,
+                         'email': member.email,
+                         'phone': member.phone,
+                         'status': member.status,
+                         'join_date': member.join_date} for member in members]
+
+        return jsonify(members_info)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 '''This API returns a specific member by their username and password passed from the front end to the backend (here)'''
-
-
 @app.route('/api/members/<string:username>/<string:passwd>', methods=['GET'])
 def member(username, passwd):
-    sql = """
-        SELECT * FROM Member
-        INNER JOIN MemberSensitiveInfo ON Member.memberID = MemberSensitiveInfo.memberID
-        WHERE MemberSensitiveInfo.username = ? AND MemberSensitiveInfo.password = ?;
-        """
-    with db.engine.connect() as connection:
-        result = connection.execute(text(sql), {'email': username, 'passwd': passwd})
-        result = result.fetchall()
-        addon_information = [dict(row._mapping) for row in result]
-        return jsonify(addon_information)
+    try:
+        member_info = db.session.query(Member, MemberSensitiveInfo).\
+            join(MemberSensitiveInfo, Member.memberID == MemberSensitiveInfo.memberID).\
+            filter(MemberSensitiveInfo.username == username, MemberSensitiveInfo.password == passwd).first()
+
+        if member_info:
+            member, sensitive_info = member_info
+            return jsonify({
+                'memberID': member.memberID,
+                'first_name': member.first_name,
+                'last_name': member.last_name,
+                'email': member.email,
+                'phone': member.phone,
+                'status': member.status,
+                'join_date': member.join_date,
+                'SSN': sensitive_info.SSN,
+                'driverID': sensitive_info.driverID,
+                'cardInfo': sensitive_info.cardInfo
+            })
+        else:
+            return jsonify({'error': 'Member not found or credentials invalid'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 '''This API creates an employee based on the information passed from the front end to the backend (here)'''
 
 
-@app.route('/api/members', methods=['POST'])
+@app.route('/api/members/create', methods=['POST'])
 def create_member():
-    # Extract data from the request body
-    data = request.json
-    first_name = data.get('first_name')
-    last_name = data.get('last_name')
-    email = data.get('email')
-    phone = data.get('phone')
-    status = data.get('status')
+    try:
+        # Extract data from the request body
+        data = request.json
+        first_name = data.get('first_name')
+        last_name = data.get('last_name')
+        email = data.get('email')
+        phone = data.get('phone')
+        status = data.get('status')
 
-    # Insert the new member into the DB
-    sql = """
-    INSERT INTO Member (first_name, last_name, email, phone, status)
-    VALUES (:first_name, :last_name, :email, :phone, :status)
-    """
-    with db.engine.connect() as connection:
-        connection.execute(text(sql), {
-            'first_name': first_name,
-            'last_name': last_name,
-            'email': email,
-            'phone': phone,
-            'status': status
-        })
+        # Create a new Member object
+        new_member = Member(first_name=first_name, last_name=last_name, email=email, phone=phone, status=status)
 
-    return jsonify({'message': 'Member account created successfully'})
+        # Add the new member to the database session
+        db.session.add(new_member)
+        # Commit the session to persist the changes
+        db.session.commit()
+
+        return jsonify({'message': 'Member account created successfully'})
+    except Exception as e:
+        # Rollback the session in case of any exception
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 
 '''This API adds an employee based on the information passed from the front end to the'''
@@ -309,25 +329,39 @@ def create_member():
 
 @app.route('/api/add-employee', methods=['POST'])
 def add_employee():
-    data = request.json
-    firstname = data.get('firstname')
-    lastname = data.get('lastname')
-    email = data.get('email')
-    phone = data.get('phone')
-    address = data.get('address')
-    employeeType = data.get('employeeType');
-    sql = """
-            INSERT INTO Employee (firstname, lastname, email, phone, address, employeeType)
-            VALUES (:firstname, :lastname, :email, :phone, :address_id, :employeeType)
-          """
+    try:
+        data = request.json
+        username = data.get('username')
+        password = data.get('password')
 
-    with db.engine.connect() as connection:
-        connection.execute(text(sql), {'firstname': firstname, 'lastname': lastname,
-                                       'email': email, 'phone': phone, 'address': address,
-                                       'employeeType': employeeType})
-        connection.commit()
+        if not username or not password:
+            return jsonify({'error': 'Both username and password are required'}), 400
 
-    return jsonify({'message': 'Customer added successfully'})
+        # Query the database to find the member by username and password
+        member_info = db.session.query(Member, MemberSensitiveInfo).\
+            join(MemberSensitiveInfo, Member.memberID == MemberSensitiveInfo.memberID).\
+            filter(MemberSensitiveInfo.username == username, MemberSensitiveInfo.password == password).first()
+
+        # If member information is found
+        if member_info:
+            member, sensitive_info = member_info
+            response = {
+                'memberID': member.memberID,
+                'first_name': member.first_name,
+                'last_name': member.last_name,
+                'email': member.email,
+                'phone': member.phone,
+                'status': member.status,
+                'join_date': member.join_date,
+                'SSN': sensitive_info.SSN,
+                'driverID': sensitive_info.driverID,
+                'cardInfo': sensitive_info.cardInfo
+            }
+            return jsonify(response)
+        else:
+            return jsonify({'error': 'Member not found or credentials invalid'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 # payment
