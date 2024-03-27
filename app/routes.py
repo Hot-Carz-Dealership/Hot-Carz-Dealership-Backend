@@ -475,3 +475,49 @@ def manage_payments(member_id):
             # Rollback the session in case of any exception
             db.session.rollback()
             return jsonify({'error': str(e)}), 500
+
+@app.route('/api/service-appointments', methods=['GET', 'POST'])
+def service_appointments():
+    if request.method == 'GET':
+        # get request, we return all data form service appointments
+        appointments = ServiceAppointment.query.all()
+
+        appointments_info = [{
+            'appointment_id': appointment.appointment_id,
+            'memberID': appointment.memberID,
+            'technician_id': appointment.technician_id,
+            'appointment_date': appointment.appointment_date,
+            'service_name': appointment.service_name
+        } for appointment in appointments]
+
+        return jsonify(appointments_info)
+
+    elif request.method == 'POST':
+        # post request we are deleting the row for service appointments for cancellation
+        # takes in 2 values, Appointment ID and a cancellation value. make it a 1
+        data = request.json
+        appointment_id_to_cancel = data.get('appointment_id')
+        cancellation_value = data.get('cancelValue')
+
+        if appointment_id_to_cancel is None or cancellation_value is None:
+            return jsonify({'error': 'Both appointment_id and cancelValue parameters are required.'}), 400
+
+        # cancelation value takes in 1 to confirm it is getting cancelled or else it doesnt get removed.
+        if cancellation_value != '1':
+            return jsonify({'error': 'Invalid cancellation value.'}), 400
+
+        try:
+            # Find the appointment to cancel
+            appointment_to_cancel = ServiceAppointment.query.get(appointment_id_to_cancel)
+
+            if appointment_to_cancel is None:
+                return jsonify({'error': 'Appointment not found.'}), 404
+
+            # Delete the appointment
+            db.session.delete(appointment_to_cancel)
+            db.session.commit()
+
+            return jsonify({'message': 'Appointment canceled successfully'})
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
