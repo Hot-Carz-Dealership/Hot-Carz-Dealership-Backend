@@ -68,12 +68,28 @@ def vehicle_information():
 '''This API returns all information on a specific vehicle based on their VIN number which is passed from the front end to the backend'''
 @app.route('/api/vehicles/<string:VIN_carID>', methods=['GET'])
 def vehicle(VIN_carID):
-    sql = "select * from Cars where Cars.VIN_carID = :VIN_carID;"
-    with db.engine.connect() as connection:
-        result = connection.execute(text(sql), {'VIN_carID': VIN_carID})
-        result = result.fetchall()
-        addon_information = [dict(row._mapping) for row in result]
-        return jsonify(addon_information)
+    vehicle = Cars.query.filter_by(VIN_carID=VIN_carID).first()
+    if vehicle:
+        vehicle_info = {
+            'VIN_carID': vehicle.VIN_carID,
+            'make': vehicle.make,
+            'model': vehicle.model,
+            'body': vehicle.body,
+            'year': vehicle.year,
+            'color': vehicle.color,
+            'mileage': vehicle.mileage,
+            'details': vehicle.details,
+            'description': vehicle.description,
+            'inStock': vehicle.inStock,
+            'stockAmount': vehicle.stockAmount,
+            'viewsOnPage': vehicle.viewsOnPage,
+            'pictureLibraryLink': vehicle.pictureLibraryLink,
+            'status': vehicle.status,
+            'price': str(vehicle.price)  # Converting Decimal to string for JSON serialization
+        }
+        return jsonify(vehicle_info)
+    else:
+        return jsonify({'message': 'Vehicle not found'}), 404
 
 
 '''This API returns all employees and their information'''
@@ -86,24 +102,25 @@ def get_all_employees():
         addon_information = [dict(row._mapping) for row in result]
         return jsonify(addon_information)
 
-@app.route('/api/testdrives', methods=['GET'])
-def get_test_drives():
-    sql = """
-    SELECT 
-    CONCAT(Member.first_name, ' ', Member.last_name) as fullname,
-    Member.phone,
-    TestDrive.car_id,
-    CONCAT(Cars.make, ' ', Cars.model) AS car_make_model,
-    TestDrive.appointment_date
-    FROM TestDrive
-    JOIN Member ON TestDrive.memberID = Member.memberID
-    JOIN Cars ON TestDrive.car_id = Cars.VIN_carID;
-    """
-    with db.engine.connect() as connection:
-        result = connection.execute(text(sql))
-        result = result.fetchall()
-        test_drive_info = [dict(row._mapping) for row in result]
-        return jsonify(test_drive_info)
+# @app.route('/api/testdrives', methods=['GET'])
+# def get_test_drives():
+#     sql = """
+#     SELECT
+#     CONCAT(Member.first_name, ' ', Member.last_name) as fullname,
+#     Member.phone,
+#     TestDrive.car_id,
+#     CONCAT(Cars.make, ' ', Cars.model) AS car_make_model,
+#     TestDrive.appointment_date
+#     FROM TestDrive
+#     JOIN Member ON TestDrive.memberID = Member.memberID
+#     JOIN Cars ON TestDrive.car_id = Cars.VIN_carID;
+#     """
+#     with db.engine.connect() as connection:
+#         result = connection.execute(text(sql))
+#         result = result.fetchall()
+#         test_drive_info = [dict(row._mapping) for row in result]
+#
+#     return jsonify(test_drive_info)
 
 
 @app.route('/api/testdrives/confirmation/<string:confirmation>', methods=['POST'])
