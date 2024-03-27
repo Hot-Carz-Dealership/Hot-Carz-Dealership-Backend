@@ -159,7 +159,6 @@ def get_test_drives():
 
 @app.route('/api/testdrives/update_confirmation', methods=['POST'])
 def update_confirmation():
-    # Extract parameters from the request
     data = request.json
     testdrive_id = data.get('testdrive_id')
     confirmation = data.get('confirmation')
@@ -168,21 +167,17 @@ def update_confirmation():
     if testdrive_id is None or confirmation is None:
         return jsonify({'error': 'Both testdrive_id and confirmation parameters are required.'}), 400
 
-    # Map confirmation string to enum value
     confirmation_value = 'Confirmed' if confirmation == '1' else 'Denied'
 
-    # Perform the update operation
-    update_sql = """
-    UPDATE TestDrive
-    SET confirmation = :confirmation_value
-    WHERE testdrive_id = :testdrive_id;
-    """
-
-    # Execute the update operation
-    with db.engine.connect() as connection:
-        connection.execute(text(update_sql), {'confirmation_value': confirmation_value, 'testdrive_id': testdrive_id})
-
-    return jsonify({'message': 'Confirmation updated successfully'})
+    try:
+        with db.engine.connect() as connection:
+            connection.execute(
+                text("UPDATE TestDrive SET confirmation = :confirmation_value WHERE testdrive_id = :testdrive_id;"),
+                {'confirmation_value': confirmation_value, 'testdrive_id': testdrive_id}
+            )
+        return jsonify({'message': 'Confirmation updated successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 '''This API returns a specific employee based on their email address and password.'''
