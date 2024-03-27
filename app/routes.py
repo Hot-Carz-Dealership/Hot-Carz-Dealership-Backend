@@ -10,6 +10,8 @@ import re
 ''' all the route API's here '''
 
 '''This API is used to check that ur DB is working locally'''
+
+
 @app.route('/')
 def testdb():
     try:
@@ -23,6 +25,8 @@ def testdb():
 
 
 ''' this API retrieves all of the add-on products'''
+
+
 @app.route('/api/vehicles/add-ons', methods=['GET'])
 def addon_information():
     # returns all the information of addon product one is offered when a customer purchases a car
@@ -39,6 +43,8 @@ def addon_information():
 
 
 '''This API returns all information on all vehicles in the database'''
+
+
 @app.route('/api/vehicles', methods=['GET'])
 def vehicle_information():
     search_query = request.args.get('search_query')
@@ -65,6 +71,8 @@ def vehicle_information():
 
 
 '''This API returns all information on a specific vehicle based on their VIN number which is passed from the front end to the backend'''
+
+
 @app.route('/api/vehicles/<string:VIN_carID>', methods=['GET'])
 def vehicle(VIN_carID):
     vehicle = Cars.query.filter_by(VIN_carID=VIN_carID).first()
@@ -178,6 +186,8 @@ def update_confirmation():
 
 
 '''This API returns a specific employee based on their email address and password.'''
+
+
 @app.route('/api/employees/<string:email>/<string:passwd>', methods=['GET'])
 def employee(email, passwd):
     # Retrieve employee based on email and password
@@ -243,7 +253,6 @@ def create_employee():
         return jsonify({'error': str(e)}), 500
 
 
-
 '''Retrieves all the members and their information'''
 
 
@@ -268,11 +277,13 @@ def get_all_members():
 
 
 '''This API returns a specific member by their username and password passed from the front end to the backend (here)'''
+
+
 @app.route('/api/members/<string:username>/<string:passwd>', methods=['GET'])
 def member(username, passwd):
     try:
-        member_info = db.session.query(Member, MemberSensitiveInfo).\
-            join(MemberSensitiveInfo, Member.memberID == MemberSensitiveInfo.memberID).\
+        member_info = db.session.query(Member, MemberSensitiveInfo). \
+            join(MemberSensitiveInfo, Member.memberID == MemberSensitiveInfo.memberID). \
             filter(MemberSensitiveInfo.username == username, MemberSensitiveInfo.password == passwd).first()
 
         if member_info:
@@ -338,8 +349,8 @@ def add_employee():
             return jsonify({'error': 'Both username and password are required'}), 400
 
         # Query the database to find the member by username and password
-        member_info = db.session.query(Member, MemberSensitiveInfo).\
-            join(MemberSensitiveInfo, Member.memberID == MemberSensitiveInfo.memberID).\
+        member_info = db.session.query(Member, MemberSensitiveInfo). \
+            join(MemberSensitiveInfo, Member.memberID == MemberSensitiveInfo.memberID). \
             filter(MemberSensitiveInfo.username == username, MemberSensitiveInfo.password == password).first()
 
         # If member information is found
@@ -372,124 +383,100 @@ def add_employee():
 @app.route('/api/payments/<int:member_id>', methods=['GET', 'POST'])
 def manage_payments(member_id):
     if request.method == 'GET':
-        # Retrieve payment information from the retrieved memberID
-        sql = """
-        SELECT * FROM Payments
-        WHERE memberID = :member_id
-        """
-        with db.engine.connect() as connection:
-            result = connection.execute(text(sql), {'member_id': member_id})
-            payments_info = [dict(row) for row in result]
+        try:
+            # Retrieve payment information for the given memberID
+            payments = Payments.query.filter_by(memberID=member_id).all()
+            payments_info = [{'paymentID': payment.paymentID,
+                              'paymentStatus': payment.paymentStatus,
+                              'paymentPerMonth': payment.paymentPerMonth,
+                              'financeLoanAmount': payment.financeLoanAmount,
+                              'loanRatePercentage': payment.loanRatePercentage,
+                              'valuePaid': payment.valuePaid,
+                              'valueToPay': payment.valueToPay,
+                              'initialPurchase': payment.initialPurchase,
+                              'lastPayment': payment.lastPayment,
+                              'creditScore': payment.creditScore,
+                              'income': payment.income,
+                              'paymentType': payment.paymentType,
+                              'cardNumber': payment.cardNumber,
+                              'expirationDate': payment.expirationDate,
+                              'CVV': payment.CVV,
+                              'routingNumber': payment.routingNumber,
+                              'bankAcctNumber': payment.bankAcctNumber} for payment in payments]
 
-        return jsonify(payments_info)
+            return jsonify(payments_info)
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
     elif request.method == 'POST':
-        # Extract data from the request body
-        data = request.json
-        payment_status = data.get('paymentStatus')
-        payment_per_month = data.get('paymentPerMonth')
-        finance_loan_amount = data.get('financeLoanAmount')
-        loan_rate_percentage = data.get('loanRatePercentage')
-        value_paid = data.get('valuePaid')
-        value_to_pay = data.get('valueToPay')
-        initial_purchase = data.get('initialPurchase')
-        last_payment = data.get('lastPayment')
-        credit_score = data.get('creditScore')
-        income = data.get('income')
-        payment_type = data.get('paymentType')
-        card_number = data.get('cardNumber')
-        expiration_date = data.get('expirationDate')
-        cvv = data.get('CVV')
-        routing_number = data.get('routingNumber')
-        bank_acct_number = data.get('bankAcctNumber')
+        try:
+            # Extract data from the request body
+            data = request.json
+            payment_status = data.get('paymentStatus')
+            payment_per_month = data.get('paymentPerMonth')
+            finance_loan_amount = data.get('financeLoanAmount')
+            loan_rate_percentage = data.get('loanRatePercentage')
+            value_paid = data.get('valuePaid')
+            value_to_pay = data.get('valueToPay')
+            initial_purchase = data.get('initialPurchase')
+            last_payment = data.get('lastPayment')
+            credit_score = data.get('creditScore')
+            income = data.get('income')
+            payment_type = data.get('paymentType')
+            card_number = data.get('cardNumber')
+            expiration_date = data.get('expirationDate')
+            cvv = data.get('CVV')
+            routing_number = data.get('routingNumber')
+            bank_acct_number = data.get('bankAcctNumber')
 
-        # Check if the member already has payment information to decide whether to modify or create a new row
-        sql_check = """
-        SELECT * FROM Payments
-        WHERE memberID = :member_id
-        """
-        with db.engine.connect() as connection:
-            result = connection.execute(text(sql_check), {'member_id': member_id})
-            existing_payment = result.fetchone()
+            # Check if the member already has payment information
+            existing_payment = Payments.query.filter_by(memberID=member_id).first()
 
-        if existing_payment:
-            # If we're here we are updating the information as they alreayd have existiing data here
-            sql_update = """
-            UPDATE Payments
-            SET paymentStatus = :payment_status,
-                paymentPerMonth = :payment_per_month,
-                financeLoanAmount = :finance_loan_amount,
-                loanRatePercentage = :loan_rate_percentage,
-                valuePaid = :value_paid,
-                valueToPay = :value_to_pay,
-                initialPurchase = :initial_purchase,
-                lastPayment = :last_payment,
-                creditScore = :credit_score,
-                income = :income,
-                paymentType = :payment_type,
-                cardNumber = :card_number,
-                expirationDate = :expiration_date,
-                CVV = :cvv,
-                routingNumber = :routing_number,
-                bankAcctNumber = :bank_acct_number
-            WHERE memberID = :member_id
-            """
-            with db.engine.connect() as connection:
-                connection.execute(text(sql_update), {
-                    'payment_status': payment_status,
-                    'payment_per_month': payment_per_month,
-                    'finance_loan_amount': finance_loan_amount,
-                    'loan_rate_percentage': loan_rate_percentage,
-                    'value_paid': value_paid,
-                    'value_to_pay': value_to_pay,
-                    'initial_purchase': initial_purchase,
-                    'last_payment': last_payment,
-                    'credit_score': credit_score,
-                    'income': income,
-                    'payment_type': payment_type,
-                    'card_number': card_number,
-                    'expiration_date': expiration_date,
-                    'cvv': cvv,
-                    'routing_number': routing_number,
-                    'bank_acct_number': bank_acct_number,
-                    'member_id': member_id
-                })
+            if existing_payment:
+                # Update existing payment information
+                existing_payment.paymentStatus = payment_status
+                existing_payment.paymentPerMonth = payment_per_month
+                existing_payment.financeLoanAmount = finance_loan_amount
+                existing_payment.loanRatePercentage = loan_rate_percentage
+                existing_payment.valuePaid = value_paid
+                existing_payment.valueToPay = value_to_pay
+                existing_payment.initialPurchase = initial_purchase
+                existing_payment.lastPayment = last_payment
+                existing_payment.creditScore = credit_score
+                existing_payment.income = income
+                existing_payment.paymentType = payment_type
+                existing_payment.cardNumber = card_number
+                existing_payment.expirationDate = expiration_date
+                existing_payment.CVV = cvv
+                existing_payment.routingNumber = routing_number
+                existing_payment.bankAcctNumber = bank_acct_number
 
-        else:
-            # If we are here we are creating a new row for new data as there is NO existing data for the user
-            sql_insert = """
-            INSERT INTO Payments (
-                paymentStatus, paymentPerMonth, financeLoanAmount, loanRatePercentage,
-                valuePaid, valueToPay, initialPurchase, lastPayment, creditScore,
-                income, paymentType, cardNumber, expirationDate, CVV, routingNumber,
-                bankAcctNumber, memberID
-            )
-            VALUES (
-                :payment_status, :payment_per_month, :finance_loan_amount, :loan_rate_percentage,
-                :value_paid, :value_to_pay, :initial_purchase, :last_payment, :credit_score,
-                :income, :payment_type, :card_number, :expiration_date, :cvv, :routing_number,
-                :bank_acct_number, :member_id
-            )
-            """
-            with db.engine.connect() as connection:
-                connection.execute(text(sql_insert), {
-                    'payment_status': payment_status,
-                    'payment_per_month': payment_per_month,
-                    'finance_loan_amount': finance_loan_amount,
-                    'loan_rate_percentage': loan_rate_percentage,
-                    'value_paid': value_paid,
-                    'value_to_pay': value_to_pay,
-                    'initial_purchase': initial_purchase,
-                    'last_payment': last_payment,
-                    'credit_score': credit_score,
-                    'income': income,
-                    'payment_type': payment_type,
-                    'card_number': card_number,
-                    'expiration_date': expiration_date,
-                    'cvv': cvv,
-                    'routing_number': routing_number,
-                    'bank_acct_number': bank_acct_number,
-                    'member_id': member_id
-                })
+            else:
+                # Create new payment information
+                new_payment = Payments(memberID=member_id,
+                                       paymentStatus=payment_status,
+                                       paymentPerMonth=payment_per_month,
+                                       financeLoanAmount=finance_loan_amount,
+                                       loanRatePercentage=loan_rate_percentage,
+                                       valuePaid=value_paid,
+                                       valueToPay=value_to_pay,
+                                       initialPurchase=initial_purchase,
+                                       lastPayment=last_payment,
+                                       creditScore=credit_score,
+                                       income=income,
+                                       paymentType=payment_type,
+                                       cardNumber=card_number,
+                                       expirationDate=expiration_date,
+                                       CVV=cvv,
+                                       routingNumber=routing_number,
+                                       bankAcctNumber=bank_acct_number)
+                db.session.add(new_payment)
 
-        return jsonify({'message': 'Payment information updated successfully'}), 200
+            # Commit changes to the database
+            db.session.commit()
+
+            return jsonify({'message': 'Payment information updated successfully'}), 200
+        except Exception as e:
+            # Rollback the session in case of any exception
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
