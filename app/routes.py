@@ -476,6 +476,7 @@ def manage_payments(member_id):
             db.session.rollback()
             return jsonify({'error': str(e)}), 500
 
+
 @app.route('/api/service-appointments', methods=['GET', 'POST'])
 def service_appointments():
     if request.method == 'GET':
@@ -519,5 +520,49 @@ def service_appointments():
 
             return jsonify({'message': 'Appointment canceled successfully'})
 
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/current-bids', methods=['GET', 'POST'])
+def current_bids():
+    if request.method == 'GET':
+        # Retrieve information about cars with active bids
+        cars_with_bids = db.session.query(Cars.make, Cars.model, Cars.VIN_carID,
+                                          Purchases.paymentType, Purchases.bidValue) \
+            .join(Purchases, Cars.VIN_carID == Purchases.VIN_carID) \
+            .filter(Purchases.paymentType == 'BID', Purchases.bidStatus == 'Processing') \
+            .all()
+
+        # Format
+        response = [{
+            'make': car.make,
+            'model': car.model,
+            'VIN_carID': car.VIN_carID,
+            'paymentType': purchase.paymentType,
+            'bidValue': purchase.bidValue
+        } for car, purchase in cars_with_bids]
+
+        return jsonify(response)
+
+    elif request.method == 'POST':
+        # we want to either confirm or reject the bid
+        data = request.json
+        VIN_carID = data.get('VIN_carID')
+        bidStatus = data.get('bidStatus')  # pass "Confirmed" or "Denied"
+
+        # Check if both parameters are provided
+        if not (VIN_carID and bidStatus):
+            return jsonify({'error': 'Both VIN_carID and bidStatus parameters are required.'}), 400
+
+        # Update the bid status
+        try:
+            purchase = Purchases.query.filter_by(VIN_carID=VIN_carID, paymentType='BID').first()
+            if purchase:
+                purchase.bidStatus = bidStatus
+                db.session.commit()
+                return jsonify({'message': 'Bid status updated successfully'}), 200
+            else:
+                return jsonify({'error': 'No bid found for the specified car'}), 404
         except Exception as e:
             return jsonify({'error': str(e)}), 500

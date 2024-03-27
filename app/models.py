@@ -132,6 +132,9 @@ class Purchases(db.Model):
     paymentID = db.Column(db.Integer, ForeignKey('payments.paymentID'))
     VIN_carID = db.Column(db.String(17), ForeignKey('cars.VIN_carID'))
     memberID = db.Column(db.Integer, ForeignKey('member.memberID'))
+    paymentType = db.Column(db.Enum('MSRP', 'BID'))
+    bidValue = db.Column(db.String(20))
+    bidStatus = db.Column(db.Enum('Confirmed', 'Denied', 'Processing'))
 
 
 class Addons(db.Model):
