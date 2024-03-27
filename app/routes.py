@@ -10,8 +10,6 @@ import re
 ''' all the route API's here '''
 
 '''This API is used to check that ur DB is working locally'''
-
-
 @app.route('/')
 def testdb():
     try:
@@ -25,8 +23,6 @@ def testdb():
 
 
 ''' this API retrieves all of the add-on products'''
-
-
 @app.route('/api/vehicles/add-ons', methods=['GET'])
 def addon_information():
     # returns all the information of addon product one is offered when a customer purchases a car
@@ -43,38 +39,32 @@ def addon_information():
 
 
 '''This API returns all information on all vehicles in the database'''
-
-
 @app.route('/api/vehicles', methods=['GET'])
 def vehicle_information():
-    # Get the search query from the request
     search_query = request.args.get('search_query')
-
     if search_query:
-        # Define a regex pattern to match the search query (assuming case-insensitive matching)
-        regex_pattern = re.compile(search_query, re.IGNORECASE)
-
         # Query the database for cars matching the search query
-        sql = """
-        SELECT * FROM Cars
-        WHERE make REGEXP :regex_pattern OR model REGEXP :regex_pattern;
-        """
-        with db.engine.connect() as connection:
-            result = connection.execute(text(sql), {'regex_pattern': regex_pattern})
-            cars_info = [dict(row._mapping) for row in result]
+        cars_info = db.session.query(Cars).filter(
+            db.or_(
+                Cars.make.ilike(f'%{search_query}%'),
+                Cars.model.ilike(f'%{search_query}%')
+            )
+        ).all()
     else:
         # If no search query provided, retrieve all vehicles
-        sql = "SELECT * FROM Cars;"
-        with db.engine.connect() as connection:
-            result = connection.execute(text(sql))
-            cars_info = [dict(row._mapping) for row in result]
+        cars_info = Cars.query.all()
 
-    return jsonify(cars_info)
+    # Convert the query result to a list of dictionaries
+    cars_info_dicts = [car.__dict__ for car in cars_info]
+
+    # Remove the '_sa_instance_state' key from each dictionary
+    for car_dict in cars_info_dicts:
+        car_dict.pop('_sa_instance_state', None)
+
+    return jsonify(cars_info_dicts)
 
 
 '''This API returns all information on a specific vehicle based on their VIN number which is passed from the front end to the backend'''
-
-
 @app.route('/api/vehicles/<string:VIN_carID>', methods=['GET'])
 def vehicle(VIN_carID):
     vehicle = Cars.query.filter_by(VIN_carID=VIN_carID).first()
@@ -124,23 +114,6 @@ def get_all_employees():
 
 @app.route('/api/testdrives', methods=['GET'])
 def get_test_drives():
-    # sql = """
-    # SELECT
-    # CONCAT(Member.first_name, ' ', Member.last_name) as fullname,
-    # Member.phone,
-    # TestDrive.car_id,
-    # CONCAT(Cars.make, ' ', Cars.model) AS car_make_model,
-    # TestDrive.appointment_date
-    # FROM TestDrive
-    # JOIN Member ON TestDrive.memberID = Member.memberID
-    # JOIN Cars ON TestDrive.car_id = Cars.VIN_carID;
-    # """
-    # with db.engine.connect() as connection:
-    #     result = connection.execute(text(sql))
-    #     result = result.fetchall()
-    #     test_drive_info = [dict(row._mapping) for row in result]
-    #
-    # return jsonify(test_drive_info)
     test_drive_info = []
     test_drives = db.session.query(TestDrive, Member, Cars). \
         join(Member, TestDrive.memberID == Member.memberID). \
@@ -205,20 +178,33 @@ def update_confirmation():
 
 
 '''This API returns a specific employee based on their email address and password.'''
-
-
 @app.route('/api/employees/<string:email>/<string:passwd>', methods=['GET'])
 def employee(email, passwd):
-    sql = """
-        SELECT * FROM Employee
-        INNER JOIN EmployeeSensitiveInfo ON Employee.employeeID = EmployeeSensitiveInfo.employeeID
-        WHERE Employee.email = :email AND EmployeeSensitiveInfo.password = :passwd;
-        """
-    with db.engine.connect() as connection:
-        result = connection.execute(text(sql), {'email': email, 'passwd': passwd})
-        result = result.fetchall()
-        addon_information = [dict(row._mapping) for row in result]
-        return jsonify(addon_information)
+    # Retrieve employee based on email and password
+    try:
+        employee_data = db.session.query(Employee, EmployeeSensitiveInfo). \
+            join(EmployeeSensitiveInfo, Employee.employeeID == EmployeeSensitiveInfo.employeeID). \
+            filter(Employee.email == email, EmployeeSensitiveInfo.password == passwd).first()
+
+        # Check if employee exists
+        if employee_data is not None:
+            employee, sensitive_info = employee_data
+            # Construct response
+            response = {
+                'employeeID': employee.employeeID,
+                'firstname': employee.firstname,
+                'lastname': employee.lastname,
+                'email': employee.email,
+                'phone': employee.phone,
+                'address': employee.address,
+                'employeeType': employee.employeeType,
+                'lastModified': sensitive_info.lastModified
+            }
+            return jsonify(response), 200
+        else:
+            return jsonify({'message': 'Employee not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 '''This API creates an employee based on all the values passed from the front to the backend'''
@@ -234,21 +220,28 @@ def create_employee():
     address = data.get('address')
     employee_type = data.get('employeeType')
 
-    sql = """
-    INSERT INTO Employee (firstname, lastname, email, phone, address, employeeType)
-    VALUES (:firstname, :lastname, :email, :phone, :address, :employeeType)
-    """
-    with db.engine.connect() as connection:
-        connection.execute(text(sql), {
-            'firstname': firstname,
-            'lastname': lastname,
-            'email': email,
-            'phone': phone,
-            'address': address,
-            'employeeType': employee_type
-        })
+    # Create a new employee object
+    new_employee = Employee(
+        firstname=firstname,
+        lastname=lastname,
+        email=email,
+        phone=phone,
+        address=address,
+        employeeType=employee_type
+    )
 
-    return jsonify({'message': 'Employee account created successfully'})
+    # Add the new employee to the session
+    db.session.add(new_employee)
+
+    try:
+        # Commit the session to the database
+        db.session.commit()
+        return jsonify({'message': 'Employee account created successfully'}), 201
+    except Exception as e:
+        # Rollback the session in case of any error
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 
 
 '''Retrieves all the members and their information'''
