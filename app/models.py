@@ -10,6 +10,7 @@ from sqlalchemy import Enum, ForeignKey
 
 
 class Cars(db.Model):
+    __tablename__ = 'Cars'
     VIN_carID = db.Column(db.String(17), primary_key=True)
     make = db.Column(db.String(50))
     model = db.Column(db.String(50))
@@ -28,6 +29,7 @@ class Cars(db.Model):
 
 
 class Member(db.Model):
+    __tablename__ = 'Member'
     memberID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     first_name = db.Column(db.String(100))
     last_name = db.Column(db.String(100))
@@ -38,6 +40,7 @@ class Member(db.Model):
 
 
 class TestDrive(db.Model):
+    __tablename__ = 'TestDrive'
     testdrive_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     memberID = db.Column(db.Integer, ForeignKey('member.memberID'))
     car_id = db.Column(db.String(17), ForeignKey('cars.VIN_carID'))
@@ -46,6 +49,7 @@ class TestDrive(db.Model):
 
 
 class Financing(db.Model):
+    __tablename__ = 'Financing'
     financing_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     memberID = db.Column(db.Integer, ForeignKey('member.memberID'))
     credit_score = db.Column(db.Integer)
@@ -57,6 +61,7 @@ class Financing(db.Model):
 
 
 class ServiceAppointment(db.Model):
+    __tablename__ = 'ServiceAppointment'
     appointment_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     memberID = db.Column(db.Integer, ForeignKey('member.memberID'))
     technician_id = db.Column(db.Integer)
@@ -65,6 +70,7 @@ class ServiceAppointment(db.Model):
 
 
 class Employee(db.Model):
+    __tablename__ = 'Employee'
     employeeID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     firstname = db.Column(db.String(50))
     lastname = db.Column(db.String(50))
@@ -75,6 +81,7 @@ class Employee(db.Model):
 
 
 class EmployeeSensitiveInfo(db.Model):
+    __tablename__ = 'EmployeeSensitiveInfo'
     sensitiveID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     employeeID = db.Column(db.Integer, ForeignKey('employee.employeeID'))
     password = db.Column(db.String(255))
@@ -85,6 +92,7 @@ class EmployeeSensitiveInfo(db.Model):
 
 
 class MemberSensitiveInfo(db.Model):
+    __tablename__ = 'MemberSensitiveInfo'
     sensitiveID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     memberID = db.Column(db.Integer, ForeignKey('member.memberID'), unique=True)
     SSN = db.Column(db.String(255), unique=True)
@@ -97,6 +105,7 @@ class MemberSensitiveInfo(db.Model):
 
 
 class Payments(db.Model):
+    __tablename__ = 'Payments'
     paymentID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     paymentStatus = db.Column(Enum('completed', 'pending', 'failed', 'none'))
     paymentPerMonth = db.Column(db.String(20))
@@ -118,6 +127,7 @@ class Payments(db.Model):
 
 
 class Purchases(db.Model):
+    __tablename__ = 'Purchases'
     purchaseID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     paymentID = db.Column(db.Integer, ForeignKey('payments.paymentID'))
     VIN_carID = db.Column(db.String(17), ForeignKey('cars.VIN_carID'))
@@ -125,12 +135,14 @@ class Purchases(db.Model):
 
 
 class Addons(db.Model):
+    __tablename__ = 'Addons'
     itemID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     itemName = db.Column(db.String(100))
     totalCost = db.Column(db.DECIMAL(10, 2))
 
 
 class MemberAuditLog(db.Model):
+    __tablename__ = 'MemberAuditLogs'
     logID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     memberID = db.Column(db.Integer, ForeignKey('member.memberID'))
     event_description = db.Column(db.TEXT)
@@ -138,6 +150,7 @@ class MemberAuditLog(db.Model):
 
 
 class EmployeeAuditLog(db.Model):
+    __tablename__ = 'EmployeeAuditLogs'
     logID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     employeeID = db.Column(db.Integer, ForeignKey('employee.employeeID'))
     event_description = db.Column(db.TEXT)
