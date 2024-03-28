@@ -39,43 +39,44 @@ CREATE TABLE IF NOT EXISTS Cars (
 );
 
 CREATE TABLE IF NOT EXISTS Member (
-    member_id INT AUTO_INCREMENT PRIMARY KEY,
+    memberID INT AUTO_INCREMENT PRIMARY KEY,
     first_name VARCHAR(100),
     last_name VARCHAR(100),
     email VARCHAR(100),
     phone VARCHAR(20),
-    status ENUM('Confirm', 'Deny', 'Cancelled') default NULL,
+    status ENUM('Confirmed', 'Denied', 'Cancelled') default NULL,
     join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS TestDrive (
     testdrive_id INT AUTO_INCREMENT PRIMARY KEY,
-    member_id INT,
+    memberID INT,
     car_id VARCHAR(17),
     appointment_date TIMESTAMP,
-    FOREIGN KEY (member_id) REFERENCES Member(member_id),
+    confirmation ENUM ('confirm', 'deny', 'Awaiting Confirmation') default NULL,
+    FOREIGN KEY (memberID) REFERENCES Member(memberID),
     FOREIGN KEY (car_id) REFERENCES Cars(VIN_carID)
 );
 
 CREATE TABLE IF NOT EXISTS Financing (
     financing_id INT AUTO_INCREMENT PRIMARY KEY,
-    member_id INT,
+    memberID INT,
     credit_score INT,
     loan_total INT,
     down_payment INT,
     percentage INT,
     monthly_sum INT,
     remaining_months INT,
-    FOREIGN KEY (member_id) REFERENCES Member(member_id)
+    FOREIGN KEY (memberID) REFERENCES Member(memberID)
 );
 
 CREATE TABLE IF NOT EXISTS ServiceAppointment (
     appointment_id INT AUTO_INCREMENT PRIMARY KEY,
-    member_id INT,
+    memberID INT,
     technician_id INT,
     appointment_date DATE,
     service_name VARCHAR(100),
-    FOREIGN KEY (member_id) REFERENCES Member(member_id)
+    FOREIGN KEY (memberID) REFERENCES Member(memberID)
 );
 
 CREATE TABLE IF NOT EXISTS Employee (
@@ -107,7 +108,7 @@ CREATE TABLE IF NOT EXISTS MemberSensitiveInfo (
     driverID VARCHAR(15) UNIQUE,
     cardInfo TEXT,
     lastModified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-#     FOREIGN KEY (memberID) REFERENCES Member(member_id) -- uncomment and test when member input it done and tested
+#     FOREIGN KEY (memberID) REFERENCES Member(memberID) -- uncomment and test when member input it done and tested
 );
 
 CREATE TABLE IF NOT EXISTS Payments (
@@ -129,7 +130,7 @@ CREATE TABLE IF NOT EXISTS Payments (
     routingNumber TEXT, -- Assuming routing number is stored as string
     bankAcctNumber TEXT, -- Assuming bank account number is stored as string
     memberID INT
-#     FOREIGN KEY (memberID) REFERENCES Member(member_id) -- uncomment and test when member input it done and tested
+#     FOREIGN KEY (memberID) REFERENCES Member(memberID) -- uncomment and test when member input it done and tested
 );
 
 
@@ -138,9 +139,13 @@ CREATE TABLE IF NOT EXISTS Purchases (
     paymentID INT,
     VIN_carID VARCHAR(17),
     memberID INT,
+    paymentType ENUM ('MSRP', 'BID'),
+    bidValue VARCHAR(20),
+    bidStatus ENUM ('Confirmed', 'Denied', 'Processing'),
+    confirmationNumber VARCHAR (13) UNIQUE,
     FOREIGN KEY (paymentID) REFERENCES Payments(paymentID),
     FOREIGN KEY (VIN_carID) REFERENCES Cars(VIN_carID)
-#     FOREIGN KEY (memberID) REFERENCES Member(member_id) -- uncomment and test when member input it done and tested
+#     FOREIGN KEY (memberID) REFERENCES Member(memberID) -- uncomment and test when member input it done and tested
 );
 
 CREATE TABLE IF NOT EXISTS Addons (
@@ -153,10 +158,10 @@ CREATE TABLE IF NOT EXISTS Addons (
 
 CREATE TABLE IF NOT EXISTS MemberAuditLog (
     logID INT AUTO_INCREMENT PRIMARY KEY,
-    member_id INT,
+    memberID INT,
     event_description TEXT,
     event_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (member_id) REFERENCES Member(member_id)
+    FOREIGN KEY (memberID) REFERENCES Member(memberID)
 );
 
 CREATE TABLE IF NOT EXISTS EmployeeAuditLog (
@@ -207,8 +212,8 @@ BEGIN
 
     -- Insert log entry if any fields were updated
     IF log_description != '' THEN
-        INSERT INTO MemberAuditLog (member_id, event_description)
-        VALUES (NEW.member_id, log_description);
+        INSERT INTO MemberAuditLog (memberID, event_description)
+        VALUES (NEW.memberID, log_description);
     END IF;
 END//
 
@@ -256,7 +261,7 @@ BEGIN
 
     -- Insert log entry if any fields were updated
     IF log_description != '' THEN
-        INSERT INTO MemberAuditLog (member_id, event_description)
+        INSERT INTO MemberAuditLog (memberID, event_description)
         VALUES (NEW.memberID, log_description);
     END IF;
 END//
