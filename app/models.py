@@ -2,12 +2,8 @@
 from . import db
 from sqlalchemy import Enum, ForeignKey
 
-# states
-
 # Define SQLAlchemy models to represent database tables
-
-'''example code on how to use models in flask'''
-
+''' all these tables have foreign keys, will include later after DB gets fully added with adequate mock data '''
 
 class Cars(db.Model):
     __tablename__ = 'Cars'
