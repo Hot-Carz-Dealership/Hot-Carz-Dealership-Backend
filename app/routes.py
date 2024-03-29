@@ -11,7 +11,6 @@ import re
 
 '''This API is used to check that ur DB is working locally'''
 
-
 @app.route('/')
 def testdb():
     try:
@@ -39,7 +38,7 @@ def addon_information():
             'totalCost': str(addon.totalCost)  # Converting Decimal to string for JSON serialization
         }
         addon_info.append(addon_data)
-    return jsonify(addon_info)
+    return jsonify(addon_info), 200
 
 
 '''This API returns all information on all vehicles in the database'''
@@ -67,7 +66,7 @@ def vehicle_information():
     for car_dict in cars_info_dicts:
         car_dict.pop('_sa_instance_state', None)
 
-    return jsonify(cars_info_dicts)
+    return jsonify(cars_info_dicts), 200
 
 
 '''This API returns all information on a specific vehicle based on their VIN number which is passed from the front end to the backend'''
@@ -117,26 +116,28 @@ def get_all_employees():
             'employeeType': employee.employeeType
         }
         employee_info.append(employee_data)
-    return jsonify(employee_info)
+    return jsonify(employee_info), 200
 
 
 @app.route('/api/testdrives', methods=['GET'])
 def get_test_drives():
-    test_drive_info = []
-    test_drives = db.session.query(TestDrive, Member, Cars). \
-        join(Member, TestDrive.memberID == Member.memberID). \
-        join(Cars, TestDrive.car_id == Cars.VIN_carID).all()
+    try:
+        test_drive_info = []
+        test_drives = db.session.query(TestDrive, Member, Cars).join(Member, TestDrive.memberID == Member.memberID). \
+            join(Cars, TestDrive.car_id == Cars.VIN_carID).all()
 
-    for test_drive, member, car in test_drives:
-        test_drive_info.append({
-            'fullname': f"{member.first_name} {member.last_name}",
-            'phone': member.phone,
-            'car_id': test_drive.car_id,
-            'car_make_model': f"{car.make} {car.model}",
-            'appointment_date': test_drive.appointment_date
-        })
+        for test_drive, member_info, car in test_drives:
+            test_drive_info.append({
+                'fullname': f"{member_info.first_name} {member_info.last_name}",
+                'phone': member_info.phone,
+                'car_id': test_drive.car_id,
+                'car_make_model': f"{car.make} {car.model}",
+                'appointment_date': test_drive.appointment_date
+            })
 
-    return jsonify(test_drive_info)
+        return jsonify(test_drive_info), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 # @app.route('/api/testdrives/confirmation/<string:confirmation>', methods=['POST'])
@@ -175,7 +176,7 @@ def update_confirmation():
                 text("UPDATE TestDrive SET confirmation = :confirmation_value WHERE testdrive_id = :testdrive_id;"),
                 {'confirmation_value': confirmation_value, 'testdrive_id': testdrive_id}
             )
-        return jsonify({'message': 'Confirmation updated successfully'})
+        return jsonify({'message': 'Confirmation updated successfully'}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -266,7 +267,7 @@ def get_all_members():
                          'status': member.status,
                          'join_date': member.join_date} for member in members]
 
-        return jsonify(members_info)
+        return jsonify(members_info), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -323,7 +324,7 @@ def create_member():
         # Commit the session to persist the changes
         db.session.commit()
 
-        return jsonify({'message': 'Member account created successfully'})
+        return jsonify({'message': 'Member account created successfully'}), 201
     except Exception as e:
         # Rollback the session in case of any exception
         db.session.rollback()
@@ -381,25 +382,30 @@ def manage_payments(member_id):
         try:
             # Retrieve payment information for the given memberID
             payments = Payments.query.filter_by(memberID=member_id).all()
-            payments_info = [{'paymentID': payment.paymentID,
-                              'paymentStatus': payment.paymentStatus,
-                              'paymentPerMonth': payment.paymentPerMonth,
-                              'financeLoanAmount': payment.financeLoanAmount,
-                              'loanRatePercentage': payment.loanRatePercentage,
-                              'valuePaid': payment.valuePaid,
-                              'valueToPay': payment.valueToPay,
-                              'initialPurchase': payment.initialPurchase,
-                              'lastPayment': payment.lastPayment,
-                              'creditScore': payment.creditScore,
-                              'income': payment.income,
-                              'paymentType': payment.paymentType,
-                              'cardNumber': payment.cardNumber,
-                              'expirationDate': payment.expirationDate,
-                              'CVV': payment.CVV,
-                              'routingNumber': payment.routingNumber,
-                              'bankAcctNumber': payment.bankAcctNumber} for payment in payments]
-
-            return jsonify(payments_info)
+            payments_info = []
+            for payment in payments:
+                payment_data = {
+                    'paymentID': payment.paymentID,
+                    'paymentStatus': payment.paymentStatus,
+                    'paymentPerMonth': payment.paymentPerMonth,
+                    'financeLoanAmount': payment.financeLoanAmount,
+                    'loanRatePercentage': payment.loanRatePercentage,
+                    'valuePaid': payment.valuePaid,
+                    'valueToPay': payment.valueToPay,
+                    'initialPurchase': payment.initialPurchase,  # Convert to string
+                    'lastPayment': payment.lastPayment,  # Convert to string
+                    'creditScore': payment.creditScore,
+                    'income': payment.income,
+                    'paymentType': payment.paymentType,
+                    'servicePurchased': payment.servicePurchased,
+                    'cardNumber': payment.cardNumber,
+                    'expirationDate': payment.expirationDate,
+                    'CVV': payment.CVV,
+                    'routingNumber': payment.routingNumber,
+                    'bankAcctNumber': payment.bankAcctNumber
+                }
+                payments_info.append(payment_data)
+            return jsonify({'payments': payments_info}), 200
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
@@ -418,6 +424,7 @@ def manage_payments(member_id):
             credit_score = data.get('creditScore')
             income = data.get('income')
             payment_type = data.get('paymentType')
+            service_purchased = data.get('servicePurchased')
             card_number = data.get('cardNumber')
             expiration_date = data.get('expirationDate')
             cvv = data.get('CVV')
@@ -440,12 +447,12 @@ def manage_payments(member_id):
                 existing_payment.creditScore = credit_score
                 existing_payment.income = income
                 existing_payment.paymentType = payment_type
+                existing_payment.servicePurchased = service_purchased
                 existing_payment.cardNumber = card_number
                 existing_payment.expirationDate = expiration_date
                 existing_payment.CVV = cvv
                 existing_payment.routingNumber = routing_number
                 existing_payment.bankAcctNumber = bank_acct_number
-
             else:
                 # Create new payment information
                 new_payment = Payments(memberID=member_id,
@@ -460,6 +467,7 @@ def manage_payments(member_id):
                                        creditScore=credit_score,
                                        income=income,
                                        paymentType=payment_type,
+                                       servicePurchased=service_purchased,
                                        cardNumber=card_number,
                                        expirationDate=expiration_date,
                                        CVV=cvv,
@@ -491,7 +499,7 @@ def service_appointments():
             'service_name': appointment.service_name
         } for appointment in appointments]
 
-        return jsonify(appointments_info)
+        return jsonify(appointments_info), 200
 
     elif request.method == 'POST':
         # post request we are deleting the row for service appointments for cancellation
@@ -528,8 +536,7 @@ def service_appointments():
 def current_bids():
     if request.method == 'GET':
         # Retrieve information about cars with active bids
-        cars_with_bids = db.session.query(Cars.make, Cars.model, Cars.VIN_carID,
-                                          Purchases.paymentType, Purchases.bidValue) \
+        cars_with_bids = db.session.query(Cars, Purchases) \
             .join(Purchases, Cars.VIN_carID == Purchases.VIN_carID) \
             .filter(Purchases.paymentType == 'BID', Purchases.bidStatus == 'Processing') \
             .all()
@@ -540,10 +547,12 @@ def current_bids():
             'model': car.model,
             'VIN_carID': car.VIN_carID,
             'paymentType': purchase.paymentType,
-            'bidValue': purchase.bidValue
+            'bidValue': purchase.bidValue,
+            'bidStatus': purchase.bidStatus,
+            'confirmationDate': purchase.confirmationNumber
         } for car, purchase in cars_with_bids]
 
-        return jsonify(response)
+        return jsonify(response), 200
 
     elif request.method == 'POST':
         # we want to either confirm or reject the bid
@@ -566,3 +575,29 @@ def current_bids():
                 return jsonify({'error': 'No bid found for the specified car'}), 404
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+
+
+'''returns all purchases from the DB'''
+@app.route('/api/purchases', methods=['GET'])
+def all_purchases():
+    purchases = Purchases.query.all()  # Query all purchases
+    purchases_list = []  # List to store formatted purchases data
+
+    for purchase in purchases:
+        purchase_data = {
+            'purchaseID': purchase.purchaseID,
+            'paymentID': purchase.paymentID,
+            'VIN_carID': purchase.VIN_carID,
+            'memberID': purchase.memberID,
+            'paymentType': purchase.paymentType,
+            'bidValue': purchase.bidValue,
+            'bidStatus': purchase.bidStatus,
+            'confirmationNumber': purchase.confirmationNumber
+        }
+        purchases_list.append(purchase_data)
+
+    return jsonify({'purchases': purchases_list}), 200
+
+# @app.route('/api/purchases/add', methods=['POST'])
+# def new_purchase():
+#     ...
