@@ -39,7 +39,7 @@ def addon_information():
             'totalCost': str(addon.totalCost)  # Converting Decimal to string for JSON serialization
         }
         addon_info.append(addon_data)
-    return jsonify(addon_info), 200
+    return jsonify(addon_info)
 
 
 '''This API returns all information on all vehicles in the database'''
@@ -67,7 +67,7 @@ def vehicle_information():
     for car_dict in cars_info_dicts:
         car_dict.pop('_sa_instance_state', None)
 
-    return jsonify(cars_info_dicts), 200
+    return jsonify(cars_info_dicts)
 
 
 '''This API returns all information on a specific vehicle based on their VIN number which is passed from the front end to the backend'''
@@ -117,28 +117,26 @@ def get_all_employees():
             'employeeType': employee.employeeType
         }
         employee_info.append(employee_data)
-    return jsonify(employee_info), 200
+    return jsonify(employee_info)
 
 
 @app.route('/api/testdrives', methods=['GET'])
 def get_test_drives():
-    try:
-        test_drive_info = []
-        test_drives = db.session.query(TestDrive, Member, Cars).join(Member, TestDrive.memberID == Member.memberID). \
-            join(Cars, TestDrive.car_id == Cars.VIN_carID).all()
+    test_drive_info = []
+    test_drives = db.session.query(TestDrive, Member, Cars). \
+        join(Member, TestDrive.memberID == Member.memberID). \
+        join(Cars, TestDrive.car_id == Cars.VIN_carID).all()
 
-        for test_drive, member_info, car in test_drives:
-            test_drive_info.append({
-                'fullname': f"{member_info.first_name} {member_info.last_name}",
-                'phone': member_info.phone,
-                'car_id': test_drive.car_id,
-                'car_make_model': f"{car.make} {car.model}",
-                'appointment_date': test_drive.appointment_date
-            })
+    for test_drive, member, car in test_drives:
+        test_drive_info.append({
+            'fullname': f"{member.first_name} {member.last_name}",
+            'phone': member.phone,
+            'car_id': test_drive.car_id,
+            'car_make_model': f"{car.make} {car.model}",
+            'appointment_date': test_drive.appointment_date
+        })
 
-        return jsonify(test_drive_info), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    return jsonify(test_drive_info)
 
 
 @app.route('/api/testdrives/update_confirmation', methods=['POST'])
@@ -159,7 +157,7 @@ def update_confirmation():
                 text("UPDATE TestDrive SET confirmation = :confirmation_value WHERE testdrive_id = :testdrive_id;"),
                 {'confirmation_value': confirmation_value, 'testdrive_id': testdrive_id}
             )
-        return jsonify({'message': 'Confirmation updated successfully'}), 201
+        return jsonify({'message': 'Confirmation updated successfully'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -250,7 +248,7 @@ def get_all_members():
                          'status': member.status,
                          'join_date': member.join_date} for member in members]
 
-        return jsonify(members_info), 200
+        return jsonify(members_info)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -307,7 +305,7 @@ def create_member():
         # Commit the session to persist the changes
         db.session.commit()
 
-        return jsonify({'message': 'Member account created successfully'}), 201
+        return jsonify({'message': 'Member account created successfully'})
     except Exception as e:
         # Rollback the session in case of any exception
         db.session.rollback()
@@ -354,6 +352,113 @@ def add_employee():
         return jsonify({'error': str(e)}), 500
 
 
+# payment
+
+'''This API is used to insert NEW or MODIFY payment data from a customer based on the method and information passed along side of the request'''
+
+
+@app.route('/api/payments/<int:member_id>', methods=['GET', 'POST'])
+def manage_payments(member_id):
+    if request.method == 'GET':
+        try:
+            # Retrieve payment information for the given memberID
+            payments = Payments.query.filter_by(memberID=member_id).all()
+            payments_info = [{'paymentID': payment.paymentID,
+                              'paymentStatus': payment.paymentStatus,
+                              'paymentPerMonth': payment.paymentPerMonth,
+                              'financeLoanAmount': payment.financeLoanAmount,
+                              'loanRatePercentage': payment.loanRatePercentage,
+                              'valuePaid': payment.valuePaid,
+                              'valueToPay': payment.valueToPay,
+                              'initialPurchase': payment.initialPurchase,
+                              'lastPayment': payment.lastPayment,
+                              'creditScore': payment.creditScore,
+                              'income': payment.income,
+                              'paymentType': payment.paymentType,
+                              'cardNumber': payment.cardNumber,
+                              'expirationDate': payment.expirationDate,
+                              'CVV': payment.CVV,
+                              'routingNumber': payment.routingNumber,
+                              'bankAcctNumber': payment.bankAcctNumber} for payment in payments]
+
+            return jsonify(payments_info)
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    elif request.method == 'POST':
+        try:
+            # Extract data from the request body
+            data = request.json
+            payment_status = data.get('paymentStatus')
+            payment_per_month = data.get('paymentPerMonth')
+            finance_loan_amount = data.get('financeLoanAmount')
+            loan_rate_percentage = data.get('loanRatePercentage')
+            value_paid = data.get('valuePaid')
+            value_to_pay = data.get('valueToPay')
+            initial_purchase = data.get('initialPurchase')
+            last_payment = data.get('lastPayment')
+            credit_score = data.get('creditScore')
+            income = data.get('income')
+            payment_type = data.get('paymentType')
+            card_number = data.get('cardNumber')
+            expiration_date = data.get('expirationDate')
+            cvv = data.get('CVV')
+            routing_number = data.get('routingNumber')
+            bank_acct_number = data.get('bankAcctNumber')
+
+            # Check if the member already has payment information
+            existing_payment = Payments.query.filter_by(memberID=member_id).first()
+
+            if existing_payment:
+                # Update existing payment information
+                existing_payment.paymentStatus = payment_status
+                existing_payment.paymentPerMonth = payment_per_month
+                existing_payment.financeLoanAmount = finance_loan_amount
+                existing_payment.loanRatePercentage = loan_rate_percentage
+                existing_payment.valuePaid = value_paid
+                existing_payment.valueToPay = value_to_pay
+                existing_payment.initialPurchase = initial_purchase
+                existing_payment.lastPayment = last_payment
+                existing_payment.creditScore = credit_score
+                existing_payment.income = income
+                existing_payment.paymentType = payment_type
+                existing_payment.cardNumber = card_number
+                existing_payment.expirationDate = expiration_date
+                existing_payment.CVV = cvv
+                existing_payment.routingNumber = routing_number
+                existing_payment.bankAcctNumber = bank_acct_number
+
+            else:
+                # Create new payment information
+                new_payment = Payments(memberID=member_id,
+                                       paymentStatus=payment_status,
+                                       paymentPerMonth=payment_per_month,
+                                       financeLoanAmount=finance_loan_amount,
+                                       loanRatePercentage=loan_rate_percentage,
+                                       valuePaid=value_paid,
+                                       valueToPay=value_to_pay,
+                                       initialPurchase=initial_purchase,
+                                       lastPayment=last_payment,
+                                       creditScore=credit_score,
+                                       income=income,
+                                       paymentType=payment_type,
+                                       cardNumber=card_number,
+                                       expirationDate=expiration_date,
+                                       CVV=cvv,
+                                       routingNumber=routing_number,
+                                       bankAcctNumber=bank_acct_number)
+                db.session.add(new_payment)
+
+            # Commit changes to the database
+            db.session.commit()
+
+            return jsonify({'message': 'Payment information updated successfully'}), 200
+        except Exception as e:
+            # Rollback the session in case of any exception
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/service-appointments', methods=['GET', 'POST'])
 def service_appointments():
     if request.method == 'GET':
@@ -368,7 +473,7 @@ def service_appointments():
             'service_name': appointment.service_name
         } for appointment in appointments]
 
-        return jsonify(appointments_info), 200
+        return jsonify(appointments_info)
 
     elif request.method == 'POST':
         # post request we are deleting the row for service appointments for cancellation
@@ -397,5 +502,49 @@ def service_appointments():
 
             return jsonify({'message': 'Appointment canceled successfully'})
 
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/current-bids', methods=['GET', 'POST'])
+def current_bids():
+    if request.method == 'GET':
+        # Retrieve information about cars with active bids
+        cars_with_bids = db.session.query(Cars.make, Cars.model, Cars.VIN_carID,
+                                          Purchases.paymentType, Purchases.bidValue) \
+            .join(Purchases, Cars.VIN_carID == Purchases.VIN_carID) \
+            .filter(Purchases.paymentType == 'BID', Purchases.bidStatus == 'Processing') \
+            .all()
+
+        # Format
+        response = [{
+            'make': car.make,
+            'model': car.model,
+            'VIN_carID': car.VIN_carID,
+            'paymentType': purchase.paymentType,
+            'bidValue': purchase.bidValue
+        } for car, purchase in cars_with_bids]
+
+        return jsonify(response)
+
+    elif request.method == 'POST':
+        # we want to either confirm or reject the bid
+        data = request.json
+        VIN_carID = data.get('VIN_carID')
+        bidStatus = data.get('bidStatus')  # pass "Confirmed" or "Denied"
+
+        # Check if both parameters are provided
+        if not (VIN_carID and bidStatus):
+            return jsonify({'error': 'Both VIN_carID and bidStatus parameters are required.'}), 400
+
+        # Update the bid status
+        try:
+            purchase = Purchases.query.filter_by(VIN_carID=VIN_carID, paymentType='BID').first()
+            if purchase:
+                purchase.bidStatus = bidStatus
+                db.session.commit()
+                return jsonify({'message': 'Bid status updated successfully'}), 200
+            else:
+                return jsonify({'error': 'No bid found for the specified car'}), 404
         except Exception as e:
             return jsonify({'error': str(e)}), 500

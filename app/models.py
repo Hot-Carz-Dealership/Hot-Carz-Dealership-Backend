@@ -114,7 +114,6 @@ class Payments(db.Model):
     creditScore = db.Column(db.String(3))
     income = db.Column(db.String(20))
     paymentType = db.Column(Enum('check', 'card', 'none'))
-    servicePurchased = db.Column(Enum('Vehicle Purchase/Payment', 'Vehicle Purchase'))
     cardNumber = db.Column(db.TEXT)
     expirationDate = db.Column(db.TEXT)
     CVV = db.Column(db.TEXT)
@@ -132,7 +131,6 @@ class Purchases(db.Model):
     paymentType = db.Column(db.Enum('MSRP', 'BID'))
     bidValue = db.Column(db.String(20))
     bidStatus = db.Column(db.Enum('Confirmed', 'Denied', 'Processing'))
-    confirmationNumber = db.Column(db.String(13))
 
 
 class Addons(db.Model):

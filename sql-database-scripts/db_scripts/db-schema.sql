@@ -53,9 +53,9 @@ CREATE TABLE IF NOT EXISTS TestDrive (
     memberID INT,
     car_id VARCHAR(17),
     appointment_date TIMESTAMP,
-    confirmation ENUM ('confirm', 'deny', 'Awaiting Confirmation') default NULL
-#     FOREIGN KEY (memberID) REFERENCES Member(memberID),
-#     FOREIGN KEY (car_id) REFERENCES Cars(VIN_carID)
+    confirmation ENUM ('confirm', 'deny', 'Awaiting Confirmation') default NULL,
+    FOREIGN KEY (memberID) REFERENCES Member(memberID),
+    FOREIGN KEY (car_id) REFERENCES Cars(VIN_carID)
 );
 
 CREATE TABLE IF NOT EXISTS Financing (
@@ -75,8 +75,8 @@ CREATE TABLE IF NOT EXISTS ServiceAppointment (
     memberID INT,
     technician_id INT,
     appointment_date DATE,
-    service_name VARCHAR(100)
-#     FOREIGN KEY (memberID) REFERENCES Member(memberID)
+    service_name VARCHAR(100),
+    FOREIGN KEY (memberID) REFERENCES Member(memberID)
 );
 
 CREATE TABLE IF NOT EXISTS Employee (
@@ -124,7 +124,6 @@ CREATE TABLE IF NOT EXISTS Payments (
     creditScore VARCHAR(3),
     income VARCHAR(20),
     paymentType ENUM('check', 'card', 'none'),
-    servicePurchased ENUM ('Vehicle Purchase/Payment', 'Vehicle Service'),
     cardNumber TEXT, -- Assuming card numbers are stored as strings
     expirationDate TEXT, -- Storing as MM/YY format
     CVV TEXT, -- Assuming CVV is a string with a fixed length
@@ -143,13 +142,11 @@ CREATE TABLE IF NOT EXISTS Purchases (
     paymentType ENUM ('MSRP', 'BID'),
     bidValue VARCHAR(20),
     bidStatus ENUM ('Confirmed', 'Denied', 'Processing'),
-    confirmationNumber VARCHAR (13) UNIQUE
-#     FOREIGN KEY (paymentID) REFERENCES Payments(paymentID),
-#     FOREIGN KEY (VIN_carID) REFERENCES Cars(VIN_carID)
+    confirmationNumber VARCHAR (13) UNIQUE,
+    FOREIGN KEY (paymentID) REFERENCES Payments(paymentID),
+    FOREIGN KEY (VIN_carID) REFERENCES Cars(VIN_carID)
 #     FOREIGN KEY (memberID) REFERENCES Member(memberID) -- uncomment and test when member input it done and tested
 );
-
-
 
 CREATE TABLE IF NOT EXISTS Addons (
     itemID INT AUTO_INCREMENT PRIMARY KEY,
