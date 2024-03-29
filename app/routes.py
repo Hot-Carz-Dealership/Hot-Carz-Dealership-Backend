@@ -1,7 +1,7 @@
 # app/routes.py
 
 from datetime import datetime
-from flask import jsonify, request
+from flask import jsonify, request, session
 from sqlalchemy import Text, text, func
 from . import app
 from .models import *
@@ -174,8 +174,9 @@ def employee(email, passwd):
             filter(Employee.email == email, EmployeeSensitiveInfo.password == passwd).first()
 
         # Check if employee exists
-        if employee_data is not None:
+        if employee_data:
             employee, sensitive_info = employee_data
+            session['employee_login_id'] = employee.employeeID
             # Construct response
             response = {
                 'employeeID': employee.employeeID,
@@ -265,6 +266,7 @@ def member(username, passwd):
 
         if member_info:
             member, sensitive_info = member_info
+            session['member_login_id'] = member.memberID
             return jsonify({
                 'memberID': member.memberID,
                 'first_name': member.first_name,
@@ -397,3 +399,20 @@ def service_appointments():
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/logout')
+def logout():
+    # THE FRONTEND NEEDS TO REDIRECT WHEN U CALL THIS ENDPOINT BACK TO THE LOGIN SCREEN ON that END.
+    session.clear()
+    return jsonify({'message': 'Logged out successfully'}), 200
+
+'''
+some additional things to clear up in backend
+
+do we want the customer in their login page to view their service appts, test drives and yeah ik purchases will need
+to be viewed
+
+
+
+'''
