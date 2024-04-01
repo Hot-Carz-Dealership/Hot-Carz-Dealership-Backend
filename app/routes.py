@@ -73,26 +73,28 @@ def vehicle_information():
 '''This API returns all information on a specific vehicle based on their VIN number which is passed from the front end to the backend'''
 
 
-@app.route('/api/vehicles/<string:VIN_carID>', methods=['GET'])
-def vehicle(VIN_carID):
-    vehicle = Cars.query.filter_by(VIN_carID=VIN_carID).first()
-    if vehicle:
+@app.route('/api/vehicles', methods=['GET'])
+def vehicle():
+    data = request.json
+    VIN_carID = data.get('VIN_carID')
+    vehicle_info = Cars.query.filter_by(VIN_carID=VIN_carID).first()
+    if vehicle_info:
         vehicle_info = {
-            'VIN_carID': vehicle.VIN_carID,
-            'make': vehicle.make,
-            'model': vehicle.model,
-            'body': vehicle.body,
-            'year': vehicle.year,
-            'color': vehicle.color,
-            'mileage': vehicle.mileage,
-            'details': vehicle.details,
-            'description': vehicle.description,
-            'inStock': vehicle.inStock,
-            'stockAmount': vehicle.stockAmount,
-            'viewsOnPage': vehicle.viewsOnPage,
-            'pictureLibraryLink': vehicle.pictureLibraryLink,
-            'status': vehicle.status,
-            'price': str(vehicle.price)  # Converting Decimal to string for JSON serialization
+            'VIN_carID': vehicle_info.VIN_carID,
+            'make': vehicle_info.make,
+            'model': vehicle_info.model,
+            'body': vehicle_info.body,
+            'year': vehicle_info.year,
+            'color': vehicle_info.color,
+            'mileage': vehicle_info.mileage,
+            'details': vehicle_info.details,
+            'description': vehicle_info.description,
+            'inStock': vehicle_info.inStock,
+            'stockAmount': vehicle_info.stockAmount,
+            'viewsOnPage': vehicle_info.viewsOnPage,
+            'pictureLibraryLink': vehicle_info.pictureLibraryLink,
+            'status': vehicle_info.status,
+            'price': str(vehicle_info.price)  # Converting Decimal to string for JSON serialization
         }
         return jsonify(vehicle_info)
     else:
@@ -165,18 +167,21 @@ def update_confirmation():
 '''This API returns a specific employee based on their email address and password.'''
 
 
-@app.route('/api/employees/<string:email>/<string:passwd>', methods=['GET'])
-def employee(email, passwd):
+@app.route('/api/employees', methods=['GET'])
+def employee():
     # Retrieve employee based on email and password
     try:
+        data = request.json
+        email = data.get('email')
+        password = data.get('password')
         employee_data = db.session.query(Employee, EmployeeSensitiveInfo). \
             join(EmployeeSensitiveInfo, Employee.employeeID == EmployeeSensitiveInfo.employeeID). \
-            filter(Employee.email == email, EmployeeSensitiveInfo.password == passwd).first()
+            filter(Employee.email == email, EmployeeSensitiveInfo.password == password).first()
 
         # Check if employee exists
         if employee_data:
             employee, sensitive_info = employee_data
-            session['employee_login_id'] = employee.employeeID
+            session['employee_session_id'] = employee.employeeID
             # Construct response
             response = {
                 'employeeID': employee.employeeID,
@@ -257,16 +262,19 @@ def get_all_members():
 '''This API returns a specific member by their username and password passed from the front end to the backend (here)'''
 
 
-@app.route('/api/members/<string:username>/<string:passwd>', methods=['GET'])
-def member(username, passwd):
+@app.route('/api/members', methods=['GET'])
+def member():
     try:
+        data = request.json
+        username = data.get('username')
+        password = data.get('password')
         member_info = db.session.query(Member, MemberSensitiveInfo). \
             join(MemberSensitiveInfo, Member.memberID == MemberSensitiveInfo.memberID). \
-            filter(MemberSensitiveInfo.username == username, MemberSensitiveInfo.password == passwd).first()
+            filter(MemberSensitiveInfo.username == username, MemberSensitiveInfo.password == password).first()
 
         if member_info:
             member, sensitive_info = member_info
-            session['member_login_id'] = member.memberID
+            session['member_session_id'] = member.memberID
             return jsonify({
                 'memberID': member.memberID,
                 'first_name': member.first_name,
@@ -406,6 +414,7 @@ def logout():
     # THE FRONTEND NEEDS TO REDIRECT WHEN U CALL THIS ENDPOINT BACK TO THE LOGIN SCREEN ON that END.
     session.clear()
     return jsonify({'message': 'Logged out successfully'}), 200
+
 
 '''
 some additional things to clear up in backend
