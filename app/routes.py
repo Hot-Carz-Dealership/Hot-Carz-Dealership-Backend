@@ -1,11 +1,9 @@
 # app/routes.py
 
-from datetime import datetime
 from flask import jsonify, request, session
-from sqlalchemy import Text, text, func
+from sqlalchemy import text
 from . import app
 from .models import *
-import re
 
 ''' all the route API's here '''
 
@@ -169,8 +167,8 @@ def update_confirmation():
 '''This API returns a specific employee based on their email address and password.'''
 
 
-@app.route('/api/employees', methods=['GET'])
-def employee():
+@app.route('/api/employees/login', methods=['GET'])
+def login_employee():
     # Retrieve employee based on email and password
     try:
         data = request.json
@@ -205,7 +203,7 @@ def employee():
 '''This API creates an employee based on all the values passed from the front to the backend'''
 
 
-@app.route('/api/employees', methods=['POST'])
+@app.route('/api/employees/create', methods=['POST'])
 def create_employee():
     data = request.json
     firstname = data.get('firstname')
@@ -264,8 +262,8 @@ def get_all_members():
 '''This API returns a specific member by their username and password passed from the front end to the backend (here)'''
 
 
-@app.route('/api/members', methods=['GET'])
-def member():
+@app.route('/api/members/login', methods=['GET'])
+def login_member():
     try:
         data = request.json
         username = data.get('username')
@@ -324,46 +322,6 @@ def create_member():
         return jsonify({'error': str(e)}), 500
 
 
-'''This API adds an employee based on the information passed from the front end to the'''
-
-
-@app.route('/api/add-employee', methods=['POST'])
-def add_employee():
-    try:
-        data = request.json
-        username = data.get('username')
-        password = data.get('password')
-
-        if not username or not password:
-            return jsonify({'error': 'Both username and password are required'}), 400
-
-        # Query the database to find the member by username and password
-        member_info = db.session.query(Member, MemberSensitiveInfo). \
-            join(MemberSensitiveInfo, Member.memberID == MemberSensitiveInfo.memberID). \
-            filter(MemberSensitiveInfo.username == username, MemberSensitiveInfo.password == password).first()
-
-        # If member information is found
-        if member_info:
-            member, sensitive_info = member_info
-            response = {
-                'memberID': member.memberID,
-                'first_name': member.first_name,
-                'last_name': member.last_name,
-                'email': member.email,
-                'phone': member.phone,
-                'status': member.status,
-                'join_date': member.join_date,
-                'SSN': sensitive_info.SSN,
-                'driverID': sensitive_info.driverID,
-                'cardInfo': sensitive_info.cardInfo
-            }
-            return jsonify(response)
-        else:
-            return jsonify({'error': 'Member not found or credentials invalid'}), 404
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
 @app.route('/api/service-appointments', methods=['GET', 'POST'])
 def service_appointments():
     if request.method == 'GET':
@@ -416,14 +374,3 @@ def logout():
     # THE FRONTEND NEEDS TO REDIRECT WHEN U CALL THIS ENDPOINT BACK TO THE LOGIN SCREEN ON that END.
     session.clear()
     return jsonify({'message': 'Logged out successfully'}), 200
-
-
-'''
-some additional things to clear up in backend
-
-do we want the customer in their login page to view their service appts, test drives and yeah ik purchases will need
-to be viewed
-
-
-
-'''
