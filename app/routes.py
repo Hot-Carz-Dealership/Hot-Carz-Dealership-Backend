@@ -11,6 +11,8 @@ import re
 
 '''This API is used to check that ur DB is working locally'''
 
+''' SESSIONS RN ARE BROKEN, WILL GET TO IT TMM, I LITERALLY JUST FIGURED OUT HOW TO EVEN START THIS'''
+
 
 @app.route('/')
 def testdb():
