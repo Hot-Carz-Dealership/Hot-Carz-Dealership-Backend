@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS MemberSensitiveInfo (
     username VARCHAR(50) UNIQUE,
     password TEXT,
     driverID VARCHAR(15) UNIQUE,
-    cardInfo TEXT,
+    cardInfo TEXT, -- this does literally nothing but im gonna keep it here because it just works and i don't wanna keep breaking stuff rn
     lastModified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (memberID) REFERENCES Member(memberID)
 );

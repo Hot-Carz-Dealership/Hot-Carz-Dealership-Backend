@@ -74,17 +74,17 @@ INSERT INTO Member (first_name, last_name, email, phone, join_date) VALUES
 ('PLACEHOLDER', 'PLACEHOLDER', 'PLACEHOLDER@example.com', '0000000000', NOW()); -- bids has a placeholder for memberID for customers that buy without bidding, this is meant as a placeholder for customer who do not BID ONLY to be referenced in the BID table
 
 
-INSERT INTO MemberSensitiveInfo (memberID, SSN, username, password, driverID, cardInfo, lastModified) VALUES
-(1,'$2a$04$/p41ed.VM6XMUQUPatQeC.rbt32KlkZXTbJdbTOTPZfEwL6iQNLiO', 'kscinelli0','$2a$04$Om4NqiydRdCOroXldzU0Quj/YCiv1.u.8O0glUsrYm5LANGtiLK..','R22313811699913','$2a$04$h2sAOWMpLA.PbnYkpVYh7erpAi3HpewYvpO/VRYUOGyUoIK2ISgE6','2023-01-11 07:54:39'),
-(2,'$2a$04$8MsZMk.Gg.M568tLmYG5euCqyDIOBzoCO2PXNlifKcn.iUBQnELkK','jtheyer1','$2a$04$D74lvHDy0P96hY2nOpMiYOUJfqJwTs1oL/MN2IpVMvRnKNJDQHon2','X95512680606098','$2a$04$tABVe8APC5zNtR4GITjgku.tq6Rdz5Ga3SOJEkn6BrD04tjG7Rs1i','2023-03-14 19:10:16'),
-(3,'$2a$04$Nu1AGJhKxzvcnbJJstAZyuVTW2yxmL76xgrY6wv0OdltKCjCqJtkS','rtrahair2','$2a$04$TscczNo027fkUYxrTBGjBuZbaUFq/R1ubAeLxIEfkVWgFXHbnkzrS','D08707674135194','$2a$04$fX2jvD4rLTambQAEnEExouieragB17Mw8uFs2nuhc7ZLdVux7brI.','2023-08-31 15:46:47'),
-(4,'$2a$04$klLi7xerdp4EsAUjg54BL.JbpB9AyOR3wDH/TV6f08iioqPaEVBHK','ggoold3','$2a$04$SFGZDYSoiK7JleU/KA7j8.9Z/qgeLcTBzwsmPTkleoCuyQ57TwuJu','C16041684227955','$2a$04$pvePMPPcNpI7YGdKQ5NtUuGgAX/RM9KwqM8.p7oDRkHF/.LtjQZIK','2024-02-29 22:48:44'),
-(5,'$2a$04$wUm4A8tsXYmZ5PU3zgxMduz.Jtud7QTugW8uo6BL1sdehTXYmZ4V6','hkordas4','$2a$04$dMbt.nGOR6CnuFE8PKa7zOgOssx/9nh0qx.VGPHZFSNYLjjEHAbNC','K40404256713626','$2a$04$GaczB0EkIV4u86g2gb.6G.dnlp.RHE6Azs4PadtDNo82yLC8wrW.O','2023-06-08 21:02:47'),
-(6,'$2a$04$PtC4Nfmh6NXRShKs75AYVetR02NIbRRECgtAiQjKqZp53C/yKoLTu','jcressingham5','$2a$04$EpNLgp3Z/K3zsxFuE5Vyz.dYqjjk/qqMF52E4EDWmFHOBP9rPprAm','R95125829361332','$2a$04$0kinDMdTCvw0qYN0IZSujuWy.1WWWncMZny6XZKXjykdN2Ks1K4tW','2023-01-27 01:55:00'),
-(7,'$2a$04$2bozKetHmKLUG80Qh4eWy.OqI2Eq2p4EQK1Psy9IzIlEgfscN5DnC','gmcguffog6','$2a$04$JJC92ThS4EIPgx.Kz7uOgeWzIu5pni.3Fvt7YRKzNmvwcM06GTz..','C99938545187865','$2a$04$8GNxp6gJStWld6sw.Pv4k.mbbBxZih0lzRBqn7Mf6augp4Bw5kGu2','2023-06-26 10:14:37'),
-(8,'$2a$04$rzqdu619jHkvPjsvytEEvuHb6XTJvBARusNtU/JpQLgAUUcmHN0ES','mcurthoys7','$2a$04$DrmiyvdkuUvtlZBUcVrFieBQMIWwXQyUs2B0OWPVxo6pFKnzK810S','T53807275459626','$2a$04$cZpVshmDpXMcqotznK8zfOE7ew7nj/pYB8C.pEHe.QAwWpONhjBT2','2023-01-07 13:34:23'),
-(9,'$2a$04$TWARPHI6IG8IeL8AJaDDxuY5.10DyGcOoWlW0FcYNK2uIItf6J242','lroff8','$2a$04$mDRsMphCW3.IIANI6Wmgm.caowYKhuYmNkqL3NBceAwsfM/PgbVrC','P93000133288498','$2a$04$Ok50WA39UFbepV2BrWaeLO0RGTTZvn9gaDOzHVCgauJVncSjYNwTm','2023-11-28 03:16:19'),
-(10,'$2a$04$cQHQtF2/gb3BZWBRz05cU.XAbbn.8l4q/5pm705EERJU5UdJ29A8G','dbaszniak9','$2a$04$psR3NEmN1WjYPYiR0bhg7uLcGFrwPheaUjngw8rga1C.6a3cCyT96','F98941422570001','$2a$04$4k5tFEbVzMlwl8pE3dqLVOyg6Y5HKi33uFnP2LT93AcvaXiRFPn2y','2023-01-03 12:55:47');
+INSERT INTO MemberSensitiveInfo (memberID, SSN, username, password, driverID, lastModified) VALUES
+(1,'$2a$04$/p41ed.VM6XMUQUPatQeC.rbt32KlkZXTbJdbTOTPZfEwL6iQNLiO', 'kscinelli0','$2a$04$Om4NqiydRdCOroXldzU0Quj/YCiv1.u.8O0glUsrYm5LANGtiLK..','R22313811699913', '2023-01-11 07:54:39'),
+(2,'$2a$04$8MsZMk.Gg.M568tLmYG5euCqyDIOBzoCO2PXNlifKcn.iUBQnELkK','jtheyer1','$2a$04$D74lvHDy0P96hY2nOpMiYOUJfqJwTs1oL/MN2IpVMvRnKNJDQHon2','X95512680606098', '2023-03-14 19:10:16'),
+(3,'$2a$04$Nu1AGJhKxzvcnbJJstAZyuVTW2yxmL76xgrY6wv0OdltKCjCqJtkS','rtrahair2','$2a$04$TscczNo027fkUYxrTBGjBuZbaUFq/R1ubAeLxIEfkVWgFXHbnkzrS','D08707674135194', '2023-08-31 15:46:47'),
+(4,'$2a$04$klLi7xerdp4EsAUjg54BL.JbpB9AyOR3wDH/TV6f08iioqPaEVBHK','ggoold3','$2a$04$SFGZDYSoiK7JleU/KA7j8.9Z/qgeLcTBzwsmPTkleoCuyQ57TwuJu','C16041684227955', '2024-02-29 22:48:44'),
+(5,'$2a$04$wUm4A8tsXYmZ5PU3zgxMduz.Jtud7QTugW8uo6BL1sdehTXYmZ4V6','hkordas4','$2a$04$dMbt.nGOR6CnuFE8PKa7zOgOssx/9nh0qx.VGPHZFSNYLjjEHAbNC','K40404256713626','2023-06-08 21:02:47'),
+(6,'$2a$04$PtC4Nfmh6NXRShKs75AYVetR02NIbRRECgtAiQjKqZp53C/yKoLTu','jcressingham5','$2a$04$EpNLgp3Z/K3zsxFuE5Vyz.dYqjjk/qqMF52E4EDWmFHOBP9rPprAm','R95125829361332', '2023-01-27 01:55:00'),
+(7,'$2a$04$2bozKetHmKLUG80Qh4eWy.OqI2Eq2p4EQK1Psy9IzIlEgfscN5DnC','gmcguffog6','$2a$04$JJC92ThS4EIPgx.Kz7uOgeWzIu5pni.3Fvt7YRKzNmvwcM06GTz..','C99938545187865', '2023-06-26 10:14:37'),
+(8,'$2a$04$rzqdu619jHkvPjsvytEEvuHb6XTJvBARusNtU/JpQLgAUUcmHN0ES','mcurthoys7','$2a$04$DrmiyvdkuUvtlZBUcVrFieBQMIWwXQyUs2B0OWPVxo6pFKnzK810S','T53807275459626', '2023-01-07 13:34:23'),
+(9,'$2a$04$TWARPHI6IG8IeL8AJaDDxuY5.10DyGcOoWlW0FcYNK2uIItf6J242','lroff8','$2a$04$mDRsMphCW3.IIANI6Wmgm.caowYKhuYmNkqL3NBceAwsfM/PgbVrC','P93000133288498', '2023-11-28 03:16:19'),
+(10,'$2a$04$cQHQtF2/gb3BZWBRz05cU.XAbbn.8l4q/5pm705EERJU5UdJ29A8G','dbaszniak9','$2a$04$psR3NEmN1WjYPYiR0bhg7uLcGFrwPheaUjngw8rga1C.6a3cCyT96','F98941422570001', '2023-01-03 12:55:47');
 
 
 INSERT INTO Financing (memberID, income, credit_score, loan_total, down_payment, percentage, monthly_sum, remaining_months) VALUES
