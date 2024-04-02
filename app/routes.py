@@ -2,6 +2,7 @@
 
 from flask import jsonify, request, session
 from sqlalchemy import text
+from datetime import datetime
 from . import app
 from .models import *
 
@@ -45,7 +46,7 @@ def addon_information():
 '''This API returns all information on all vehicles in the database'''
 
 
-@app.route('/api/vehicles', methods=['GET'])
+@app.route('/api/vehicles/search', methods=['GET'])
 def vehicle_information():
     search_query = request.args.get('search_query')
     if search_query:
@@ -89,7 +90,6 @@ def vehicle():
             'mileage': vehicle_info.mileage,
             'details': vehicle_info.details,
             'description': vehicle_info.description,
-            'inStock': vehicle_info.inStock,
             'stockAmount': vehicle_info.stockAmount,
             'viewsOnPage': vehicle_info.viewsOnPage,
             'pictureLibraryLink': vehicle_info.pictureLibraryLink,
@@ -127,13 +127,13 @@ def get_test_drives():
     test_drive_info = []
     test_drives = db.session.query(TestDrive, Member, Cars). \
         join(Member, TestDrive.memberID == Member.memberID). \
-        join(Cars, TestDrive.car_id == Cars.VIN_carID).all()
+        join(Cars, TestDrive.VIN_carID == Cars.VIN_carID).all()
 
     for test_drive, member, car in test_drives:
         test_drive_info.append({
             'fullname': f"{member.first_name} {member.last_name}",
             'phone': member.phone,
-            'car_id': test_drive.car_id,
+            'car_id': test_drive.VIN_carID,
             'car_make_model': f"{car.make} {car.model}",
             'appointment_date': test_drive.appointment_date
         })
@@ -191,7 +191,6 @@ def login_employee():
                 'phone': employee.phone,
                 'address': employee.address,
                 'employeeType': employee.employeeType,
-                'lastModified': sensitive_info.lastModified
             }
             return jsonify(response), 200
         else:
@@ -251,7 +250,6 @@ def get_all_members():
                          'last_name': member.last_name,
                          'email': member.email,
                          'phone': member.phone,
-                         'status': member.status,
                          'join_date': member.join_date} for member in members]
 
         return jsonify(members_info)
@@ -281,7 +279,6 @@ def login_member():
                 'last_name': member.last_name,
                 'email': member.email,
                 'phone': member.phone,
-                'status': member.status,
                 'join_date': member.join_date,
                 'SSN': sensitive_info.SSN,
                 'driverID': sensitive_info.driverID,
@@ -305,17 +302,37 @@ def create_member():
         last_name = data.get('last_name')
         email = data.get('email')
         phone = data.get('phone')
-        status = data.get('status')
+        username = data.get('username')
+        password = data.get('password')
 
         # Create a new Member object
-        new_member = Member(first_name=first_name, last_name=last_name, email=email, phone=phone, status=status)
+        new_member = Member(first_name=first_name, last_name=last_name, email=email, phone=phone,
+                            join_date=datetime.now())
 
-        # Add the new member to the database session
+        # Create a new MemberSensitiveInfo object
+        new_sensitive_info = MemberSensitiveInfo(username=username, password=password)
+
+        # Associate MemberSensitiveInfo with the new Member
+        new_member.sensitive_info = new_sensitive_info
+
+        # Add the new member and sensitive info to the database session
         db.session.add(new_member)
-        # Commit the session to persist the changes
         db.session.commit()
 
-        return jsonify({'message': 'Member account created successfully'})
+        # Start a session for the new member
+        session['member_session_id'] = new_member.memberID
+
+        member_info = {
+            'memberID': new_member.memberID,
+            'first_name': new_member.first_name,
+            'last_name': new_member.last_name,
+            'email': new_member.email,
+            'phone': new_member.phone,
+            'join_date': new_member.join_date,
+            'username': new_sensitive_info.username
+        }
+
+        return jsonify({'message': 'Member account created successfully', 'member_info': member_info}), 201
     except Exception as e:
         # Rollback the session in case of any exception
         db.session.rollback()
@@ -331,7 +348,6 @@ def service_appointments():
         appointments_info = [{
             'appointment_id': appointment.appointment_id,
             'memberID': appointment.memberID,
-            'technician_id': appointment.technician_id,
             'appointment_date': appointment.appointment_date,
             'service_name': appointment.service_name
         } for appointment in appointments]
@@ -343,13 +359,13 @@ def service_appointments():
         # takes in 2 values, Appointment ID and a cancellation value. make it a 1
         data = request.json
         appointment_id_to_cancel = data.get('appointment_id')
-        cancellation_value = data.get('cancelValue')
+        cancellation_value = int(data.get('cancelValue'))
 
         if appointment_id_to_cancel is None or cancellation_value is None:
             return jsonify({'error': 'Both appointment_id and cancelValue parameters are required.'}), 400
 
         # cancelation value takes in 1 to confirm it is getting cancelled or else it doesnt get removed.
-        if cancellation_value != '1':
+        if cancellation_value != 1:
             return jsonify({'error': 'Invalid cancellation value.'}), 400
 
         try:

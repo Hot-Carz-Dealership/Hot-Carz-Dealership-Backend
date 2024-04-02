@@ -87,7 +87,6 @@ class MemberSensitiveInfo(db.Model):
     username = db.Column(db.String(50), unique=True)
     password = db.Column(db.TEXT)
     driverID = db.Column(db.String(15), unique=True)
-    cardInfo = db.Column(db.TEXT)
     lastModified = db.Column(db.TIMESTAMP, server_default=db.func.current_timestamp(),
                              onupdate=db.func.current_timestamp())
 
