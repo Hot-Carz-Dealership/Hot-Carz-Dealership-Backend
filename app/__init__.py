@@ -6,18 +6,20 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 from config import Config  # Import the configuration
 
+
+
+
 app = Flask(__name__)
-app.secret_key = 'secret_key'
 
 db_name = 'dealership_backend'
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://root@localhost/' + db_name
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:password@localhost/' + db_name
 
 # Load the configuration
 app.config.from_object(Config)
 
 # Enable Cross-Origin Resource Sharing (CORS)
-CORS(app)
+CORS(app, supports_credentials=True)
 
 # Initialize SQLAlchemy
 db = SQLAlchemy(app)

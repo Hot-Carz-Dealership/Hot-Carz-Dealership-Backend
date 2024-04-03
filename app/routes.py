@@ -1,10 +1,13 @@
 # app/routes.py
 
-from flask import jsonify, request, session
+from flask import Flask,jsonify, request, session
 from sqlalchemy import text
 from datetime import datetime
 from . import app
 from .models import *
+
+from flask_cors import CORS, cross_origin
+
 
 ''' all the NON FINANCIAL route API's here. All Passwords and sensitive information use Bcrypt hash'''
 
@@ -245,8 +248,8 @@ def get_all_members():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
-@app.route('/api/members/login', methods=['GET'])
+@cross_origin
+@app.route('/api/members/login', methods=['GET','POST'])
 # This API is used as Authentication to login a member IF their ACCOUNT EXISTS and
 # returns that members information. we need their username and password passed from the front end to the backend to login
 def login_member():
@@ -332,6 +335,24 @@ def create_member():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@app.route("/@me")
+#Gets user for active session
+def get_current_user():
+    user_id = session.get("member_session_id")
+
+    if not user_id:
+        return jsonify ({"error": "Unauthorized"}), 401
+    
+    member = Member.query.filter_by(memberID=user_id).first()
+    return jsonify({
+                'memberID': member.memberID,
+                'first_name': member.first_name,
+                'last_name': member.last_name,
+                'email': member.email,
+                'phone': member.phone,
+                'join_date': member.join_date,
+            })
+    
 
 @app.route('/api/service-appointments', methods=['GET', 'POST'])
 # GET protocol return all service appointment information
