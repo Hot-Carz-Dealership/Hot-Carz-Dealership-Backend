@@ -335,6 +335,24 @@ def create_member():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@app.route("/@me")
+#Gets user for active session
+def get_current_user():
+    user_id = session.get("member_session_id")
+
+    if not user_id:
+        return jsonify ({"error": "Unauthorized"}), 401
+    
+    member = Member.query.filter_by(memberID=user_id).first()
+    return jsonify({
+                'memberID': member.memberID,
+                'first_name': member.first_name,
+                'last_name': member.last_name,
+                'email': member.email,
+                'phone': member.phone,
+                'join_date': member.join_date,
+            })
+    
 
 @app.route('/api/service-appointments', methods=['GET', 'POST'])
 # GET protocol return all service appointment information
