@@ -1,10 +1,13 @@
 # app/routes.py
 
-from flask import jsonify, request, session
+from flask import Flask,jsonify, request, session
 from sqlalchemy import text
 from datetime import datetime
 from . import app
 from .models import *
+
+from flask_cors import CORS, cross_origin
+
 
 ''' all the NON FINANCIAL route API's here. All Passwords and sensitive information use Bcrypt hash'''
 
@@ -245,8 +248,8 @@ def get_all_members():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
-@app.route('/api/members/login', methods=['GET'])
+@cross_origin
+@app.route('/api/members/login', methods=['GET','POST'])
 # This API is used as Authentication to login a member IF their ACCOUNT EXISTS and
 # returns that members information. we need their username and password passed from the front end to the backend to login
 def login_member():
