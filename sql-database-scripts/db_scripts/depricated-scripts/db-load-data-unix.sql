@@ -1,13 +1,14 @@
+-- UNIX SYSTEMS \n
 -- TEMP CHANGE SO THAT THE FRONT END CAN START TESTING END POINTS. MODFIED MOCK DATA WILL COME LATER
 
 USE dealership_backend;
 
-LOAD DATA INFILE 'localdir/employee.csv' --
+LOAD DATA INFILE '/localdir/employee.csv' --
 INTO TABLE Employee
 FIELDS TERMINATED BY ','
 LINES TERMINATED BY '\n';
 
-LOAD DATA INFILE 'localdir/cars.csv' --
+LOAD DATA INFILE '/localdir/cars.csv' --
 INTO TABLE Cars
 FIELDS TERMINATED BY ','
 LINES TERMINATED BY '\n';
@@ -43,12 +44,12 @@ VALUES
     (2, 'SALSF2D47CA305941', 102, 'BID', '1500', 'Processing', 'CN2345678901'),
     (3, 'SALSF2D47CA305941', 103, 'BID', '2000', 'Processing', 'CN3456789012');
 
-LOAD DATA INFILE 'localdir/sensitiveInfoEmployee.csv' --
+LOAD DATA INFILE '/localdir/sensitiveInfoEmployee.csv' --
 INTO TABLE EmployeeSensitiveInfo
 FIELDS TERMINATED BY ','
 LINES TERMINATED BY '\n';
 
-LOAD DATA INFILE 'localdir/senstitiveInfoMember.csv' --
+LOAD DATA INFILE '/localdir/senstitiveInfoMember.csv' --
 INTO TABLE MemberSensitiveInfo
 FIELDS TERMINATED BY ','
 LINES TERMINATED BY '\n';
