@@ -86,7 +86,6 @@ def vehicle():
             'mileage': vehicle_info.mileage,
             'details': vehicle_info.details,
             'description': vehicle_info.description,
-            'stockAmount': vehicle_info.stockAmount,
             'viewsOnPage': vehicle_info.viewsOnPage,
             'pictureLibraryLink': vehicle_info.pictureLibraryLink,
             'status': vehicle_info.status,
