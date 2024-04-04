@@ -95,6 +95,51 @@ def vehicle():
     else:
         return jsonify({'message': 'Vehicle not found'}), 404
 
+@app.route('/api/vehicles/add', methods=['POST'])
+# This API adds a new vehicle to the database based on the information passed from the frontend
+def add_vehicle():
+    try:
+        # no manager auth yet, will add in the future
+        data = request.json
+
+        # data that needed to be passed from the frontend
+        VIN_carID = data.get('VIN_carID')
+        make = data.get('make')
+        model = data.get('model')
+        body = data.get('body')
+        year = data.get('year')
+        color = data.get('color')
+        mileage = data.get('mileage')
+        details = data.get('details')
+        description = data.get('description')
+        viewsOnPage = data.get('viewsOnPage')
+        pictureLibraryLink = data.get('pictureLibraryLink')
+        status = data.get('status')
+        price = data.get('price')
+
+        # new vehicle record inserted into the DB
+        new_vehicle = Cars(
+            VIN_carID=VIN_carID,
+            make=make,
+            model=model,
+            body=body,
+            year=year,
+            color=color,
+            mileage=mileage,
+            details=details,
+            description=description,
+            viewsOnPage=viewsOnPage,
+            pictureLibraryLink=pictureLibraryLink,
+            status=status,
+            price=price
+        )
+        db.session.add(new_vehicle)
+        db.session.commit()
+        return jsonify({'message': 'Vehicle added successfully'}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/vehicles/random', methods=['GET'])
 # This API returns all info on 2 random vehicles in the database for the homepage
 def random_vehicles():
@@ -411,6 +456,9 @@ def get_current_user():
                 'phone': member.phone,
                 'join_date': member.join_date,
             })
+
+
+
     
 
 @app.route('/api/service-appointments', methods=['GET', 'POST'])
