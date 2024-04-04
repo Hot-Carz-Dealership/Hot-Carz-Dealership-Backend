@@ -161,7 +161,7 @@ def update_confirmation():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/employees/login', methods=['GET'])
+@app.route('/api/employees/login', methods=['GET','POST'])
 # This API LOGS in the employee and returns employee information based on their email address and password which is used for auth
 def login_employee():
     # Retrieve employee based on email and password
@@ -227,6 +227,26 @@ def create_employee():
         # Rollback the session in case of any error
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+@app.route("/@emp")
+#Gets employee for active session
+def get_current_employee():
+    user_id = session.get("employee_session_id")
+
+    if not user_id:
+        return jsonify ({"error": "Unauthorized"}), 401
+    
+    employee = Employee.query.filter_by(employeeID=user_id).first()
+    return jsonify({
+                'employeeID': employee.employeeID,
+                'firstname': employee.firstname,
+                'lastname': employee.lastname,
+                'email': employee.email,
+                'phone': employee.phone,
+                'address': employee.address,
+                'employeeType': employee.employeeType,
+            })
+
 
 
 @app.route('/api/members', methods=['GET'])
@@ -403,7 +423,7 @@ def service_appointments():
             return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/logout')
+@app.route('/api/logout', methods=['POST'])
 def logout():
     # THE FRONTEND NEEDS TO REDIRECT WHEN U CALL THIS ENDPOINT BACK TO THE LOGIN SCREEN ON that END.
     # LMK if IT WORKS OR NOT
