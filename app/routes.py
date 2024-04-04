@@ -1,6 +1,6 @@
 # app/routes.py
 
-from flask import Flask,jsonify, request, session
+from flask import Flask, jsonify, request, session
 from sqlalchemy import text
 from datetime import datetime
 from . import app
@@ -8,7 +8,6 @@ from .models import *
 import random
 
 from flask_cors import CORS, cross_origin
-
 
 ''' all the NON FINANCIAL route API's here. All Passwords and sensitive information use Bcrypt hash'''
 
@@ -95,20 +94,67 @@ def vehicle():
     else:
         return jsonify({'message': 'Vehicle not found'}), 404
 
+
+@app.route('/api/vehicles/add', methods=['POST'])
+# This API adds a new vehicle to the database based on the information passed from the frontend
+def add_vehicle():
+    try:
+        # no manager auth yet, will add in the future
+        data = request.json
+
+        # data that needed to be passed from the frontend
+        VIN_carID = data.get('VIN_carID')
+        make = data.get('make')
+        model = data.get('model')
+        body = data.get('body')
+        year = data.get('year')
+        color = data.get('color')
+        mileage = data.get('mileage')
+        details = data.get('details')
+        description = data.get('description')
+        viewsOnPage = data.get('viewsOnPage')
+        pictureLibraryLink = data.get('pictureLibraryLink')
+        status = data.get('status')
+        price = data.get('price')
+
+        # new vehicle record inserted into the DB
+        new_vehicle = Cars(
+            VIN_carID=VIN_carID,
+            make=make,
+            model=model,
+            body=body,
+            year=year,
+            color=color,
+            mileage=mileage,
+            details=details,
+            description=description,
+            viewsOnPage=viewsOnPage,
+            pictureLibraryLink=pictureLibraryLink,
+            status=status,
+            price=price
+        )
+        db.session.add(new_vehicle)
+        db.session.commit()
+        return jsonify({'message': 'Vehicle added successfully'}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/vehicles/random', methods=['GET'])
 # This API returns all info on 2 random vehicles in the database for the homepage
 def random_vehicles():
     try:
         # Get the total number of vehicles in the database
         total_vehicles = Cars.query.count()
-        
+
         # If there are less than 2 vehicles in the database, return an error
         if total_vehicles < 2:
             return jsonify({'error': 'Insufficient vehicles in the database to select random ones.'}), 404
-        
+
         # Generate two random indices within the range of total vehicles
         random_indices = random.sample(range(total_vehicles), 2)
-        
+
         # Retrieve information about the two random vehicles
         random_vehicles_info = []
         for index in random_indices:
@@ -129,9 +175,9 @@ def random_vehicles():
                 'price': str(random_vehicle.price)
             }
             random_vehicles_info.append(random_vehicle_info)
-        
+
         return jsonify(random_vehicles_info), 200
-    
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -201,7 +247,7 @@ def update_confirmation():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/employees/login', methods=['GET','POST'])
+@app.route('/api/employees/login', methods=['GET', 'POST'])
 # This API LOGS in the employee and returns employee information based on their email address and password which is used for auth
 def login_employee():
     # Retrieve employee based on email and password
@@ -268,25 +314,25 @@ def create_employee():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+
 @app.route("/@emp")
-#Gets employee for active session
+# Gets employee for active session
 def get_current_employee():
     user_id = session.get("employee_session_id")
 
     if not user_id:
-        return jsonify ({"error": "Unauthorized"}), 401
-    
+        return jsonify({"error": "Unauthorized"}), 401
+
     employee = Employee.query.filter_by(employeeID=user_id).first()
     return jsonify({
-                'employeeID': employee.employeeID,
-                'firstname': employee.firstname,
-                'lastname': employee.lastname,
-                'email': employee.email,
-                'phone': employee.phone,
-                'address': employee.address,
-                'employeeType': employee.employeeType,
-            })
-
+        'employeeID': employee.employeeID,
+        'firstname': employee.firstname,
+        'lastname': employee.lastname,
+        'email': employee.email,
+        'phone': employee.phone,
+        'address': employee.address,
+        'employeeType': employee.employeeType,
+    })
 
 
 @app.route('/api/members', methods=['GET'])
@@ -307,8 +353,9 @@ def get_all_members():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 @cross_origin
-@app.route('/api/members/login', methods=['GET','POST'])
+@app.route('/api/members/login', methods=['GET', 'POST'])
 # This API is used as Authentication to login a member IF their ACCOUNT EXISTS and
 # returns that members information. we need their username and password passed from the front end to the backend to login
 def login_member():
@@ -394,24 +441,28 @@ def create_member():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+
 @app.route("/@me")
-#Gets user for active session
+# Gets user for active session for Members
 def get_current_user():
     user_id = session.get("member_session_id")
 
     if not user_id:
-        return jsonify ({"error": "Unauthorized"}), 401
-    
+        return jsonify({"error": "Unauthorized"}), 401
+
     member = Member.query.filter_by(memberID=user_id).first()
+    sensitive_info = MemberSensitiveInfo.query.filter_by(memberID=user_id).first()  # for returning their Driver ID
     return jsonify({
-                'memberID': member.memberID,
-                'first_name': member.first_name,
-                'last_name': member.last_name,
-                'email': member.email,
-                'phone': member.phone,
-                'join_date': member.join_date,
-            })
-    
+        'memberID': member.memberID,
+        'first_name': member.first_name,
+        'last_name': member.last_name,
+        'email': member.email,
+        'phone': member.phone,
+        'driverID': sensitive_info.driverID,
+        'join_date': member.join_date
+        # in the future will add Address, Zipcode and State on where the member is from
+    })
+
 
 @app.route('/api/service-appointments', methods=['GET', 'POST'])
 # GET protocol return all service appointment information
