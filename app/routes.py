@@ -5,6 +5,7 @@ from sqlalchemy import text
 from datetime import datetime
 from . import app
 from .models import *
+import random
 
 from flask_cors import CORS, cross_origin
 
@@ -72,8 +73,7 @@ def vehicle_information():
 @app.route('/api/vehicles', methods=['GET'])
 # This API returns all information on a specific vehicle based on their VIN number which is passed from the front end to the backend
 def vehicle():
-    data = request.json
-    VIN_carID = data.get('VIN_carID')  # needs to be passed from the frontend
+    VIN_carID = request.args.get('vin')  # get query parameter id
     vehicle_info = Cars.query.filter_by(VIN_carID=VIN_carID).first()
     if vehicle_info:
         vehicle_info = {
@@ -94,6 +94,46 @@ def vehicle():
         return jsonify(vehicle_info)
     else:
         return jsonify({'message': 'Vehicle not found'}), 404
+
+@app.route('/api/vehicles/random', methods=['GET'])
+# This API returns all info on 2 random vehicles in the database for the homepage
+def random_vehicles():
+    try:
+        # Get the total number of vehicles in the database
+        total_vehicles = Cars.query.count()
+        
+        # If there are less than 2 vehicles in the database, return an error
+        if total_vehicles < 2:
+            return jsonify({'error': 'Insufficient vehicles in the database to select random ones.'}), 404
+        
+        # Generate two random indices within the range of total vehicles
+        random_indices = random.sample(range(total_vehicles), 2)
+        
+        # Retrieve information about the two random vehicles
+        random_vehicles_info = []
+        for index in random_indices:
+            random_vehicle = Cars.query.offset(index).first()
+            random_vehicle_info = {
+                'VIN_carID': random_vehicle.VIN_carID,
+                'make': random_vehicle.make,
+                'model': random_vehicle.model,
+                'body': random_vehicle.body,
+                'year': random_vehicle.year,
+                'color': random_vehicle.color,
+                'mileage': random_vehicle.mileage,
+                'details': random_vehicle.details,
+                'description': random_vehicle.description,
+                'viewsOnPage': random_vehicle.viewsOnPage,
+                'pictureLibraryLink': random_vehicle.pictureLibraryLink,
+                'status': random_vehicle.status,
+                'price': str(random_vehicle.price)
+            }
+            random_vehicles_info.append(random_vehicle_info)
+        
+        return jsonify(random_vehicles_info), 200
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/employees', methods=['GET'])
