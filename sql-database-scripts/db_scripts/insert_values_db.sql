@@ -128,10 +128,10 @@ INSERT INTO TestDrive (memberID, VIN_carID, appointment_date, confirmation) VALU
 
 
 INSERT INTO ServiceAppointment (memberID, appointment_date, service_name) VALUES
-(1, '2024-04-10', 'Oil Change'),
-(2, '2024-04-11', 'Brake Inspection'),
-(3, '2024-04-12', 'Tire Rotation'),
-(4, '2024-04-13', 'Battery Replacement');
+(1, '2024-04-10 14:00:00', 'Oil Change'),
+(2, '2024-04-11 15:00:00', 'Brake Inspection'),
+(3, '2024-04-12 16:00:00', 'Tire Rotation'),
+(4, '2024-04-13 17:00:00', 'Battery Replacement');
 
 
 INSERT INTO Addons (itemName, totalCost) VALUES
