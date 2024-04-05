@@ -1,0 +1,179 @@
+swagger: "2.0"
+info:
+  title: "Hot Carz API Endpoint Documentation"
+  description: "Documentation for all of the Main NON-Financial Flask API endpoints"
+  version: "1.0"
+paths:
+  /:
+    get:
+      summary: "Test DB Connection"
+      description: "Check if the database connection is working."
+      responses:
+        200:
+          description: "Success"
+  /api/vehicles/add-ons:
+    get:
+      summary: "Get Add-on Products"
+      description: "Returns all add-on products and their information."
+      responses:
+        200:
+          description: "Success"
+  /api/vehicles/search:
+    get:
+      summary: "Search Vehicles"
+      description: "Returns information on vehicles based on a search query."
+      parameters:
+        - name: "search_query"
+          in: "query"
+          description: "Search query string"
+          required: false
+          type: "string"
+      responses:
+        200:
+          description: "Success"
+  /api/vehicles:
+    get:
+      summary: "Get Vehicle Information"
+      description: "Returns information on a specific vehicle based on VIN."
+      parameters:
+        - name: "vin"
+          in: "query"
+          description: "VIN number of the vehicle"
+          required: true
+          type: "string"
+      responses:
+        200:
+          description: "Success"
+        404:
+          description: "Vehicle not found"
+    post:
+      summary: "Add Vehicle"
+      description: "Adds a new vehicle to the database."
+      responses:
+        201:
+          description: "Vehicle added successfully"
+        500:
+          description: "Internal Server Error"
+  /api/vehicles/random:
+    get:
+      summary: "Get Random Vehicles"
+      description: "Returns information on two random vehicles from the database."
+      responses:
+        200:
+          description: "Success"
+        404:
+          description: "Insufficient vehicles in the database"
+  /api/employees:
+    get:
+      summary: "Get All Employees"
+      description: "Returns information on all employees."
+      responses:
+        200:
+          description: "Success"
+  /api/testdrives:
+    get:
+      summary: "Get Test Drives"
+      description: "Returns information on all test drives."
+      responses:
+        200:
+          description: "Success"
+  /api/testdrives/update_confirmation:
+    post:
+      summary: "Update Confirmation"
+      description: "Updates confirmation status of a test drive."
+      responses:
+        200:
+          description: "Success"
+        500:
+          description: "Internal Server Error"
+  /api/employees/login:
+    post:
+      summary: "Login Employee"
+      description: "Logs in an employee and returns employee information."
+      responses:
+        200:
+          description: "Success"
+        404:
+          description: "Employee not found"
+        500:
+          description: "Internal Server Error"
+  /api/employees/create:
+    post:
+      summary: "Create Employee"
+      description: "Creates a new employee account."
+      responses:
+        201:
+          description: "Employee account created successfully"
+        500:
+          description: "Internal Server Error"
+  /@emp:
+    get:
+      summary: "Get Current Employee"
+      description: "Returns information on the current logged-in employee."
+      responses:
+        200:
+          description: "Success"
+        401:
+          description: "Unauthorized"
+  /api/members:
+    get:
+      summary: "Get All Members"
+      description: "Returns information on all members."
+      responses:
+        200:
+          description: "Success"
+  /api/members/login:
+    post:
+      summary: "Login Member"
+      description: "Logs in a member and returns member information."
+      responses:
+        200:
+          description: "Success"
+        404:
+          description: "Member not found or credentials invalid"
+        500:
+          description: "Internal Server Error"
+  /api/members/create:
+    post:
+      summary: "Create Member"
+      description: "Creates a new member account."
+      responses:
+        201:
+          description: "Member account created successfully"
+        500:
+          description: "Internal Server Error"
+  /@me:
+    get:
+      summary: "Get Current User"
+      description: "Returns information on the current logged-in member."
+      responses:
+        200:
+          description: "Success"
+        401:
+          description: "Unauthorized"
+  /api/service-appointments:
+    get:
+      summary: "Get Service Appointments"
+      description: "Returns information on all service appointments."
+      responses:
+        200:
+          description: "Success"
+    post:
+      summary: "Cancel Service Appointment"
+      description: "Cancels a service appointment."
+      responses:
+        200:
+          description: "Success"
+        400:
+          description: "Bad Request"
+        404:
+          description: "Appointment not found"
+        500:
+          description: "Internal Server Error"
+  /api/logout:
+    post:
+      summary: "Logout"
+      description: "Logs out the current user."
+      responses:
+        200:
+          description: "Success"
