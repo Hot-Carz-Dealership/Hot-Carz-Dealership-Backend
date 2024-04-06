@@ -12,7 +12,7 @@ API_URL = '/static/docs.yml'  # Our API url (can of course be a local resource)
 
 app = Flask(__name__)
 
-db_name = 'dealership_backend_testing'
+db_name = 'dealership_backend'
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:password@localhost/' + db_name
 app.config['SECRET_KEY'] = 'secret_key'
