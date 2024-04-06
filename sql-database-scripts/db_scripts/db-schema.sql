@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS ServiceAppointment (
     -- this table is meant to store information on the service appointments made
     appointment_id INT AUTO_INCREMENT PRIMARY KEY,
     memberID INT,
-    appointment_date DATE,
+    appointment_date TIMESTAMP,
     service_name VARCHAR(100),
     FOREIGN KEY (memberID) REFERENCES Member(memberID)
 );

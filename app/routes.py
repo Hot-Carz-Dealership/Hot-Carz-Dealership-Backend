@@ -41,7 +41,7 @@ def addon_information():
             'totalCost': str(addon.totalCost)  # Converting Decimal to string for JSON serialization
         }
         addon_info.append(addon_data)
-    return jsonify(addon_info)
+    return jsonify(addon_info), 200
 
 
 @app.route('/api/vehicles/search', methods=['GET'])
@@ -66,7 +66,7 @@ def vehicle_information():
     # Remove the '_sa_instance_state' key from each dictionary
     for car_dict in cars_info_dicts:
         car_dict.pop('_sa_instance_state', None)
-    return jsonify(cars_info_dicts)
+    return jsonify(cars_info_dicts), 200
 
 
 @app.route('/api/vehicles', methods=['GET'])
@@ -90,12 +90,12 @@ def vehicle():
             'status': vehicle_info.status,
             'price': str(vehicle_info.price)  # Converting Decimal to string for JSON serialization
         }
-        return jsonify(vehicle_info)
+        return jsonify(vehicle_info), 200
     else:
         return jsonify({'message': 'Vehicle not found'}), 404
 
 
-@app.route('/api/vehicles/add', methods=['POST'])
+@app.route('/api/vehicles/add', methods=['POST']) # need test case
 # This API adds a new vehicle to the database based on the information passed from the frontend
 def add_vehicle():
     try:
@@ -198,7 +198,7 @@ def get_all_employees():
             'employeeType': employee.employeeType
         }
         employee_info.append(employee_data)
-    return jsonify(employee_info)
+    return jsonify(employee_info), 200
 
 
 @app.route('/api/testdrives', methods=['GET'])
@@ -217,7 +217,7 @@ def get_test_drives():
             'car_make_model': f"{car.make} {car.model}",
             'appointment_date': test_drive.appointment_date
         })
-    return jsonify(test_drive_info)
+    return jsonify(test_drive_info), 200
 
 
 @app.route('/api/testdrives/update_confirmation', methods=['POST'])
@@ -242,12 +242,12 @@ def update_confirmation():
                 text("UPDATE TestDrive SET confirmation = :confirmation_value WHERE testdrive_id = :testdrive_id;"),
                 {'confirmation_value': confirmation_value, 'testdrive_id': testdrive_id}
             )
-        return jsonify({'message': 'Confirmation updated successfully'})
+        return jsonify({'message': 'Confirmation updated successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/employees/login', methods=['GET', 'POST'])
+@app.route('/api/employees/login', methods=['GET', 'POST']) # needs a test case
 # This API LOGS in the employee and returns employee information based on their email address and password which is used for auth
 def login_employee():
     # Retrieve employee based on email and password
@@ -332,7 +332,7 @@ def get_current_employee():
         'phone': employee.phone,
         'address': employee.address,
         'employeeType': employee.employeeType,
-    })
+    }), 200
 
 
 @app.route('/api/members', methods=['GET'])
@@ -349,7 +349,7 @@ def get_all_members():
                          'email': member.email,
                          'phone': member.phone,
                          'join_date': member.join_date} for member in members]
-        return jsonify(members_info)
+        return jsonify(members_info), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -386,7 +386,7 @@ def login_member():
                 'SSN': sensitive_info.SSN,
                 'driverID': sensitive_info.driverID,
                 'cardInfo': sensitive_info.cardInfo
-            })
+            }), 200
         else:
             return jsonify({'error': 'Member not found or credentials invalid'}), 404
     except Exception as e:
@@ -461,7 +461,7 @@ def get_current_user():
         'driverID': sensitive_info.driverID,
         'join_date': member.join_date
         # in the future will add Address, Zipcode and State on where the member is from
-    })
+    }), 200
 
 
 @app.route('/api/service-appointments', methods=['GET', 'POST'])
@@ -479,7 +479,7 @@ def service_appointments():
             'service_name': appointment.service_name
         } for appointment in appointments]
 
-        return jsonify(appointments_info)
+        return jsonify(appointments_info), 200
 
     elif request.method == 'POST':
         # post request we are deleting the row for service appointments for cancellation
@@ -508,7 +508,7 @@ def service_appointments():
             db.session.delete(appointment_to_cancel)
             db.session.commit()
 
-            return jsonify({'message': 'Appointment canceled successfully'})
+            return jsonify({'message': 'Appointment canceled successfully'}), 200
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
