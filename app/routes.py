@@ -175,9 +175,7 @@ def random_vehicles():
                 'price': str(random_vehicle.price)
             }
             random_vehicles_info.append(random_vehicle_info)
-
         return jsonify(random_vehicles_info), 200
-
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
