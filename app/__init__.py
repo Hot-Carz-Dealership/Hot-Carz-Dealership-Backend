@@ -15,7 +15,6 @@ app = Flask(__name__)
 db_name = 'dealership_backend'
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:password@localhost/' + db_name
-app.config['SECRET_KEY'] = 'secret_key'
 
 # Load the configuration
 app.config.from_object(Config)
@@ -39,5 +38,12 @@ db = SQLAlchemy(app)
 
 # Set up database migration
 migrate = Migrate(app, db)
+
+# session addition for flask
+app.config['SECRET_KEY'] = 'secret_key'  # sets the secret key for the Flask application for session cookies
+app.config['SESSION_TYPE'] = 'filesystem'  # configures the type of session storage to be used. In this case, it sets the session storage type to be stored on the filesystem
+# basically this stores session data in the app in our file system. This gets auth working for me somehow lmk frontend if this breaks something
+
+app.debug = True  # enables debugging in the flask app
 
 from app import routes, models  # Import routes and models

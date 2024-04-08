@@ -1,4 +1,5 @@
 # app/routes.py
+import logging
 
 from flask import Flask, jsonify, request, session
 from sqlalchemy import text
@@ -297,7 +298,7 @@ def create_employee():
         employee_type = data.get('employeeType')
         password = data.get('password')
         driverID = data.get('driverID')
-        ssn = data.get('ssn')
+        ssn = data.get('SSN')
 
         # create a new employee entry to insert into the db
         new_employee = Employee(
@@ -314,7 +315,7 @@ def create_employee():
         new_sensitive_info = EmployeeSensitiveInfo(
             employeeID=Employee.employeeID,
             password=password,
-            SNN=ssn,
+            SSN=ssn,
             driverID=driverID,
             lastModified=datetime.now()
         )
@@ -323,6 +324,7 @@ def create_employee():
         return jsonify({'message': 'Employee account created successfully'}), 201
     except Exception as e:
         # Rollback the session in case of any error
+        logging.exception("An error occurred while creating employee:")
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
@@ -402,6 +404,7 @@ def login_member():
         else:
             return jsonify({'error': 'Member not found or credentials invalid'}), 404
     except Exception as e:
+        logging.exception(e)
         return jsonify({'error': str(e)}), 500
 
 
