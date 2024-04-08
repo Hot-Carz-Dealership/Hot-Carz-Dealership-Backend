@@ -25,6 +25,19 @@ def testdb():
         hed = '<h1>Something is broken.</h1>'
         return hed + error_text
 
+def get_ID_value(table_name, table):
+    # in order to get the ID we need to query it to match with what we want, lets test with the username we have tmm
+    # to return the correct ID.
+    try:
+        if table == 1:  # for with employee Table
+            id_value = table_name.employeeID
+            return id_value
+        if table == 2:  # for with member Table
+            id_value = table_name.memberID
+            return id_value
+    except Exception as e:
+        print(f'Error Occured with Table Operation: {e}')
+        return None
 
 ''' this API retrieves all of the add-on products'''
 
@@ -96,7 +109,7 @@ def vehicle():
         return jsonify({'message': 'Vehicle not found'}), 404
 
 
-@app.route('/api/vehicles/add', methods=['POST']) # need test case
+@app.route('/api/vehicles/add', methods=['POST'])  # need test case
 # This API adds a new vehicle to the database based on the information passed from the frontend
 def add_vehicle():
     try:
@@ -200,6 +213,9 @@ def get_all_employees():
     return jsonify(employee_info), 200
 
 
+
+
+
 @app.route('/api/testdrives', methods=['GET'])
 # THIS ENDPOINT return all testdrive information and joins with the Member and Cars table for better information to view on the manager View
 def get_test_drives():
@@ -247,7 +263,7 @@ def update_confirmation():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/employees/login', methods=['GET', 'POST']) # needs a test case
+@app.route('/api/employees/login', methods=['GET', 'POST'])  # needs a test case
 # This API LOGS in the employee and returns employee information based on their email address and password which is used for auth
 def login_employee():
     # Retrieve employee based on email and password
@@ -312,8 +328,9 @@ def create_employee():
         db.session.add(new_employee)
 
         # added a new create EmployeeSensitiveInfo instance and associate it with the employee
+        # buggy code dont use im fixing it soon.
         new_sensitive_info = EmployeeSensitiveInfo(
-            employeeID=Employee.employeeID,
+            employeeID=get_ID_value(Employee, 1),
             password=password,
             SSN=ssn,
             driverID=driverID,
@@ -408,6 +425,8 @@ def login_member():
         return jsonify({'error': str(e)}), 500
 
 
+# something is wrong with this for creating the sensitive info i found it in test, i need it to break on the frontend to
+# know better
 @app.route('/api/members/create', methods=['POST'])
 # This API creates an employee based on the information passed from the front end to the backend (here)
 def create_member():
@@ -424,17 +443,24 @@ def create_member():
         password = data.get('password')
 
         # Create a new Member object
-        new_member = Member(first_name=first_name, last_name=last_name, email=email, phone=phone,
-                            join_date=datetime.now())
+        new_member = Member(first_name=first_name,
+                            last_name=last_name,
+                            email=email,
+                            phone=phone,
+                            join_date=datetime.now()
+                            )
+        db.session.add(new_member)
 
         # Create a new MemberSensitiveInfo object
-        new_sensitive_info = MemberSensitiveInfo(username=username, password=password)
+        # don't worry about the driver INFO or ssn until the member starts purchasing a car.
+        new_sensitive_info = MemberSensitiveInfo(memberID=Member.memberID,
+                                                 username=username,
+                                                 password=password,
+                                                 lastModified=datetime.now()
+                                                 )
+        db.session.add(new_sensitive_info)
 
-        # Associate MemberSensitiveInfo with the new Member
-        new_member.sensitive_info = new_sensitive_info
-
-        # Add the new member and sensitive info to the database session
-        db.session.add(new_member)
+        # commit the new member and their sensitive info to the database session
         db.session.commit()
 
         # Start a session for the new member for better User experience, LMK if it works

@@ -9,7 +9,7 @@ import random
 import json
 from flask import session
 from app import app, db
-from app.models import Cars, Employee, EmployeeSensitiveInfo
+from app.models import Cars, Member, MemberSensitiveInfo, Employee, EmployeeSensitiveInfo
 
 
 @pytest.fixture
@@ -211,32 +211,45 @@ def test_update_confirmation(client):
 
 
 # should work but i need the frontend to test to make sure we can create employees before testing
-# def test_create_employee(client):
-#     employee_data = {
-#         "firstname": "testEmployee",
-#         "lastname": "testEmployee",
-#         "email": "testEmployee@example.com",
-#         "phone": "1234567890",
-#         "address": "123 Example St",
-#         "employeeType": "Technician",
-#         "password": "a123",
-#         "driverID": "exampleDriverID",
-#         "SSN": "exampleSSN"
-#     }
-#
-#     # Sending a POST request to create an employee
-#     response = client.post('/api/employees/create', json=employee_data)
-#     assert response.status_code == 201
-#
-#     with app.app_context():
-#         # Verifying that the employee is created in the database
-#         created_employee = Employee.query.filter_by(email=employee_data["email"]).first()
-#         assert created_employee is not None
-#         assert created_employee.sensitive_info is not None
-#
-#         # Delete the created employee in DB
-#         db.session.delete(created_employee)
-#         db.session.commit()
+
+def delete_row(new_entry):
+    db.session.delete(new_entry)
+    db.session.commit()
+
+
+def test_create_employee(client):
+    employee_data = {
+        "firstname": "testEmployee",
+        "lastname": "testEmployee",
+        "email": "testEmployee@example.com",
+        "phone": "1234567890",
+        "address": "123 Example St",
+        "employeeType": "Technician",
+        "password": "a123",
+        "driverID": "exampleDriverID",
+        "SSN": "exampleSSN"
+    }
+
+    # Sending a POST request to create an employee
+    response = client.post('/api/employees/create', json=employee_data)
+    assert response.status_code == 201
+
+    with app.app_context():
+        # verifying that the employee is created in the database
+        created_employee = Employee.query.filter_by(email=employee_data["email"]).first()
+        assert created_employee is not None
+
+        # verifying that the employee's sensitive information is created
+        created_sensitive_info = EmployeeSensitiveInfo.query.filter_by(employeeID=created_employee.employeeID).first()
+        assert created_sensitive_info is not None
+
+        # Rollback the changes in the database
+        # db.session.delete(created_sensitive_info)
+        # db.session.commit()
+
+        delete_row(created_sensitive_info)
+        delete_row(created_employee)
+
 
 
 def test_get_current_user():
@@ -281,17 +294,37 @@ def test_login_endpoint(client):
     assert 'error' in response_invalid.json
 
 
-# def test_create_member(client): # fix later
-#     data = {
-#         'first_name': 'Mike',
-#         'last_name': 'Joe',
-#         'email': 'jane@example.com',
-#         'phone': '1234567890',
-#         'username': 'janedoe',
-#         'password': 'password'
-#     }
-#     response = client.post('/api/members/create', json=data)
-#     assert response.status_code == 201
+def test_create_member(client):
+    # Define member data for testing
+    member_data = {
+        "first_name": "testMember",
+        "last_name": "testMember",
+        "email": "testMember@example.com",
+        "phone": "1234567890",
+        "username": "testMember_username",
+        "password": "password123"
+    }
+
+    # Send a POST request to create a member
+    response = client.post('/api/members/create', json=member_data)
+
+    # Check if the response status code is 201 (Created)
+    assert response.status_code == 201
+
+    # Check if the member and associated sensitive info are created in the database
+    with app.app_context():
+        created_member = Member.query.filter_by(email=member_data["email"]).first()
+        assert created_member is not None
+
+        # Check if the associated sensitive info is also created
+        created_sensitive_info = MemberSensitiveInfo.query.filter_by(memberID=created_member.memberID).first()
+        assert created_sensitive_info is not None
+        assert created_sensitive_info.username == member_data["username"]
+        assert created_sensitive_info.password == member_data["password"]
+
+        # Delete the created member and sensitive info from the database
+        db.session.delete(created_member)
+        db.session.commit()
 
 
 def test_get_current_user(client):
