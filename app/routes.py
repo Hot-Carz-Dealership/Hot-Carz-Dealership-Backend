@@ -233,15 +233,16 @@ def update_confirmation():
     confirmation_value = 'Confirmed' if confirmation == '1' else 'Denied'
 
     try:
-        # i didn't change it, im not gonna it works i think, LMK frontend
-        # makes the needed change to update said decisions on the DB
-        with db.engine.connect() as connection:
-            connection.execute(
-                text("UPDATE TestDrive SET confirmation = :confirmation_value WHERE testdrive_id = :testdrive_id;"),
-                {'confirmation_value': confirmation_value, 'testdrive_id': testdrive_id}
-            )
-        return jsonify({'message': 'Confirmation updated successfully'}), 200
+        # revised the work done here to make is follow SQL Alchemy Models and rest of backend code base
+        testdrive = TestDrive.query.get(testdrive_id)
+        if testdrive:
+            testdrive.confirmation = confirmation_value
+            db.session.commit()
+            return jsonify({'message': 'Confirmation updated successfully'}), 200
+        else:
+            return jsonify({'error': 'Test drive not found'}), 404
     except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 
