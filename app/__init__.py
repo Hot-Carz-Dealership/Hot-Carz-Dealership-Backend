@@ -39,10 +39,11 @@ db = SQLAlchemy(app)
 # Set up database migration
 migrate = Migrate(app, db)
 
-# session addition for flask
+# session app confic code for flask
 app.config['SECRET_KEY'] = 'secret_key'  # sets the secret key for the Flask application for session cookies
-app.config['SESSION_TYPE'] = 'filesystem'  # configures the type of session storage to be used. In this case, it sets the session storage type to be stored on the filesystem
-# basically this stores session data in the app in our file system. This gets auth working for me somehow lmk frontend if this breaks something
+
+# app.config['SESSION_TYPE'] = 'filesystem'  # configures the type of session storage to be used. In this case, it sets the session storage type to be stored on the filesystem
+# basically this stores session data in the app in our file systems but idk if it works.
 
 app.debug = True  # enables debugging in the flask app
 

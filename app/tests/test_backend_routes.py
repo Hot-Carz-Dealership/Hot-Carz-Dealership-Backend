@@ -267,26 +267,18 @@ def test_get_all_members(client):
     assert response.status_code == 200
 
 
-# an error with the secret key is popping up so idk i'll fix another time tbh
-# def test_login_endpoint(client):
-#     # test case for valid login
-#     data_valid = {'username': 'kscinelli0', 'password': 'gi2z9nka'}
-#     response_valid = client.post('/api/members/login', json=data_valid)
-#     assert response_valid.status_code == 200
-#     assert 'memberID' in response_valid.json
-#
-#     # test case for invalid credentials
-#     data_invalid = {'username': 'invalid_username', 'password': 'invalid_password'}
-#     response_invalid = client.post('/api/members/login', json=data_invalid)
-#     assert response_invalid.status_code == 404
-#     assert 'error' in response_invalid.json
-#
-#     # test case for missing input fields
-#     data_missing = {'username': 'kscinelli0'}  # missing 'password' field
-#     response_missing = client.post('/api/members/login', json=data_missing)
-#     assert response_missing.status_code == 500
-#     assert 'error' in response_missing.json
+def test_login_endpoint(client):
+    # test case for valid login
+    data_valid = {'username': 'kscinelli0', 'password': 'gi2z9nka'}
+    response_valid = client.post('/api/members/login', json=data_valid)
+    assert response_valid.status_code == 200
+    assert 'memberID' in response_valid.json
 
+    # test case for invalid credentials
+    data_invalid = {'username': 'invalid_username', 'password': 'invalid_password'}
+    response_invalid = client.post('/api/members/login', json=data_invalid)
+    assert response_invalid.status_code == 404
+    assert 'error' in response_invalid.json
 
 
 # def test_create_member(client): # fix later
