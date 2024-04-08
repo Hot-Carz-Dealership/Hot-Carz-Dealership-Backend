@@ -295,8 +295,11 @@ def create_employee():
         phone = data.get('phone')
         address = data.get('address')
         employee_type = data.get('employeeType')
+        password = data.get('password')
+        driverID = data.get('driverID')
+        ssn = data.get('ssn')
 
-        # Create a new employee object/record
+        # create a new employee entry to insert into the db
         new_employee = Employee(
             firstname=firstname,
             lastname=lastname,
@@ -306,6 +309,16 @@ def create_employee():
             employeeType=employee_type
         )
         db.session.add(new_employee)
+
+        # added a new create EmployeeSensitiveInfo instance and associate it with the employee
+        new_sensitive_info = EmployeeSensitiveInfo(
+            employeeID=Employee.employeeID,
+            password=password,
+            SNN=ssn,
+            driverID=driverID,
+            lastModified=datetime.now()
+        )
+        db.session.add(new_sensitive_info)
         db.session.commit()
         return jsonify({'message': 'Employee account created successfully'}), 201
     except Exception as e:
