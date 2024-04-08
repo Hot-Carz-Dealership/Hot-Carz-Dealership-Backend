@@ -233,7 +233,7 @@ def update_confirmation():
     confirmation_value = 'Confirmed' if confirmation == '1' else 'Denied'
 
     try:
-        # revised the work done here to make is follow SQL Alchemy Models and rest of backend code base
+        # revised the work done here to make is follow SQL Alchemy model and rest of codebase
         testdrive = TestDrive.query.get(testdrive_id)
         if testdrive:
             testdrive.confirmation = confirmation_value
