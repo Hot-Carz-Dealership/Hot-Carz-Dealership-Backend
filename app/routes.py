@@ -315,26 +315,6 @@ def create_employee():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route("/@emp")
-# Gets employee for active session
-def get_current_employee():
-    user_id = session.get("employee_session_id")
-
-    if not user_id:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    employee = Employee.query.filter_by(employeeID=user_id).first()
-    return jsonify({
-        'employeeID': employee.employeeID,
-        'firstname': employee.firstname,
-        'lastname': employee.lastname,
-        'email': employee.email,
-        'phone': employee.phone,
-        'address': employee.address,
-        'employeeType': employee.employeeType,
-    }), 200
-
-
 @app.route('/api/members', methods=['GET'])
 def get_all_members():
     # Retrieves all the members and their information
@@ -453,8 +433,20 @@ def get_current_user():
     user_id = session.get("member_session_id")
 
     if not user_id:
-        return jsonify({"error": "Unauthorized"}), 401
-
+        user_id = session.get("employee_session_id")
+        if not user_id:
+            return jsonify({"error": "Unauthorized"}), 401
+        employee = Employee.query.filter_by(employeeID=user_id).first()
+        return jsonify({
+            'employeeID': employee.employeeID,
+            'firstname': employee.firstname,
+            'lastname': employee.lastname,
+            'email': employee.email,
+            'phone': employee.phone,
+            'address': employee.address,
+            'employeeType': employee.employeeType,
+        }), 200
+    
     member = Member.query.filter_by(memberID=user_id).first()
     sensitive_info = MemberSensitiveInfo.query.filter_by(memberID=user_id).first()  # for returning their Driver ID
     return jsonify({
