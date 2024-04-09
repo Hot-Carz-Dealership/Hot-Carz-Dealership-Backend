@@ -437,20 +437,27 @@ def create_member():
         password = data.get('password')
 
         # Create a new Member object
-        new_member = Member(first_name=first_name, last_name=last_name, email=email, phone=phone,
-                            join_date=datetime.now())
+        new_member = Member(first_name=first_name,
+                            last_name=last_name,
+                            email=email,
+                            phone=phone,
+                            join_date=datetime.now()
+                            )
 
-        # Add the new member to the database session
+        # adds a new value Member value into the DB
         db.session.add(new_member)
-        db.session.commit()
+        db.session.flush()  # HOLY LINE DUDE, makes it so that we can grab the memberID from the same session before commiting all changes
 
-        # Create a new MemberSensitiveInfo object
 
         # Create a new MemberSensitiveInfo object and associate it with the new member
-        new_sensitive_info = MemberSensitiveInfo(sensitiveID=new_member.memberID, memberID=new_member.memberID, 
-                                                 username=username, password=password, driverID=driverID)
+        new_sensitive_info = MemberSensitiveInfo(sensitiveID=new_member.memberID,
+                                                 memberID=new_member.memberID,
+                                                 username=username,
+                                                 password=password,
+                                                 driverID=driverID
+                                                 )
 
-        # Add the new sensitive info to the database session
+        # adds the new sensitive info to the database session
         db.session.add(new_sensitive_info)
         db.session.commit()
 
@@ -482,20 +489,8 @@ def get_current_user():
     user_id = session.get("member_session_id")
 
     if not user_id:
-        user_id = session.get("employee_session_id")
-        if not user_id:
-            return jsonify({"error": "Unauthorized"}), 401
-        employee = Employee.query.filter_by(employeeID=user_id).first()
-        return jsonify({
-            'employeeID': employee.employeeID,
-            'firstname': employee.firstname,
-            'lastname': employee.lastname,
-            'email': employee.email,
-            'phone': employee.phone,
-            'address': employee.address,
-            'employeeType': employee.employeeType,
-        }), 200
-    
+        return jsonify({"error": "Unauthorized"}), 401
+
     member = Member.query.filter_by(memberID=user_id).first()
     sensitive_info = MemberSensitiveInfo.query.filter_by(memberID=user_id).first()  # for returning their Driver ID
     return jsonify({
