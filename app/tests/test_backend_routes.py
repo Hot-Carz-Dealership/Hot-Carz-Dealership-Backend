@@ -1,6 +1,7 @@
 # tests/test_backend_routes.py
 # this file contains unit tests for the Non-Financial Backend Endpoints here in this repo in routes.py
 
+import json
 import pytest
 import string
 import random
@@ -267,7 +268,7 @@ def test_create_employee(client):
         delete_row(created_employee)
 
 
-def test_get_current_user():
+def test_get_current_user(client):
     # this unit test, tests login Auth to make sure the user can and does indeed login
 
     # no user Auth
@@ -284,10 +285,10 @@ def test_get_current_user():
         assert response.status_code == 200
 
         data = json.loads(response.data.decode('utf-8'))
-        columns = ['memberID', 'firstName', 'lastName', 'email', 'phone', 'driverID', 'join_date']
+        columns = ['memberID', 'first_name', 'last_name', 'email', 'phone', 'driverID', 'join_date']
         # print(data)
         for column_data in columns:
-            assert column_data == data
+            assert column_data in data
 
 
 def test_get_all_members(client):
