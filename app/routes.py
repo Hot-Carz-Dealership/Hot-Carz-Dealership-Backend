@@ -98,7 +98,7 @@ def vehicle():
         return jsonify({'message': 'Vehicle not found'}), 404
 
 
-@app.route('/api/vehicles/add', methods=['POST']) # need test case
+@app.route('/api/vehicles/add', methods=['POST'])  # need test case
 # This API adds a new vehicle to the database based on the information passed from the frontend
 # TESTCASE: DONE
 def add_vehicle():
@@ -255,7 +255,7 @@ def update_confirmation():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/employees/login', methods=['GET', 'POST']) # needs a test case
+@app.route('/api/employees/login', methods=['GET', 'POST'])  # needs a test case
 # This API LOGS in the employee and returns employee information based on their email address and password which is used for auth
 def login_employee():
     # Retrieve employee based on email and password
@@ -339,35 +339,33 @@ def create_employee():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route("/@emp")
-# Gets employee for active session
-# TESTCASE: DONE
-def get_current_employee():
-    user_id = session.get("employee_session_id")
-
-    if not user_id:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    employee = Employee.query.filter_by(employeeID=user_id).first()
-    return jsonify({
-        'employeeID': employee.employeeID,
-        'firstname': employee.firstname,
-        'lastname': employee.lastname,
-        'email': employee.email,
-        'phone': employee.phone,
-        'address': employee.address,
-        'employeeType': employee.employeeType,
-    }), 200
+# depricated | delete later when know for sure won't be used and have a viable solution
+# @app.route("/@emp")
+# # Gets employee for active session
+# def get_current_employee():
+#     user_id = session.get("employee_session_id")
+#
+#     if not user_id:
+#         return jsonify({"error": "Unauthorized"}), 401
+#
+#     employee = Employee.query.filter_by(employeeID=user_id).first()
+#     return jsonify({
+#         'employeeID': employee.employeeID,
+#         'firstname': employee.firstname,
+#         'lastname': employee.lastname,
+#         'email': employee.email,
+#         'phone': employee.phone,
+#         'address': employee.address,
+#         'employeeType': employee.employeeType,
+#     }), 200
 
 
 @app.route('/api/members', methods=['GET'])
-# TESTCASE: DONE
 def get_all_members():
     # Retrieves all the members and their information
     try:
         # Query all members from the database
         members = Member.query.all()
-
         # Convert the query result to a list of dictionaries
         members_info = [{'memberID': member.memberID,
                          'first_name': member.first_name,
@@ -402,7 +400,7 @@ def login_member():
             member, sensitive_info = member_info
 
             # start the session for the logged member
-            session['member_session_id'] = member.memberID 
+            session['member_session_id'] = member.memberID
             return jsonify({
                 'memberID': member.memberID,
                 'first_name': member.first_name,
@@ -448,7 +446,6 @@ def create_member():
         db.session.add(new_member)
         db.session.flush()  # HOLY LINE DUDE, makes it so that we can grab the memberID from the same session before commiting all changes
 
-
         # Create a new MemberSensitiveInfo object and associate it with the new member
         new_sensitive_info = MemberSensitiveInfo(sensitiveID=new_member.memberID,
                                                  memberID=new_member.memberID,
@@ -482,14 +479,28 @@ def create_member():
         return jsonify({'error': str(e)}), 500
 
 
-
 @app.route("/@me")
 # Gets user for active session for Members
 def get_current_user():
     user_id = session.get("member_session_id")
 
+    # if it is none, basically we then begin the login for employees and NOT members here.
+    # all in one endpoint, thx patrick. This data belongs to him but it's under my commit because I fucked up.
     if not user_id:
-        return jsonify({"error": "Unauthorized"}), 401
+        user_id = session.get("employee_session_id")
+
+        if not user_id:
+            return jsonify({"error": "Unauthorized"}), 401
+        employee = Employee.query.filter_by(employeeID=user_id).first()
+        return jsonify({
+            'employeeID': employee.employeeID,
+            'firstname': employee.firstname,
+            'lastname': employee.lastname,
+            'email': employee.email,
+            'phone': employee.phone,
+            'address': employee.address,
+            'employeeType': employee.employeeType,
+        }), 200
 
     member = Member.query.filter_by(memberID=user_id).first()
     sensitive_info = MemberSensitiveInfo.query.filter_by(memberID=user_id).first()  # for returning their Driver ID
