@@ -375,7 +375,7 @@ def login_member():
             member, sensitive_info = member_info
 
             # start the session for the logged member
-            session['member_session_id'] = member.memberID
+            session['member_session_id'] = member.memberID 
             return jsonify({
                 'memberID': member.memberID,
                 'first_name': member.first_name,
@@ -393,18 +393,18 @@ def login_member():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/members/create', methods=['POST'])
 # This API creates an employee based on the information passed from the front end to the backend (here)
+@app.route('/api/members/create', methods=['POST'])
 def create_member():
     try:
-        # Extract data from the request body
         data = request.json
 
-        # values needing to be passed from the front to the backend
+        # Extract data from the request body
         first_name = data.get('first_name')
         last_name = data.get('last_name')
         email = data.get('email')
         phone = data.get('phone')
+        driverID = data.get('driverID')
         username = data.get('username')
         password = data.get('password')
 
@@ -412,14 +412,18 @@ def create_member():
         new_member = Member(first_name=first_name, last_name=last_name, email=email, phone=phone,
                             join_date=datetime.now())
 
-        # Create a new MemberSensitiveInfo object
-        new_sensitive_info = MemberSensitiveInfo(username=username, password=password)
-
-        # Associate MemberSensitiveInfo with the new Member
-        new_member.sensitive_info = new_sensitive_info
-
-        # Add the new member and sensitive info to the database session
+        # Add the new member to the database session
         db.session.add(new_member)
+
+        # Commit the member addition first to ensure new_member gets a valid ID
+        db.session.commit()
+
+        # Create a new MemberSensitiveInfo object and associate it with the new member
+        new_sensitive_info = MemberSensitiveInfo(sensitiveID=new_member.memberID, memberID=new_member.memberID, 
+                                                 username=username, password=password, driverID=driverID)
+
+        # Add the new sensitive info to the database session
+        db.session.add(new_sensitive_info)
         db.session.commit()
 
         # Start a session for the new member for better User experience, LMK if it works
@@ -440,6 +444,7 @@ def create_member():
         # Rollback the session in case of any exception
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
 
 
 @app.route("/@me")
