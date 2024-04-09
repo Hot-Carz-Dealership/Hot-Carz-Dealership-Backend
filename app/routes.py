@@ -1,11 +1,12 @@
 # app/routes.py
 
-from flask import Flask, jsonify, request, session
-from sqlalchemy import text
-from datetime import datetime
+import random
+import logging
 from . import app
 from .models import *
-import random
+from sqlalchemy import text
+from datetime import datetime
+from flask import Flask, jsonify, request, session
 
 from flask_cors import CORS, cross_origin
 
@@ -30,6 +31,7 @@ def testdb():
 
 @app.route('/api/vehicles/add-ons', methods=['GET'])
 # this GET protocol API is used to return all Add-on products and their information
+# TESTCASE: DONE
 def addon_information():
     # returns all the information of addon product one is offered when a customer purchases a car
     addons = Addons.query.all()
@@ -46,6 +48,7 @@ def addon_information():
 
 @app.route('/api/vehicles/search', methods=['GET'])
 # This API returns all information on all vehicles in the database based on a search function in search bar in the frontend
+# TESTCASE: DONE
 def vehicle_information():
     search_query = request.args.get('search_query')
     if search_query:
@@ -71,6 +74,7 @@ def vehicle_information():
 
 @app.route('/api/vehicles', methods=['GET'])
 # This API returns all information on a specific vehicle based on their VIN number which is passed from the front end to the backend
+# TESTCASE: DONE
 def vehicle():
     VIN_carID = request.args.get('vin')  # get query parameter id
     vehicle_info = Cars.query.filter_by(VIN_carID=VIN_carID).first()
@@ -97,6 +101,7 @@ def vehicle():
 
 @app.route('/api/vehicles/add', methods=['POST']) # need test case
 # This API adds a new vehicle to the database based on the information passed from the frontend
+# TESTCASE: DONE
 def add_vehicle():
     try:
         # no manager auth yet, will add in the future
@@ -143,6 +148,7 @@ def add_vehicle():
 
 @app.route('/api/vehicles/random', methods=['GET'])
 # This API returns all info on 2 random vehicles in the database for the homepage
+# TESTCASE: DONE
 def random_vehicles():
     try:
         # Get the total number of vehicles in the database
@@ -184,6 +190,7 @@ def random_vehicles():
 
 @app.route('/api/employees', methods=['GET'])
 # This API returns all employees and their information
+# TESTCASE: DONE
 def get_all_employees():
     employees = Employee.query.all()
     employee_info = []
@@ -203,6 +210,7 @@ def get_all_employees():
 
 @app.route('/api/testdrives', methods=['GET'])
 # THIS ENDPOINT return all testdrive information and joins with the Member and Cars table for better information to view on the manager View
+# TESTCASE: DONE
 def get_test_drives():
     test_drive_info = []
     test_drives = db.session.query(TestDrive, Member, Cars). \
@@ -222,6 +230,7 @@ def get_test_drives():
 
 @app.route('/api/testdrives/update_confirmation', methods=['POST'])
 # this API is POST request used by the manager to Confirm or Deny confirmations
+# TESTCASE: DONE
 def update_confirmation():
     data = request.json
 
@@ -285,6 +294,7 @@ def login_employee():
 
 @app.route('/api/employees/create', methods=['POST'])
 # This API creates an employee based on all the values passed from the front to the backend
+# TESTCASE: DONE
 def create_employee():
     try:
         data = request.json
@@ -296,6 +306,9 @@ def create_employee():
         phone = data.get('phone')
         address = data.get('address')
         employee_type = data.get('employeeType')
+        password = data.get('password')
+        driverID = data.get('driverID')
+        ssn = data.get('SSN')
 
         # Create a new employee object/record
         new_employee = Employee(
@@ -307,6 +320,18 @@ def create_employee():
             employeeType=employee_type
         )
         db.session.add(new_employee)
+        db.session.flush()
+
+        # added a new create EmployeeSensitiveInfo instance and associate it with the employee
+        # buggy code dont use im fixing it soon.
+        new_sensitive_info = EmployeeSensitiveInfo(
+            employeeID=new_employee.employeeID,
+            password=password,
+            SSN=ssn,
+            driverID=driverID,
+            lastModified=datetime.now()
+        )
+        db.session.add(new_sensitive_info)
         db.session.commit()
         return jsonify({'message': 'Employee account created successfully'}), 201
     except Exception as e:
@@ -315,7 +340,29 @@ def create_employee():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route("/@emp")
+# Gets employee for active session
+# TESTCASE: DONE
+def get_current_employee():
+    user_id = session.get("employee_session_id")
+
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    employee = Employee.query.filter_by(employeeID=user_id).first()
+    return jsonify({
+        'employeeID': employee.employeeID,
+        'firstname': employee.firstname,
+        'lastname': employee.lastname,
+        'email': employee.email,
+        'phone': employee.phone,
+        'address': employee.address,
+        'employeeType': employee.employeeType,
+    }), 200
+
+
 @app.route('/api/members', methods=['GET'])
+# TESTCASE: DONE
 def get_all_members():
     # Retrieves all the members and their information
     try:
@@ -338,6 +385,7 @@ def get_all_members():
 @app.route('/api/members/login', methods=['GET', 'POST'])
 # This API is used as Authentication to login a member IF their ACCOUNT EXISTS and
 # returns that members information. we need their username and password passed from the front end to the backend to login
+# TESTCASE: DONE
 def login_member():
     try:
         data = request.json
@@ -375,6 +423,7 @@ def login_member():
 
 # This API creates an employee based on the information passed from the front end to the backend (here)
 @app.route('/api/members/create', methods=['POST'])
+# TESTCASE: DONE
 def create_member():
     try:
         data = request.json
@@ -394,9 +443,9 @@ def create_member():
 
         # Add the new member to the database session
         db.session.add(new_member)
-
-        # Commit the member addition first to ensure new_member gets a valid ID
         db.session.commit()
+
+        # Create a new MemberSensitiveInfo object
 
         # Create a new MemberSensitiveInfo object and associate it with the new member
         new_sensitive_info = MemberSensitiveInfo(sensitiveID=new_member.memberID, memberID=new_member.memberID, 
@@ -423,6 +472,7 @@ def create_member():
     except Exception as e:
         # Rollback the session in case of any exception
         db.session.rollback()
+        logging.exception(e)
         return jsonify({'error': str(e)}), 500
 
 
@@ -464,6 +514,8 @@ def get_current_user():
 @app.route('/api/service-appointments', methods=['GET', 'POST'])
 # GET protocol return all service appointment information
 # POST protocol is used for managers to cancel appointments on their views when they are logged in
+# TESTCASE: DONE FOR GET AND POST
+
 def service_appointments():
     if request.method == 'GET':
         # get request, we return all data form service appointments
