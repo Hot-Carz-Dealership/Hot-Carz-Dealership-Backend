@@ -49,6 +49,7 @@ def test_addon_information(client):
 
     # we check to make sure the response body structure and content from the called API is exactly what we want it to return
     data = response.get_json()
+    assert data is not None
     assert isinstance(data, list)  # assert that the response returned is a list of dictionaries
 
     # assert the data
@@ -70,6 +71,7 @@ def test_vehicle_information(client):
     # ensure that the data returned from nothing passed to the endpoint is indeed
     # a list of dictionaries and has data being returned
     data_without_query = response_without_query.get_json()
+    assert data_without_query is not None
     assert isinstance(data_without_query, list)
     assert len(data_without_query) > 0
 
@@ -85,6 +87,7 @@ def test_vehicle_information(client):
     assert response_with_query.headers['Content-Type'] == 'application/json'
 
     data_with_query = response_with_query.get_json()
+    assert data_with_query is not None
     assert isinstance(data_with_query, list)
 
     if len(data_with_query) > 0:
@@ -131,6 +134,7 @@ def test_vehicle(client):
     assert response_found.status_code == 200
     assert response_found.headers['Content-Type'] == 'application/json'
     data_found = response_found.get_json()
+    assert data_found is not None
 
     # iterate through the columns and confirm that the data we need to grab is there and intact
     expected_keys = ['VIN_carID', 'make', 'model', 'body', 'year', 'color', 'mileage', 'details', 'description',
@@ -153,9 +157,10 @@ def test_random_vehicles(client):
     assert random_car_response.headers['Content-Type'] == 'application/json'
 
     data_found = random_car_response.get_json()
-    print(data_found)
-    assert isinstance(data_found, list)  # Ensure response is a list of dictionaries
-    assert len(data_found) == 2  # Ensure two vehicles' information is returned
+    assert data_found is not None
+    # print(data_found)
+    assert isinstance(data_found, list)  # ensures that the response is a list of dictionaries
+    assert len(data_found) == 2  # ensures that two vehicles' information is returned
 
     expected_keys = ['VIN_carID', 'make', 'model', 'body', 'year', 'color', 'mileage', 'details', 'description',
                      'viewsOnPage', 'pictureLibraryLink', 'status', 'price']
@@ -170,6 +175,7 @@ def test_get_all_employees(client):
     assert response.headers['Content-Type'] == 'application/json'
 
     data = response.get_json()
+    assert data is not None
     assert isinstance(data, list)
 
     # Check if each dictionary in the response contains the expected keys
@@ -188,6 +194,7 @@ def test_get_test_drives(client):
     assert response.headers['Content-Type'] == 'application/json'
 
     data = response.get_json()
+    assert data is not None
     assert isinstance(data, list)
 
     expected_keys = ['fullname', 'phone', 'car_id', 'car_make_model', 'appointment_date']
@@ -222,19 +229,6 @@ def test_update_confirmation(client):
 #     for field in expected_fields:
 #         assert field in data  # assert that the column is in the returned data
 #         assert data[field]  # assert that the data in the column is indeed not empty
-
-
-def test_create_employee(client):
-    data = {
-        'firstname': 'John',
-        'lastname': 'Doe',
-        'email': 'john@example.com',
-        'phone': '1234567890',
-        'address': '123 Main St',
-        'employeeType': 'Manager'
-    }
-    response = client.post('/api/employees/create', json=data)
-    assert response.status_code == 201
 
 
 def test_create_employee(client):
@@ -285,12 +279,15 @@ def test_get_current_user(client):
         assert response.status_code == 200
 
         data = json.loads(response.data.decode('utf-8'))
+        assert data is not None
+
         columns = ['memberID', 'first_name', 'last_name', 'email', 'phone', 'driverID', 'join_date']
         # print(data)
         for column_data in columns:
             assert column_data in data
 
 
+# will finish another time, i got everything else kinda done tho so its ok lol
 def test_get_all_members(client):
     response = client.get('/api/members')
     assert response.status_code == 200
@@ -359,6 +356,7 @@ def test_service_appointments_get(client):
     assert response.headers['Content-Type'] == 'application/json'
 
     data = response.get_json()
+    assert data is not None
     assert isinstance(data, list)
     expected_keys = ['appointment_id', 'memberID', 'appointment_date', 'service_name']
 
