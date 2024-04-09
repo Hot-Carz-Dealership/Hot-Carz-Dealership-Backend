@@ -23,8 +23,7 @@ class Cars(db.Model):
     pictureLibraryLink = db.Column(db.Text)
     status = db.Column(Enum('new', 'sold', 'low-mileage', 'being-watched'))
     price = db.Column(db.DECIMAL(10, 2))
-
-
+    
 class Member(db.Model):
     # Member table model
     __tablename__ = 'Member'
@@ -35,6 +34,8 @@ class Member(db.Model):
     phone = db.Column(db.String(20))
     join_date = db.Column(db.TIMESTAMP, server_default=db.func.current_timestamp())
 
+    # Define relationship with MemberSensitiveInfo
+    sensitive_info = db.relationship('MemberSensitiveInfo', back_populates='member')
 
 class TestDrive(db.Model):
     # TestDrive table model
@@ -91,6 +92,8 @@ class MemberSensitiveInfo(db.Model):
     cardInfo = db.Column(db.TEXT)
     lastModified = db.Column(db.TIMESTAMP, server_default=db.func.current_timestamp(),
                              onupdate=db.func.current_timestamp())
+    # Define relationship with Member
+    member = db.relationship('Member', back_populates='sensitive_info')
 
 
 class Financing(db.Model):
