@@ -254,41 +254,42 @@ def update_confirmation():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+# #Commented out for now since we have combined login for member and employee
+# # depricated | delete later when know for sure won't be used and have a viable solution
+# @app.route('/api/employees/login', methods=['GET', 'POST'])  # needs a test case
+# # This API LOGS in the employee and returns employee information based on their email address and password which is used for auth
+# def login_employee():
+#     # Retrieve employee based on email and password
+#     try:
+#         data = request.json
 
-@app.route('/api/employees/login', methods=['GET', 'POST'])  # needs a test case
-# This API LOGS in the employee and returns employee information based on their email address and password which is used for auth
-def login_employee():
-    # Retrieve employee based on email and password
-    try:
-        data = request.json
+#         # information needed to be passed by the frontend
+#         email = data.get('email')
+#         password = data.get('password')
+#         employee_data = db.session.query(Employee, EmployeeSensitiveInfo). \
+#             join(EmployeeSensitiveInfo, Employee.employeeID == EmployeeSensitiveInfo.employeeID). \
+#             filter(Employee.email == email, EmployeeSensitiveInfo.password == password).first()
 
-        # information needed to be passed by the frontend
-        email = data.get('email')
-        password = data.get('password')
-        employee_data = db.session.query(Employee, EmployeeSensitiveInfo). \
-            join(EmployeeSensitiveInfo, Employee.employeeID == EmployeeSensitiveInfo.employeeID). \
-            filter(Employee.email == email, EmployeeSensitiveInfo.password == password).first()
-
-        # Check if employee exists
-        if employee_data:
-            employee, sensitive_info = employee_data
-            # ENABLES AND STORES THE SESSIONS FOR THE NEWLY LOGGED IN EMPLPOYEE
-            session['employee_session_id'] = employee.employeeID
-            # Construct response to return back to view on frontend regarding logged in employee and their information
-            response = {
-                'employeeID': employee.employeeID,
-                'firstname': employee.firstname,
-                'lastname': employee.lastname,
-                'email': employee.email,
-                'phone': employee.phone,
-                'address': employee.address,
-                'employeeType': employee.employeeType,
-            }
-            return jsonify(response), 200
-        else:
-            return jsonify({'message': 'Employee not found'}), 404
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+#         # Check if employee exists
+#         if employee_data:
+#             employee, sensitive_info = employee_data
+#             # ENABLES AND STORES THE SESSIONS FOR THE NEWLY LOGGED IN EMPLPOYEE
+#             session['employee_session_id'] = employee.employeeID
+#             # Construct response to return back to view on frontend regarding logged in employee and their information
+#             response = {
+#                 'employeeID': employee.employeeID,
+#                 'firstname': employee.firstname,
+#                 'lastname': employee.lastname,
+#                 'email': employee.email,
+#                 'phone': employee.phone,
+#                 'address': employee.address,
+#                 'employeeType': employee.employeeType,
+#             }
+#             return jsonify(response), 200
+#         else:
+#             return jsonify({'message': 'Employee not found'}), 404
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/employees/create', methods=['POST'])
@@ -377,45 +378,47 @@ def get_all_members():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+#Commented out for now since we have combined login for member and employee
+# depricated | delete later when know for sure won't be used and have a viable solution
 
-@cross_origin
-@app.route('/api/members/login', methods=['GET', 'POST'])
-# This API is used as Authentication to login a member IF their ACCOUNT EXISTS and
-# returns that members information. we need their username and password passed from the front end to the backend to login
-# TESTCASE: DONE
-def login_member():
-    try:
-        data = request.json
+# @cross_origin
+# @app.route('/api/members/login', methods=['GET', 'POST'])
+# # This API is used as Authentication to login a member IF their ACCOUNT EXISTS and
+# # returns that members information. we need their username and password passed from the front end to the backend to login
+# # TESTCASE: DONE
+# def login_member():
+#     try:
+#         data = request.json
 
-        # informaton needed to login being sent from front to backend
-        username = data.get('username')
-        password = data.get('password')
+#         # informaton needed to login being sent from front to backend
+#         username = data.get('username')
+#         password = data.get('password')
 
-        # Joins to make it happen where the password matches with the MemberSensitiveInfo information for that member
-        member_info = db.session.query(Member, MemberSensitiveInfo). \
-            join(MemberSensitiveInfo, Member.memberID == MemberSensitiveInfo.memberID). \
-            filter(MemberSensitiveInfo.username == username, MemberSensitiveInfo.password == password).first()
+#         # Joins to make it happen where the password matches with the MemberSensitiveInfo information for that member
+#         member_info = db.session.query(Member, MemberSensitiveInfo). \
+#             join(MemberSensitiveInfo, Member.memberID == MemberSensitiveInfo.memberID). \
+#             filter(MemberSensitiveInfo.username == username, MemberSensitiveInfo.password == password).first()
 
-        if member_info:
-            member, sensitive_info = member_info
+#         if member_info:
+#             member, sensitive_info = member_info
 
-            # start the session for the logged member
-            session['member_session_id'] = member.memberID
-            return jsonify({
-                'memberID': member.memberID,
-                'first_name': member.first_name,
-                'last_name': member.last_name,
-                'email': member.email,
-                'phone': member.phone,
-                'join_date': member.join_date,
-                'SSN': sensitive_info.SSN,
-                'driverID': sensitive_info.driverID,
-                'cardInfo': sensitive_info.cardInfo
-            }), 200
-        else:
-            return jsonify({'error': 'Member not found or credentials invalid'}), 404
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+#             # start the session for the logged member
+#             session['member_session_id'] = member.memberID
+#             return jsonify({
+#                 'memberID': member.memberID,
+#                 'first_name': member.first_name,
+#                 'last_name': member.last_name,
+#                 'email': member.email,
+#                 'phone': member.phone,
+#                 'join_date': member.join_date,
+#                 'SSN': sensitive_info.SSN,
+#                 'driverID': sensitive_info.driverID,
+#                 'cardInfo': sensitive_info.cardInfo
+#             }), 200
+#         else:
+#             return jsonify({'error': 'Member not found or credentials invalid'}), 404
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
 
 
 # This API creates an employee based on the information passed from the front end to the backend (here)
