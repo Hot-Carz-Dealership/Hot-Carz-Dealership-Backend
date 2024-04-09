@@ -494,8 +494,8 @@ def get_current_user():
         employee = Employee.query.filter_by(employeeID=user_id).first()
         return jsonify({
             'employeeID': employee.employeeID,
-            'firstname': employee.firstname,
-            'lastname': employee.lastname,
+            'first_name': employee.firstname,
+            'last_name': employee.lastname,
             'email': employee.email,
             'phone': employee.phone,
             'address': employee.address,
@@ -574,3 +574,59 @@ def logout():
     # LMK if IT WORKS OR NOT
     session.clear()
     return jsonify({'message': 'Logged out successfully'}), 200
+
+@app.route('/api/login', methods=['POST'])
+# This API handles login for both members and employees
+def login():
+    try:
+        data = request.json
+
+        # Check if the provided data belongs to a member
+        username = data.get('username')
+        password = data.get('password')
+        member_info = db.session.query(Member, MemberSensitiveInfo). \
+            join(MemberSensitiveInfo, Member.memberID == MemberSensitiveInfo.memberID). \
+            filter(MemberSensitiveInfo.username == username, MemberSensitiveInfo.password == password).first()
+
+        if member_info:
+            member, sensitive_info = member_info
+            session['member_session_id'] = member.memberID
+            return jsonify({
+                'type': 'member',
+                'memberID': member.memberID,
+                'first_name': member.first_name,
+                'last_name': member.last_name,
+                'email': member.email,
+                'phone': member.phone,
+                'join_date': member.join_date,
+                'SSN': sensitive_info.SSN,
+                'driverID': sensitive_info.driverID,
+                'cardInfo': sensitive_info.cardInfo
+            }), 200
+
+        # If not a member, check if it's an employee
+        email = data.get('username')
+        employee_data = db.session.query(Employee, EmployeeSensitiveInfo). \
+            join(EmployeeSensitiveInfo, Employee.employeeID == EmployeeSensitiveInfo.employeeID). \
+            filter(Employee.email == email, EmployeeSensitiveInfo.password == password).first()
+
+        if employee_data:
+            employee, sensitive_info = employee_data
+            session['employee_session_id'] = employee.employeeID
+            response = {
+                'type': 'employee',
+                'employeeID': employee.employeeID,
+                'first_name': employee.firstname,
+                'last_name': employee.lastname,
+                'email': employee.email,
+                'phone': employee.phone,
+                'address': employee.address,
+                'employeeType': employee.employeeType,
+            }
+            return jsonify(response), 200
+
+        # If neither member nor employee, return error
+        return jsonify({'error': 'Invalid credentials or user type'}), 404
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
