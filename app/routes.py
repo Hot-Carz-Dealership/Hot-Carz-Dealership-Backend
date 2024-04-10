@@ -8,7 +8,6 @@ from .models import *
 from app import bcrypt
 from sqlalchemy import text
 from datetime import datetime
-from flask_bcrypt import bcrypt
 from flask import jsonify, request, session
 
 ''' all the NON FINANCIAL route API's here. All Passwords and sensitive information use Bcrypt hash'''
