@@ -1,11 +1,14 @@
 # app/routes.py
 
+import re
 import random
 import logging
 from . import app
 from .models import *
+from app import bcrypt
 from sqlalchemy import text
 from datetime import datetime
+from flask_bcrypt import bcrypt
 from flask_cors import CORS, cross_origin
 from flask import Flask, jsonify, request, session
 
@@ -196,8 +199,8 @@ def get_all_employees():
     for employee in employees:
         employee_data = {
             'employeeID': employee.employeeID,
-            'firstname': employee.first_name,
-            'lastname': employee.last_name,
+            'first_name': employee.first_name,
+            'last_name': employee.last_name,
             'email': employee.email,
             'phone': employee.phone,
             'address': employee.address,
@@ -327,8 +330,8 @@ def create_employee():
         # buggy code dont use im fixing it soon.
         new_sensitive_info = EmployeeSensitiveInfo(
             employeeID=new_employee.employeeID,
-            password=password,
-            SSN=ssn,
+            password=bcrypt.generate_password_hash(password),
+            SSN=bcrypt.generate_password_hash(ssn),
             driverID=driverID,
             lastModified=datetime.now()
         )
@@ -464,7 +467,8 @@ def create_member():
         new_sensitive_info = MemberSensitiveInfo(
             memberID=new_member.memberID,
             username=username,
-            password=password,
+            password=bcrypt.generate_password_hash(password),
+            SSN="No SSN Inserted with Associated Member Account.",
             driverID=driverID
         )
 
@@ -540,7 +544,6 @@ def get_current_user():
 # GET protocol return all service appointment information
 # POST protocol is used for managers to cancel appointments on their views when they are logged in
 # TESTCASE: DONE FOR GET AND POST
-
 def service_appointments():
     if request.method == 'GET':
         # get request, we return all data form service appointments
@@ -599,67 +602,98 @@ def logout():
 @app.route('/api/login', methods=['POST'])
 # This API handles login for both members and employees
 def login():
+    re_string = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     try:
         data = request.json
-
-        # Check if the provided data belongs to a member
         username = data.get('username')
-        password = data.get('password')
-        member_info = db.session.query(Member, MemberSensitiveInfo). \
-            join(MemberSensitiveInfo, Member.memberID == MemberSensitiveInfo.memberID). \
-            filter(MemberSensitiveInfo.username == username, MemberSensitiveInfo.password == password).first()
 
-        if member_info:
-            member, sensitive_info = member_info
-            session['member_session_id'] = member.memberID
+        # the basis on this check is to better ensure who we are checking for when logging in
+        # Emails = employees
+        # regular Text = members
+        if re.search(re_string, username) is None:
+            # username is not an email, we check for member logging in
 
-            # just in case because the member create doesn't force them to enter a SSN, so if nothign returns from the DB,
-            # better to have a text to show on the frontend then just nothing.
+            # checks if the provided data belongs to a member
+            # 'username' parameter is used interchangeably with email for employee and username for member
+            password = data.get('password')
 
-            if sensitive_info.SSM is None:
-                member_SSN = "No SSN Inserted with Associated Member Account."
-            else:
-                member_SSN = sensitive_info.SSN
+            # if none, then there is no username associated with the account
+            member_match_username = db.session.query(MemberSensitiveInfo).filter(
+                MemberSensitiveInfo.username == username).first()
 
-            return jsonify({
-                'type': 'member',
-                'memberID': member.memberID,
-                'first_name': member.first_name,
-                'last_name': member.last_name,
-                'email': member.email,
-                'phone': member.phone,
-                'address': member.address,
-                'state': member.state,
-                'zipcode': member.zipcode,
-                'join_date': member.join_date,
-                'SSN': member_SSN,
-                'driverID': sensitive_info.driverID,
-                'cardInfo': sensitive_info.cardInfo
-            }), 200
+            # 1st parameters checks the one stored
+            # 2nd compares the hashing of the password with the one in the 1st parameter (the one already stored)
+            # if this doesn't work lmk so i can change the hashing algorithm
+            # if false, then the password does not match with what is stored or something is wrong in how the function
+            # is being used
+            password = bcrypt.check_password_hash(member_match_username.password, password)
 
-        # If not a member, check if it's an employee
-        email = data.get('username')
-        employee_data = db.session.query(Employee, EmployeeSensitiveInfo). \
-            join(EmployeeSensitiveInfo, Employee.employeeID == EmployeeSensitiveInfo.employeeID). \
-            filter(Employee.email == email, EmployeeSensitiveInfo.password == password).first()
+            if member_match_username is None or password is False:
+                return jsonify({'error': 'Invalid username or password.'}), 401
 
-        if employee_data:
-            employee, sensitive_info = employee_data
-            session['employee_session_id'] = employee.employeeID
-            response = {
-                'type': 'employee',
-                'employeeID': employee.employeeID,
-                'first_name': employee.first_name,
-                'last_name': employee.last_name,
-                'email': employee.email,
-                'phone': employee.phone,
-                'address': employee.address,
-                'employeeType': employee.employeeType,
-            }
-            return jsonify(response), 200
+            member_info = db.session.query(Member, MemberSensitiveInfo). \
+                join(MemberSensitiveInfo, Member.memberID == MemberSensitiveInfo.memberID). \
+                filter(MemberSensitiveInfo.username == username, MemberSensitiveInfo.password == password).first()
 
-        # If neither member nor employee, return error
-        return jsonify({'error': 'Invalid credentials or user type'}), 404
+            if member_info:
+                member, sensitive_info = member_info
+                session['member_session_id'] = member.memberID
 
+                # just in case because the member create doesn't force them to enter a SSN, so if nothign returns from the DB,
+                # better to have a text to show on the frontend then just nothing.
+
+                return jsonify({
+                    'type': 'member',
+                    'memberID': member.memberID,
+                    'first_name': member.first_name,
+                    'last_name': member.last_name,
+                    'email': member.email,
+                    'phone': member.phone,
+                    'address': member.address,
+                    'state': member.state,
+                    'zipcode': member.zipcode,
+                    'join_date': member.join_date,
+                    'SSN': sensitive_info.SSN,
+                    'driverID': sensitive_info.driverID,
+                    'cardInfo': sensitive_info.cardInfo
+                }), 200
+        else:
+            # the username is an email, we check for employee logging in
+
+            email = username
+            password = data.get('password')
+
+            # if none, then there is no username associated with the account
+            sensitive_info_username_match = db.session.query(EmployeeSensitiveInfo). \
+                join(Employee, Employee.employeeID == EmployeeSensitiveInfo.employeeID). \
+                filter(Employee.email == email).first()
+
+            # 1st parameters checks the one stored
+            # 2nd compares the hashing of the password with the one in the 1st parameter (the one already stored)
+            # if this doesn't work lmk so i can change the hashing algorithm
+            # if false, then the password does not match with what is stored or something is wrong in how the function
+            # is being used
+            password = bcrypt.check_password_hash(sensitive_info_username_match.password, password)
+
+            employee_data = db.session.query(Employee, EmployeeSensitiveInfo). \
+                join(EmployeeSensitiveInfo, Employee.employeeID == EmployeeSensitiveInfo.employeeID). \
+                filter(Employee.email == email, EmployeeSensitiveInfo.password == password).first()
+
+            if employee_data:
+                employee, sensitive_info = employee_data
+                session['employee_session_id'] = employee.employeeID
+                response = {
+                    'type': 'employee',  # ? what is this - Msg from Daniel
+                    'employeeID': employee.employeeID,
+                    'first_name': employee.first_name,
+                    'last_name': employee.last_name,
+                    'email': employee.email,
+                    'phone': employee.phone,
+                    'address': employee.address,
+                    'employeeType': employee.employeeType,
+                }
+                return jsonify(response), 200
+            # If neither member nor employee, return error
+            return jsonify({'error': 'Invalid credentials or user type'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 500
