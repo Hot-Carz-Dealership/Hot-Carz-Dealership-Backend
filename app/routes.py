@@ -9,8 +9,7 @@ from app import bcrypt
 from sqlalchemy import text
 from datetime import datetime
 from flask_bcrypt import bcrypt
-from flask_cors import CORS, cross_origin
-from flask import Flask, jsonify, request, session
+from flask import jsonify, request, session
 
 ''' all the NON FINANCIAL route API's here. All Passwords and sensitive information use Bcrypt hash'''
 
@@ -331,7 +330,8 @@ def create_employee():
         new_sensitive_info = EmployeeSensitiveInfo(
             employeeID=new_employee.employeeID,
             password=bcrypt.generate_password_hash(password),
-            SSN=bcrypt.generate_password_hash(ssn),
+            # SSN=bcrypt.generate_password_hash(ssn),
+            SSN=ssn,
             driverID=driverID,
             lastModified=datetime.now()
         )

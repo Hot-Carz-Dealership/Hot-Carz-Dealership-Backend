@@ -24,6 +24,7 @@ class Cars(db.Model):
     status = db.Column(Enum('new', 'sold', 'low-mileage', 'being-watched'))
     price = db.Column(db.DECIMAL(10, 2))
 
+
 class Member(db.Model):
     # Member table model
     __tablename__ = 'Member'
@@ -39,6 +40,7 @@ class Member(db.Model):
 
     # Define relationship with MemberSensitiveInfo
     sensitive_info = db.relationship('MemberSensitiveInfo', back_populates='member')
+
 
 class TestDrive(db.Model):
     # TestDrive table model
