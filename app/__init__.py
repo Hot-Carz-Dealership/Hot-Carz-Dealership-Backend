@@ -4,7 +4,6 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_migrate import Migrate
-from flask_bcrypt import Bcrypt
 from flask_swagger_ui import get_swaggerui_blueprint
 from config import Config  # Import the configuration
 
@@ -41,8 +40,8 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 # for encryption of sensitive data
-bcrypt = Bcrypt()
-bcrypt = bcrypt.init_app(app)
+# bcrypt = Bcrypt()
+# bcrypt = bcrypt.init_app(app)
 
 # session app confic code for flask
 app.config['SECRET_KEY'] = 'secret_key'  # sets the secret key for the Flask application for session cookies

@@ -1,11 +1,11 @@
 # app/routes.py
 
 import re
+import bcrypt
 import random
 import logging
 from . import app
 from .models import *
-from app import bcrypt
 from sqlalchemy import text
 from datetime import datetime
 from flask import jsonify, request, session
@@ -328,7 +328,7 @@ def create_employee():
         # buggy code dont use im fixing it soon.
         new_sensitive_info = EmployeeSensitiveInfo(
             employeeID=new_employee.employeeID,
-            password=bcrypt.generate_password_hash(password),
+            password=bcrypt.hashpw(password, bcrypt.gensalt()),
             # SSN=bcrypt.generate_password_hash(ssn),
             SSN=ssn,
             driverID=driverID,
@@ -466,7 +466,7 @@ def create_member():
         new_sensitive_info = MemberSensitiveInfo(
             memberID=new_member.memberID,
             username=username,
-            password=bcrypt.generate_password_hash(password),
+            password=bcrypt.hashpw(password, bcrypt.gensalt()),
             SSN="No SSN Inserted with Associated Member Account.",
             driverID=driverID
         )
@@ -622,10 +622,10 @@ def login():
 
             # 1st parameters checks the one stored
             # 2nd compares the hashing of the password with the one in the 1st parameter (the one already stored)
-            # if this doesn't work lmk so i can change the hashing algorithm
+            # if this doesn't work, encode the passwords, '.encode('utf-8')', it mayyy then work idk
             # if false, then the password does not match with what is stored or something is wrong in how the function
             # is being used
-            password = bcrypt.check_password_hash(member_match_username.password, password)
+            password = bcrypt.checkpw(password, member_match_username.password)
 
             if member_match_username is None or password is False:
                 return jsonify({'error': 'Invalid username or password.'}), 401
@@ -672,7 +672,7 @@ def login():
             # if this doesn't work lmk so i can change the hashing algorithm
             # if false, then the password does not match with what is stored or something is wrong in how the function
             # is being used
-            password = bcrypt.check_password_hash(sensitive_info_username_match.password, password)
+            password = bcrypt.checkpw(password, sensitive_info_username_match.password)
 
             employee_data = db.session.query(Employee, EmployeeSensitiveInfo). \
                 join(EmployeeSensitiveInfo, Employee.employeeID == EmployeeSensitiveInfo.employeeID). \
