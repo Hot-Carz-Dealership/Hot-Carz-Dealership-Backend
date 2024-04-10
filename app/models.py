@@ -23,7 +23,7 @@ class Cars(db.Model):
     pictureLibraryLink = db.Column(db.Text)
     status = db.Column(Enum('new', 'sold', 'low-mileage', 'being-watched'))
     price = db.Column(db.DECIMAL(10, 2))
-    
+
 class Member(db.Model):
     # Member table model
     __tablename__ = 'Member'
@@ -32,6 +32,9 @@ class Member(db.Model):
     last_name = db.Column(db.String(100))
     email = db.Column(db.String(100))
     phone = db.Column(db.String(20))
+    address = db.Column(db.String(255))
+    state = db.Column(db.String(2))
+    zipcode = db.Column(db.String(5))
     join_date = db.Column(db.TIMESTAMP, server_default=db.func.current_timestamp())
 
     # Define relationship with MemberSensitiveInfo
@@ -60,8 +63,8 @@ class Employee(db.Model):
     # Employee table model
     __tablename__ = 'Employee'
     employeeID = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    firstname = db.Column(db.String(50))
-    lastname = db.Column(db.String(50))
+    first_name = db.Column(db.String(50))
+    last_name = db.Column(db.String(50))
     email = db.Column(db.String(100))
     phone = db.Column(db.String(20))
     address = db.Column(db.String(255))
