@@ -14,7 +14,7 @@ INSERT INTO Cars (VIN_carID, make, model, body, year, color, mileage, details, d
 ('1G4HP52KX44657084', 'Chevrolet', 'Malibu', 'sedan', 2024, 'Silver', 29429, 'The Chevy Malibu is a stylish midsize sedan renowned for its fuel efficiency, spacious interior, and smooth ride, making it a popular choice for both daily commuting and long-distance travel.', 'The Chevy Malibu embodies sophistication and practicality, featuring a sleek exterior design complemented by a spacious and comfortable interior equipped with modern amenities and advanced safety features, while its efficient engine options and smooth ride quality ensure an enjoyable driving experience, making it a standout option in the competitive midsize sedan market.',  3, 'https://www.chevrolet.com/content/dam/chevrolet/na/us/english/index/vehicles/2022/cars/malibu/01-images/colorizer/2022-malibu-1lt-gan-colorizer.jpg?imwidth=1200', 'being-watched', 30995.00);
 
 
-INSERT INTO Employee (firstname, lastname, email, phone, address, employeeType) VALUES
+INSERT INTO Employee (first_name, last_name, email, phone, address, employeeType) VALUES
 ('Tabby', 'Steger', 'tsteger0@de.vu', '6354591816', '2 Thierer Junction', 'superAdmin'),
 ('Aleta', 'Clavering', 'aclavering1@desdev.cn', '2208706316', '62405 Merry Plaza', 'technician'),
 ('Patsy', 'Orchart', 'porchart2@ibm.com', '4734835137', '693 Nova Road', 'technician'),
@@ -60,18 +60,18 @@ INSERT INTO EmployeeSensitiveInfo (employeeID, password, SSN, driverID, lastModi
 (20, 'uveu9bt5', '$2a$04$4Yfo/KdXCgWL97VNF5R./eakmCS8zvGloJJEAJc3iUjJgXtd8Mdxu', 'P84486181854073', '2023-06-06 12:56:11');
 
 
-INSERT INTO Member (first_name, last_name, email, phone, join_date) VALUES
-('John', 'Doe', 'john.doe@example.com', '1234567890', '2024-04-02 15:00:00'),
-('Alice', 'Smith', 'alice.smith@example.com', '2345678901', '2024-03-02 11:00:00'),
-('Bob', 'Johnson', 'bob.johnson@example.com', '3456789012',  '2024-03-03 12:00:00'),
-('Emma', 'Brown', 'emma.brown@example.com', '4567890123', '2024-03-03 13:00:00'),
-('Michael', 'Davis', 'michael.davis@example.com', '5678901234', '2024-04-03 14:00:00'),
-('Sarah', 'Wilson', 'sarah.wilson@example.com', '6789012345', '2024-04-05 15:00:00'),
-('David', 'Martinez', 'david.martinez@example.com', '7890123456', '2024-04-02 16:00:00'),
-('Michelle', 'Lopez', 'michelle.lopez@example.com', '8901234567', '2024-04-04 17:00:00'),
-('James', 'Taylor', 'james.taylor@example.com', '9012345678', '2024-04-02 18:00:00'),
-('Emma', 'Garcia', 'emma.garcia@example.com', '0123456789', '2024-04-02 19:00:00'),
-('PLACEHOLDER', 'PLACEHOLDER', 'PLACEHOLDER@example.com', '0000000000', NOW()); -- bids has a placeholder for memberID for customers that buy without bidding, this is meant as a placeholder for customer who do not BID ONLY to be referenced in the BID table
+INSERT INTO Member (first_name, last_name, email, phone, address, state, zipcode, join_date) VALUES
+('John', 'Doe', 'john.doe@example.com', '1234567890', '123 Main St', 'CA', '12345', '2024-04-02 15:00:00'),
+('Alice', 'Smith', 'alice.smith@example.com', '2345678901', '456 Elm St', 'NY', '23456', '2024-03-02 11:00:00'),
+('Bob', 'Johnson', 'bob.johnson@example.com', '3456789012',  '789 Oak St', 'TX', '34567', '2024-03-03 12:00:00'),
+('Emma', 'Brown', 'emma.brown@example.com', '4567890123', '101 Pine St', 'FL', '45678', '2024-03-03 13:00:00'),
+('Michael', 'Davis', 'michael.davis@example.com', '5678901234', '202 Elm St', 'CA', '56789', '2024-04-03 14:00:00'),
+('Sarah', 'Wilson', 'sarah.wilson@example.com', '6789012345', '303 Maple St', 'NY', '67890', '2024-04-05 15:00:00'),
+('David', 'Martinez', 'david.martinez@example.com', '7890123456', '505 Oak St', 'TX', '78901', '2024-04-02 16:00:00'),
+('Michelle', 'Lopez', 'michelle.lopez@example.com', '8901234567', '707 Cedar St', 'FL', '89012', '2024-04-04 17:00:00'),
+('James', 'Taylor', 'james.taylor@example.com', '9012345678', '909 Pine St', 'CA', '90123', '2024-04-02 18:00:00'),
+('Emma', 'Garcia', 'emma.garcia@example.com', '0123456789', '111 Walnut St', 'NY', '01234', '2024-04-02 19:00:00'),
+('PLACEHOLDER', 'PLACEHOLDER', 'PLACEHOLDER@example.com', '0000000000', '123 Sesame Street', 'OH', '00000', NOW()); -- bids has a placeholder for memberID for customers that buy without bidding, this is meant as a placeholder for customer who do not BID ONLY to be referenced in the BID table
 
 
 INSERT INTO MemberSensitiveInfo (memberID, SSN, username, password, driverID, lastModified) VALUES

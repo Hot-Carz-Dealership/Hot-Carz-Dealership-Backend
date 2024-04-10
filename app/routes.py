@@ -196,8 +196,8 @@ def get_all_employees():
     for employee in employees:
         employee_data = {
             'employeeID': employee.employeeID,
-            'firstname': employee.firstname,
-            'lastname': employee.lastname,
+            'firstname': employee.first_name,
+            'lastname': employee.last_name,
             'email': employee.email,
             'phone': employee.phone,
             'address': employee.address,
@@ -254,6 +254,7 @@ def update_confirmation():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+
 # #Commented out for now since we have combined login for member and employee
 # # depricated | delete later when know for sure won't be used and have a viable solution
 # @app.route('/api/employees/login', methods=['GET', 'POST'])  # needs a test case
@@ -300,8 +301,8 @@ def create_employee():
         data = request.json
 
         # data needed to be passed from the frontend to the backend
-        firstname = data.get('firstname')
-        lastname = data.get('lastname')
+        first_name = data.get('first_name')
+        last_name = data.get('last_name')
         email = data.get('email')
         phone = data.get('phone')
         address = data.get('address')
@@ -312,8 +313,8 @@ def create_employee():
 
         # Create a new employee object/record
         new_employee = Employee(
-            firstname=firstname,
-            lastname=lastname,
+            first_name=first_name,
+            last_name=last_name,
             email=email,
             phone=phone,
             address=address,
@@ -373,12 +374,16 @@ def get_all_members():
                          'last_name': member.last_name,
                          'email': member.email,
                          'phone': member.phone,
+                         'address': member.address,
+                         'state': member.state,
+                         'zipcode': member.zipcode,
                          'join_date': member.join_date} for member in members]
         return jsonify(members_info), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-#Commented out for now since we have combined login for member and employee
+
+# Commented out for now since we have combined login for member and employee
 # depricated | delete later when know for sure won't be used and have a viable solution
 
 # @cross_origin
@@ -436,12 +441,18 @@ def create_member():
         driverID = data.get('driverID')
         username = data.get('username')
         password = data.get('password')
+        address = data.get('address')
+        state = data.get('state')
+        zipcode = data.get('zipcode')
 
         # Create a new Member object
         new_member = Member(first_name=first_name,
                             last_name=last_name,
                             email=email,
                             phone=phone,
+                            address=address,
+                            state=state,
+                            zipcode=zipcode,
                             join_date=datetime.now()
                             )
 
@@ -450,12 +461,12 @@ def create_member():
         db.session.flush()  # HOLY LINE DUDE, makes it so that we can grab the memberID from the same session before commiting all changes
 
         # Create a new MemberSensitiveInfo object and associate it with the new member
-        new_sensitive_info = MemberSensitiveInfo(sensitiveID=new_member.memberID,
-                                                 memberID=new_member.memberID,
-                                                 username=username,
-                                                 password=password,
-                                                 driverID=driverID
-                                                 )
+        new_sensitive_info = MemberSensitiveInfo(
+            memberID=new_member.memberID,
+            username=username,
+            password=password,
+            driverID=driverID
+        )
 
         # adds the new sensitive info to the database session
         db.session.add(new_sensitive_info)
@@ -471,6 +482,9 @@ def create_member():
             'last_name': new_member.last_name,
             'email': new_member.email,
             'phone': new_member.phone,
+            'address': new_member.address,
+            'state': new_member.state,
+            'zipcode': new_member.zipcode,
             'join_date': new_member.join_date,
             'username': new_sensitive_info.username
         }
@@ -497,8 +511,8 @@ def get_current_user():
         employee = Employee.query.filter_by(employeeID=user_id).first()
         return jsonify({
             'employeeID': employee.employeeID,
-            'first_name': employee.firstname,
-            'last_name': employee.lastname,
+            'first_name': employee.first_name,
+            'last_name': employee.last_name,
             'email': employee.email,
             'phone': employee.phone,
             'address': employee.address,
@@ -513,6 +527,9 @@ def get_current_user():
         'last_name': member.last_name,
         'email': member.email,
         'phone': member.phone,
+        'address': member.address,
+        'state': member.state,
+        'zipcode': member.zipcode,
         'driverID': sensitive_info.driverID,
         'join_date': member.join_date
         # in the future will add Address, Zipcode and State on where the member is from
@@ -578,6 +595,7 @@ def logout():
     session.clear()
     return jsonify({'message': 'Logged out successfully'}), 200
 
+
 @app.route('/api/login', methods=['POST'])
 # This API handles login for both members and employees
 def login():
@@ -594,6 +612,15 @@ def login():
         if member_info:
             member, sensitive_info = member_info
             session['member_session_id'] = member.memberID
+
+            # just in case because the member create doesn't force them to enter a SSN, so if nothign returns from the DB,
+            # better to have a text to show on the frontend then just nothing.
+
+            if sensitive_info.SSM is None:
+                member_SSN = "No SSN Inserted with Associated Member Account."
+            else:
+                member_SSN = sensitive_info.SSN
+
             return jsonify({
                 'type': 'member',
                 'memberID': member.memberID,
@@ -601,8 +628,11 @@ def login():
                 'last_name': member.last_name,
                 'email': member.email,
                 'phone': member.phone,
+                'address': member.address,
+                'state': member.state,
+                'zipcode': member.zipcode,
                 'join_date': member.join_date,
-                'SSN': sensitive_info.SSN,
+                'SSN': member_SSN,
                 'driverID': sensitive_info.driverID,
                 'cardInfo': sensitive_info.cardInfo
             }), 200
@@ -619,8 +649,8 @@ def login():
             response = {
                 'type': 'employee',
                 'employeeID': employee.employeeID,
-                'first_name': employee.firstname,
-                'last_name': employee.lastname,
+                'first_name': employee.first_name,
+                'last_name': employee.last_name,
                 'email': employee.email,
                 'phone': employee.phone,
                 'address': employee.address,

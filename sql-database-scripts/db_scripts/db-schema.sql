@@ -45,6 +45,9 @@ CREATE TABLE IF NOT EXISTS Member (
     last_name VARCHAR(100),
     email VARCHAR(100),
     phone VARCHAR(20),
+    address VARCHAR(255),
+    state VARCHAR(2),
+    zipcode VARCHAR(5),
     join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -72,8 +75,8 @@ CREATE TABLE IF NOT EXISTS ServiceAppointment (
 CREATE TABLE IF NOT EXISTS Employee (
     -- this table is meant to serve the purpose of containing basic information of the dealership employees
     employeeID INT AUTO_INCREMENT PRIMARY KEY,
-    firstname VARCHAR(50),
-    lastname VARCHAR(50),
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
     email VARCHAR(100),
     phone VARCHAR(20),
     address VARCHAR(255),
