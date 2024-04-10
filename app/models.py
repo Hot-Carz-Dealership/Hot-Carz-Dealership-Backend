@@ -57,6 +57,9 @@ class ServiceAppointment(db.Model):
     __tablename__ = 'ServiceAppointment'
     appointment_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     memberID = db.Column(db.Integer, ForeignKey('Member.memberID'))
+    employeeID = db.Column(db.Integer, ForeignKey('Employee.employeeID'))
+    comment = db.Column(db.TEXT),
+    status = db.Column(Enum('Scheduled', 'Done')),
     appointment_date = db.Column(db.DATE)
     service_name = db.Column(db.String(100))
 
