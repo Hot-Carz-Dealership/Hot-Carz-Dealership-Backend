@@ -7,7 +7,7 @@ import logging
 from . import app
 from .models import *
 from sqlalchemy import text
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import jsonify, request, session
 
 ''' all the NON FINANCIAL route API's here. All Passwords and sensitive information use Bcrypt hash'''
@@ -358,6 +358,26 @@ def create_employee():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/employees/technicians', methods=['GET'])
+# this API is used to return all technicians in the DB from employees table
+def get_technicians():
+    # retrieve all technicians from the database
+    technicians = Employee.query.filter_by(employeeType='Technician').all()
+    technicians_data = []
+    for technician in technicians:
+        technician_data = {
+            'employeeID': technician.employeeID,
+            'first_name': technician.first_name,
+            'last_name': technician.last_name,
+            'email': technician.email,
+            'phone': technician.phone,
+            'address': technician.address,
+            'employeeType': technician.employeeType
+        }
+        technicians_data.append(technician_data)
+    return jsonify(technicians_data), 200
+
+
 # depricated | delete later when know for sure won't be used and have a viable solution
 # @app.route("/@emp")
 # # Gets employee for active session
@@ -567,119 +587,216 @@ def service_appointments():
             'appointment_id': appointment.appointment_id,
             'memberID': appointment.memberID,
             'appointment_date': appointment.appointment_date,
-            'service_name': appointment.service_name
+            'service_name': appointment.service_name,
+            'comments': appointment.comments,
+            'status': appointment.status,
+            'last_modified': appointment.last_modified
         } for appointment in appointments]
-
         return jsonify(appointments_info), 200
 
     elif request.method == 'POST':
         # post request we are deleting the row for service appointments for cancellation
         # takes in 2 values, Appointment ID and a cancellation value. make it a 1
+        # POST VALUE
+        # 1 ==  cancel value
+        # 2 == assign technician here for an appointment
         data = request.json
+        post_method = int(data.get('post_method'))
 
-        # values to be passed from front to backend
-        appointment_id_to_cancel = data.get('appointment_id')
-        cancellation_value = int(data.get('cancelValue'))
+        if post_method == 1:
+            # values to be passed from front to backend
+            appointment_id_to_cancel = data.get('appointment_id')
+            cancellation_value = int(data.get('cancelValue'))
 
-        if appointment_id_to_cancel is None or cancellation_value is None:
-            return jsonify({'error': 'Both appointment_id and cancelValue parameters are required.'}), 400
+            if appointment_id_to_cancel is None or cancellation_value is None:
+                return jsonify({'error': 'Both appointment_id and cancelValue parameters are required.'}), 400
 
-        # cancelation value takes in 1 to confirm it is getting cancelled or else it doesnt get removed.
-        if cancellation_value != 1:
-            return jsonify({'error': 'Invalid cancellation value.'}), 400
+            # cancelation value takes in 1 to confirm it is getting cancelled or else it doesnt get removed.
+            if cancellation_value != 1:
+                return jsonify({'error': 'Invalid cancellation value.'}), 400
 
-        try:
-            # Find the appointment to cancel
-            appointment_to_cancel = ServiceAppointment.query.get(appointment_id_to_cancel)
+            try:
+                # Find the appointment to cancel
+                appointment_to_cancel = ServiceAppointment.query.get(appointment_id_to_cancel)
 
-            if appointment_to_cancel is None:
-                return jsonify({'error': 'Appointment not found.'}), 404
+                if appointment_to_cancel is None:
+                    return jsonify({'error': 'Appointment not found.'}), 404
 
-            # Delete the appointment
-            db.session.delete(appointment_to_cancel)
-            db.session.commit()
-
-            return jsonify({'message': 'Appointment canceled successfully'}), 200
-
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/member/book-service-appointments', methods=['GET', 'POST'])
-def book_service_appointments():
-    ...
+                # Delete the appointment
+                db.session.delete(appointment_to_cancel)
+                db.session.commit()
+                return jsonify({'message': 'Appointment canceled successfully'}), 200
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+        elif post_method == 2:
+            ...
+        else:
+            return jsonify({'message': 'Invalid Post method '}), 400
 
 
-# -- fix this api based on new table
+# ask the professor to clarfy on this requirement on txt docs
+@app.route('/api/customers/book-service-appointment', methods=['POST'])
+# this API allows for customer to book a service appointment based on cars bought from the dealership
+def book_service_appointment():
+    # check if the member is logged in, if not redirect them to log in
+    member_id = session.get('member_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+
+    data = request.json
+
+    # data that needs to be sent from the frontend to the backend here
+    member_id = data.get('memberID')
+    appointment_date = data.get('appointment_date')
+    service_name = data.get('service_name')
+    # VIN_carID = data.get('VIN_carID')
+
+    # Check if required data is provided
+    if not member_id or not appointment_date or not service_name:
+        return jsonify({'message': 'Member ID, appointment date, and service name are required'}), 400
+
+    # Check if the member exists
+    member = Member.query.get(member_id)
+    if not member:
+        return jsonify({'message': 'Member not found'}), 404
+
+    # Create a new service appointment
+    appointment = ServiceAppointment(
+        memberID=member_id,
+        # VIN_carID=VIN_carID,
+        appointment_date=appointment_date,
+        service_name=service_name,
+        status='Scheduled',
+        last_modified=datetime.now()
+    )
+    db.session.add(appointment)
+    db.session.commit()
+
+    return jsonify({'message': 'Service appointment booked successfully'}), 201
+
+
+@app.route('/api/manager/assign-service-appointments', methods=['POST'])
+def assign_service_appointments():
+    # Check if the user is logged in and is a manager/superAdmin
+    emplpyee_session_id = session.get('employee_session_id')
+    if not emplpyee_session_id:
+        return jsonify({'message': 'Unauthorized access'}), 401
+
+    employee = Employee.query.get(emplpyee_session_id)
+    if not employee or employee.employeeType not in ['Manager', 'superAdmin']:
+        return jsonify({'message': 'Unauthorized access'}), 403
+
+    data = request.json
+
+    # frontend needs to send these values to here for this to work
+    appointment_id = data.get('appointment_id')
+    technician_id = data.get('technician_id')
+
+    # check if appointment_id and technician_id are provided
+    if not appointment_id or not technician_id:
+        return jsonify({'message': 'Appointment ID and technician ID are required'}), 400
+
+    # check if the appointment exists
+    appointment = ServiceAppointment.query.get(appointment_id)
+    if not appointment:
+        return jsonify({'message': 'Appointment not found'}), 404
+
+    # check if the technician exists and is a Technician
+    technician = Employee.query.filter_by(employeeID=technician_id, employeeType='Technician').first()
+    if not technician:
+        return jsonify({'message': 'Technician not found or not a valid Technician'}), 404
+
+    # assign the appointment to the technician
+    assignment = ServiceAppointmentEmployeeAssignments(appointment_id=appointment_id, employeeID=technician_id)
+    db.session.add(assignment)
+    db.session.commit()
+    return jsonify({'message': 'Appointment assigned successfully'}), 200
+
+
 @app.route('/api/technician-view-service-appointments', methods=['GET'])
 # --- NEW API ---
 # this API is used for technicians to view their service appointment
 def technician_view_service_appointments():
-    # retrieve employee ID from session
-    employee_id = session['employee_session_id']
-    if employee_id is None:
+    # checks if user is logged in
+    employee_id = session.get('employee_session_id')
+    if not employee_id:
         return jsonify({'message': 'Unauthorized access'}), 401
 
-    # check if the logged-in user is a technician
+    # ensures that the employee is a Technician
     employee = Employee.query.filter_by(employeeID=employee_id, employeeType='Technician').first()
     if not employee:
         return jsonify({'message': 'Unauthorized access'}), 401
 
-    # retrieve service appointments assigned to the technician
-    appointments = ServiceAppointment.query.filter_by(employeeID=employee_id).all()
+    # wow
+    # here we query all the technician appointments up and if they are Done, they are still to be shown the technician
+    # until 1 full day has passed. The service appointment that occured is still stored in the DB but we just no longer display it
+    # to the technician
+    appointments = db.session.query(ServiceAppointment) \
+        .join(ServiceAppointmentEmployeeAssignments,
+              ServiceAppointment.appointment_id == ServiceAppointmentEmployeeAssignments.appointment_id) \
+        .filter(ServiceAppointmentEmployeeAssignments.employeeID == employee_id) \
+        .filter(ServiceAppointment.status.in_(['Scheduled', 'Done'])) \
+        .filter(((ServiceAppointment.last_modified >= datetime.now() - timedelta(days=1)) & (
+            ServiceAppointment.status == 'Done')) | (ServiceAppointment.status != 'Done')).all()
 
-    # Serialize the appointments data
-    appointment_data = []
+    # Serialize appointments and return response
+    appointments_data = []
     for appointment in appointments:
-        appointment_info = {
+        appointment_data = {
             'appointment_id': appointment.appointment_id,
             'memberID': appointment.memberID,
-            'appointment_date': appointment.appointment_date.isoformat(),
-            'service_name': appointment.service_name
+            'appointment_date': appointment.appointment_date.strftime('%Y-%m-%d %H:%M:%S'),
+            'service_name': appointment.service_name,
+            'comments': appointment.comments,
+            'status': appointment.status,
+            'last_modified': appointment.last_modified.strftime(
+                '%Y-%m-%d %H:%M:%S') if appointment.last_modified else None
         }
-        appointment_data.append(appointment_info)
+        appointments_data.append(appointment_data)
+    return jsonify(appointments_data), 200
 
-    return jsonify(appointment_data), 200
 
-
-# -- EDIT BASED ON NEW TABLE
 @app.route('/api/technician-view-service-appointments/technician-edit', methods=['POST'])
-# --- NEW API ---
-# this API is used for technicians to update the comments or close tickets in their service appointment data
 def technician_edit():
     # checks if user is logged in
-    employee_id = session['employee_session_id']
-    if employee_id is None:
+    employee_id = session.get('employee_session_id')
+    if not employee_id:
         return jsonify({'message': 'Unauthorized access'}), 401
 
-    # ensures that the employee is a Technician to use this API
+    # ensures that the employee is a Technician
     employee = Employee.query.filter_by(employeeID=employee_id, employeeType='Technician').first()
     if not employee:
         return jsonify({'message': 'Unauthorized access'}), 401
 
-    # retrieve data from the frontend to send to DB on technician update
+    # Retrieve data from the frontend
     data = request.json
     appointment_id = data.get('appointment_id')
     comment = data.get('comment')
     status = data.get('status')
 
+    # check to make sure the appointment_id is provided
     if not appointment_id:
         return jsonify({'message': 'Appointment ID is required'}), 400
 
-    # retrieve the service appointment row
+    # check if appointment exists
     appointment = ServiceAppointment.query.get(appointment_id)
     if not appointment:
         return jsonify({'message': 'Appointment not found'}), 404
 
-    # insert comments into the service appointments data
+    # ensure that the appointment is assigned to the technician to the signed in technician
+    appointment_assignment = ServiceAppointmentEmployeeAssignments.query.filter_by(
+        appointment_id=appointment_id, employeeID=employee_id).first()
+    if not appointment_assignment:
+        return jsonify({'message': 'You are not assigned to this appointment'}), 403
+
+    # technicians can update the appointment details
     if comment:
         appointment.comment = comment
 
-    # technicians closing ticket based on Done Enum value sent from the frontend
+    # technicians can update the appointment status
     if status == 'Done':
         appointment.status = 'Done'
 
-    # commit the changes to the database
     db.session.commit()
     return jsonify({'message': 'Appointment updated successfully'}), 200
 
