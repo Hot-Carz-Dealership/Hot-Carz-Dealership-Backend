@@ -299,8 +299,15 @@ def update_confirmation():
 # TESTCASE: DONE
 def create_employee():
     try:
-        data = request.json
+        employee_id = session['employee_session_id']
+        if employee_id is None:
+            return jsonify({'message': 'Unauthorized access'}), 401
 
+        super_admin = Employee.query.get(employee_id)
+        if not super_admin or super_admin.employeeType != 'superAdmin':
+            return jsonify({'message': 'Only SuperAdmins can create employee accounts'}), 403
+
+        data = request.json
         # data needed to be passed from the frontend to the backend
         first_name = data.get('first_name')
         last_name = data.get('last_name')
@@ -311,6 +318,14 @@ def create_employee():
         password = data.get('password')
         driverID = data.get('driverID')
         ssn = data.get('SSN')
+
+        # email already exists, we cannot have duplicate employees
+        if Employee.query.filter_by(email=email).first():
+            return jsonify({'message': 'Email already exists'}), 400
+
+        # ensures that superAdmins can only create Manager or Technician accounts
+        if employee_type != 'Manager' or employee_type != 'Technician':
+            return jsonify({'message': 'Only Manager or Technician accounts can be created by SuperAdmins'}), 400
 
         # Create a new employee object/record
         new_employee = Employee(
@@ -595,6 +610,7 @@ def book_service_appointments():
     ...
 
 
+# -- fix this api based on new table
 @app.route('/api/technician-view-service-appointments', methods=['GET'])
 # --- NEW API ---
 # this API is used for technicians to view their service appointment
@@ -626,6 +642,7 @@ def technician_view_service_appointments():
     return jsonify(appointment_data), 200
 
 
+# -- EDIT BASED ON NEW TABLE
 @app.route('/api/technician-view-service-appointments/technician-edit', methods=['POST'])
 # --- NEW API ---
 # this API is used for technicians to update the comments or close tickets in their service appointment data
