@@ -1,13 +1,14 @@
 # app/routes.py
 
+import re
+import bcrypt
 import random
 import logging
 from . import app
 from .models import *
 from sqlalchemy import text
-from datetime import datetime
-from flask_cors import CORS, cross_origin
-from flask import Flask, jsonify, request, session
+from datetime import datetime, timedelta
+from flask import jsonify, request, session
 
 ''' all the NON FINANCIAL route API's here. All Passwords and sensitive information use Bcrypt hash'''
 
@@ -196,8 +197,8 @@ def get_all_employees():
     for employee in employees:
         employee_data = {
             'employeeID': employee.employeeID,
-            'firstname': employee.first_name,
-            'lastname': employee.last_name,
+            'first_name': employee.first_name,
+            'last_name': employee.last_name,
             'email': employee.email,
             'phone': employee.phone,
             'address': employee.address,
@@ -298,8 +299,15 @@ def update_confirmation():
 # TESTCASE: DONE
 def create_employee():
     try:
-        data = request.json
+        employee_id = session['employee_session_id']
+        if employee_id is None:
+            return jsonify({'message': 'Unauthorized access'}), 401
 
+        super_admin = Employee.query.get(employee_id)
+        if not super_admin or super_admin.employeeType != 'superAdmin':
+            return jsonify({'message': 'Only SuperAdmins can create employee accounts'}), 403
+
+        data = request.json
         # data needed to be passed from the frontend to the backend
         first_name = data.get('first_name')
         last_name = data.get('last_name')
@@ -310,6 +318,14 @@ def create_employee():
         password = data.get('password')
         driverID = data.get('driverID')
         ssn = data.get('SSN')
+
+        # email already exists, we cannot have duplicate employees
+        if Employee.query.filter_by(email=email).first():
+            return jsonify({'message': 'Email already exists'}), 400
+
+        # ensures that superAdmins can only create Manager or Technician accounts
+        if employee_type != 'Manager' or employee_type != 'Technician':
+            return jsonify({'message': 'Only Manager or Technician accounts can be created by SuperAdmins'}), 400
 
         # Create a new employee object/record
         new_employee = Employee(
@@ -327,7 +343,8 @@ def create_employee():
         # buggy code dont use im fixing it soon.
         new_sensitive_info = EmployeeSensitiveInfo(
             employeeID=new_employee.employeeID,
-            password=password,
+            password=bcrypt.hashpw(password, bcrypt.gensalt()),
+            # SSN=bcrypt.generate_password_hash(ssn),
             SSN=ssn,
             driverID=driverID,
             lastModified=datetime.now()
@@ -339,6 +356,26 @@ def create_employee():
         # Rollback the session in case of any error
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/employees/technicians', methods=['GET'])
+# this API is used to return all technicians in the DB from employees table
+def get_technicians():
+    # retrieve all technicians from the database
+    technicians = Employee.query.filter_by(employeeType='Technician').all()
+    technicians_data = []
+    for technician in technicians:
+        technician_data = {
+            'employeeID': technician.employeeID,
+            'first_name': technician.first_name,
+            'last_name': technician.last_name,
+            'email': technician.email,
+            'phone': technician.phone,
+            'address': technician.address,
+            'employeeType': technician.employeeType
+        }
+        technicians_data.append(technician_data)
+    return jsonify(technicians_data), 200
 
 
 # depricated | delete later when know for sure won't be used and have a viable solution
@@ -464,7 +501,8 @@ def create_member():
         new_sensitive_info = MemberSensitiveInfo(
             memberID=new_member.memberID,
             username=username,
-            password=password,
+            password=bcrypt.hashpw(password, bcrypt.gensalt()),
+            SSN="No SSN Inserted with Associated Member Account.",
             driverID=driverID
         )
 
@@ -536,56 +574,285 @@ def get_current_user():
     }), 200
 
 
-@app.route('/api/service-appointments', methods=['GET', 'POST'])
+@app.route('/api/service-appointments', methods=['GET'])
 # GET protocol return all service appointment information
 # POST protocol is used for managers to cancel appointments on their views when they are logged in
 # TESTCASE: DONE FOR GET AND POST
-
 def service_appointments():
-    if request.method == 'GET':
-        # get request, we return all data form service appointments
-        appointments = ServiceAppointment.query.all()
+    # get request, we return all data form service appointments
+    appointments = ServiceAppointment.query.all()
 
-        appointments_info = [{
+    appointments_info = [{
+        'appointment_id': appointment.appointment_id,
+        'memberID': appointment.memberID,
+        'serviceID': appointment.serviceID,
+        'appointment_date': appointment.appointment_date,
+        'comments': appointment.comments,
+        'status': appointment.status,
+        'last_modified': appointment.last_modified
+    } for appointment in appointments]
+    return jsonify(appointments_info), 200
+
+
+@app.route('/api/manager/delete-service-appointments', methods=['DELETE'])
+# this api used to be a part of the /api/service-appointments but i moved it here for better separation
+def delete_service_appointment():
+    # ensures that the manager or superAdmin is logged in
+    employee_id = session.get('employee_session_id')
+    if not employee_id:
+        return jsonify({'message': 'Unauthorized access'}), 401
+
+    # Ensure that the employee is a Manager
+    employee = Employee.query.filter_by(employeeID=employee_id).first()
+    if employee.employeeType not in ['Manager', 'superAdmin']:
+        return jsonify({'message': 'Unauthorized access'}), 401
+
+    try:
+        data = request.json
+        appointment_id_to_cancel = data.get('appointment_id')
+
+        if appointment_id_to_cancel is None:
+            return jsonify({'error': 'Appointment_id are required to delete.'}), 400
+
+        # Find the appointment to cancel
+        appointment_to_cancel = ServiceAppointment.query.get(appointment_id_to_cancel)
+        if appointment_to_cancel is None:
+            return jsonify({'error': 'Appointment not found.'}), 404
+
+        # Delete the appointment
+        db.session.delete(appointment_to_cancel)
+        db.session.commit()
+        return jsonify({'message': 'Appointment canceled successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ----------- ask the professor to clarfy on this requirement on txt docs -----------
+@app.route('/api/member/book-service-appointment', methods=['POST'])
+# DO NOT USE THIS API YET
+# this API allows for customer to book a service appointment based on cars bought from the dealership
+def book_service_appointment():
+    # check if the member is logged in, if not redirect them to log in
+    member_id = session.get('member_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+
+    data = request.json
+
+    # data that needs to be sent from the frontend to the backend here
+    member_id = data.get('memberID')
+    appointment_date = data.get('appointment_date')
+    service_name = data.get('service_name')
+    # VIN_carID = data.get('VIN_carID')
+
+    # Check if required data is provided
+    if not member_id or not appointment_date or not service_name:
+        return jsonify({'message': 'Member ID, appointment date, and service name are required'}), 400
+
+    # Check if the member exists
+    member = Member.query.get(member_id)
+    if not member:
+        return jsonify({'message': 'Member not found'}), 404
+
+    # Create a new service appointment
+    appointment = ServiceAppointment(
+        memberID=member_id,
+        # VIN_carID=VIN_carID,
+        appointment_date=appointment_date,
+        service_name=service_name,
+        status='Scheduled',
+        last_modified=datetime.now()
+    )
+    db.session.add(appointment)
+    db.session.commit()
+
+    return jsonify({'message': 'Service appointment booked successfully'}), 201
+
+
+@app.route('/api/service-menu', methods=['GET'])
+# this api i hate it, it made me make another table and have to refactor everything.
+# returns all values in the Services table for users to choose what services they want.
+def get_services():
+    if request.method == 'GET':
+        try:
+            services = Services.query.all()
+            services_info = [{
+                'serviceID': service.serviceID,
+                'service_name': service.service_name
+            } for service in services]
+            return jsonify(services_info), 200
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/manager/edit-service-menu', methods=['POST', 'DELETE'])
+def edit_service_menu():
+    # ensures that the manager or superAdmin is logged in
+    employee_id = session.get('employee_session_id')
+    if not employee_id:
+        return jsonify({'message': 'Unauthorized access'}), 401
+
+    # Ensure that the employee is a Manager
+    employee = Employee.query.filter_by(employeeID=employee_id).first()
+    if employee.employeeType not in ['Manager', 'superAdmin']:
+        return jsonify({'message': 'Unauthorized access'}), 401
+
+    # Only managers or superAdmins are allowed to access this endpoint from this point onward
+
+    if request.method == 'POST':
+        # here we want to make a new service
+        try:
+            data = request.json
+            service_name = data.get('service_name')
+            new_service = Services(service_name=service_name)
+            db.session.add(new_service)
+            db.session.commit()
+            return jsonify({'message': 'Service added successfully'}), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
+    elif request.method == 'DELETE':
+        try:
+            # here we want to make a delete a service we offer by passing the service ID to the Delete request
+            data = request.json
+            service_id = data.get('service_id')
+            service = Services.query.filter_by(serviceID=service_id).first()
+            if service:
+                db.session.delete(service)
+                db.session.commit()
+                return jsonify({'message': 'Service deleted successfully'}), 200
+            else:
+                return jsonify({'message': 'Service not found'}), 404
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/manager/assign-service-appointments', methods=['POST'])
+def assign_service_appointments():
+    # Check if the user is logged in and is a manager/superAdmin
+    emplpyee_session_id = session.get('employee_session_id')
+    if not emplpyee_session_id:
+        return jsonify({'message': 'Unauthorized access'}), 401
+
+    employee = Employee.query.get(emplpyee_session_id)
+    if not employee or employee.employeeType not in ['Manager', 'superAdmin']:
+        return jsonify({'message': 'Unauthorized access'}), 403
+
+    data = request.json
+
+    # frontend needs to send these values to here for this to work
+    appointment_id = data.get('appointment_id')
+    employee_id = data.get('employee_id')
+
+    # check if appointment_id and technician_id are provided
+    if not appointment_id or not employee_id:
+        return jsonify({'message': 'Appointment ID and technician ID are required'}), 400
+
+    # check if the appointment exists
+    appointment = ServiceAppointment.query.get(appointment_id)
+    if not appointment:
+        return jsonify({'message': 'Appointment not found'}), 404
+
+    # check if the technician exists and is a Technician
+    technician = Employee.query.filter_by(employeeID=employee_id, employeeType='Technician').first()
+    if not technician:
+        return jsonify({'message': 'Technician not found or not a valid Technician'}), 404
+
+    # assign the appointment to the technician
+    assignment = ServiceAppointmentEmployeeAssignments(appointment_id=appointment_id, employeeID=employee_id)
+    db.session.add(assignment)
+    db.session.commit()
+    return jsonify({'message': 'Appointment assigned successfully'}), 200
+
+
+@app.route('/api/technician-view-service-appointments', methods=['GET'])
+# --- NEW API ---
+# this API is used for technicians to view their service appointment
+def technician_view_service_appointments():
+    # checks if user is logged in
+    employee_id = session.get('employee_session_id')
+    if not employee_id:
+        return jsonify({'message': 'Unauthorized access'}), 401
+
+    # ensures that the employee is a Technician
+    employee = Employee.query.filter_by(employeeID=employee_id, employeeType='Technician').first()
+    if not employee:
+        return jsonify({'message': 'Unauthorized access'}), 401
+
+    # wow
+    # here we query all the technician appointments up and if they are Done, they are still to be shown the technician
+    # until 1 full day has passed. The service appointment that occured is still stored in the DB but we just no longer display it
+    # to the technician
+    appointments = db.session.query(ServiceAppointment, Services.service_name) \
+        .join(ServiceAppointmentEmployeeAssignments,
+              ServiceAppointment.appointment_id == ServiceAppointmentEmployeeAssignments.appointment_id) \
+        .join(Services, ServiceAppointment.serviceID == Services.serviceID) \
+        .filter(ServiceAppointmentEmployeeAssignments.employeeID == employee_id) \
+        .filter(ServiceAppointment.status.in_(['Scheduled', 'Done'])) \
+        .filter(((ServiceAppointment.last_modified >= datetime.now() - timedelta(days=1)) & (
+            ServiceAppointment.status == 'Done')) | (ServiceAppointment.status != 'Done')).all()
+
+    # Serialize appointments and return response
+    appointments_data = []
+    for appointment, service_name in appointments:
+        appointment_data = {
             'appointment_id': appointment.appointment_id,
             'memberID': appointment.memberID,
             'appointment_date': appointment.appointment_date,
-            'service_name': appointment.service_name
-        } for appointment in appointments]
+            'service_name': service_name,
+            'comments': appointment.comments,
+            'status': appointment.status,
+            'last_modified': appointment.last_modified
+            if appointment.last_modified else None
+        }
+        appointments_data.append(appointment_data)
+    return jsonify(appointments_data), 200
 
-        return jsonify(appointments_info), 200
 
-    elif request.method == 'POST':
-        # post request we are deleting the row for service appointments for cancellation
-        # takes in 2 values, Appointment ID and a cancellation value. make it a 1
-        data = request.json
+@app.route('/api/technician-view-service-appointments/technician-edit', methods=['POST'])
+def technician_edit():
+    # checks if user is logged in
+    employee_id = session.get('employee_session_id')
+    if not employee_id:
+        return jsonify({'message': 'Unauthorized access'}), 401
 
-        # values to be passed from front to backend
-        appointment_id_to_cancel = data.get('appointment_id')
-        cancellation_value = int(data.get('cancelValue'))
+    # ensures that the employee is a Technician
+    employee = Employee.query.filter_by(employeeID=employee_id, employeeType='Technician').first()
+    if not employee:
+        return jsonify({'message': 'Unauthorized access'}), 401
 
-        if appointment_id_to_cancel is None or cancellation_value is None:
-            return jsonify({'error': 'Both appointment_id and cancelValue parameters are required.'}), 400
+    # Retrieve data from the frontend
+    data = request.json
+    appointment_id = data.get('appointment_id')
+    comment = data.get('comment')
+    status = data.get('status')
 
-        # cancelation value takes in 1 to confirm it is getting cancelled or else it doesnt get removed.
-        if cancellation_value != 1:
-            return jsonify({'error': 'Invalid cancellation value.'}), 400
+    # check to make sure the appointment_id is provided
+    if not appointment_id:
+        return jsonify({'message': 'Appointment ID is required'}), 400
 
-        try:
-            # Find the appointment to cancel
-            appointment_to_cancel = ServiceAppointment.query.get(appointment_id_to_cancel)
+    # check if appointment exists
+    appointment = ServiceAppointment.query.get(appointment_id)
+    if not appointment:
+        return jsonify({'message': 'Appointment not found'}), 404
 
-            if appointment_to_cancel is None:
-                return jsonify({'error': 'Appointment not found.'}), 404
+    # ensure that the appointment is assigned to the technician to the signed in technician
+    appointment_assignment = ServiceAppointmentEmployeeAssignments.query.filter_by(
+        appointment_id=appointment_id, employeeID=employee_id).first()
+    if not appointment_assignment:
+        return jsonify({'message': 'You are not assigned to this appointment'}), 403
 
-            # Delete the appointment
-            db.session.delete(appointment_to_cancel)
-            db.session.commit()
+    # technicians can update the appointment details
+    if comment:
+        appointment.comment = comment
 
-            return jsonify({'message': 'Appointment canceled successfully'}), 200
+    # technicians can update the appointment status
+    if status == 'Done':
+        appointment.status = 'Done'
 
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
+    db.session.commit()
+    return jsonify({'message': 'Appointment updated successfully'}), 200
 
 
 @app.route('/api/logout', methods=['POST'])
@@ -596,70 +863,100 @@ def logout():
     return jsonify({'message': 'Logged out successfully'}), 200
 
 
+# Route for user authentication
 @app.route('/api/login', methods=['POST'])
-# This API handles login for both members and employees
 def login():
+    re_string = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     try:
         data = request.json
-
-        # Check if the provided data belongs to a member
         username = data.get('username')
-        password = data.get('password')
-        member_info = db.session.query(Member, MemberSensitiveInfo). \
-            join(MemberSensitiveInfo, Member.memberID == MemberSensitiveInfo.memberID). \
-            filter(MemberSensitiveInfo.username == username, MemberSensitiveInfo.password == password).first()
 
-        if member_info:
-            member, sensitive_info = member_info
-            session['member_session_id'] = member.memberID
+        # the basis on this check is to better ensure who we are checking for when logging in
+        # Emails = employees
+        # regular Text = members
+        if re.search(re_string, username) is None:
+            # username is not an email, we check for member logging in
 
-            # just in case because the member create doesn't force them to enter a SSN, so if nothign returns from the DB,
-            # better to have a text to show on the frontend then just nothing.
+            # checks if the provided data belongs to a member
+            # 'username' parameter is used interchangeably with email for employee and username for member
+            password = data.get('password').encode('utf-8')
 
-            if sensitive_info.SSM is None:
-                member_SSN = "No SSN Inserted with Associated Member Account."
+            # if none, then there is no username associated with the account
+            member_match_username = db.session.query(MemberSensitiveInfo).filter(
+                MemberSensitiveInfo.username == username).first()
+
+            if member_match_username is None:
+                return jsonify({'error': 'Invalid username or password.'}), 401
+
+            stored_hash = member_match_username.password.encode('utf-8')
+
+            # Check if password matches
+            if bcrypt.checkpw(password, stored_hash):
+                member_info = db.session.query(Member, MemberSensitiveInfo). \
+                    join(MemberSensitiveInfo, Member.memberID == MemberSensitiveInfo.memberID). \
+                    filter(MemberSensitiveInfo.username == username).first()
+
+                if member_info:
+                    member, sensitive_info = member_info
+                    session['member_session_id'] = member.memberID
+
+                    # just in case because the member create doesn't force them to enter a SSN, so if nothign returns from the DB,
+                    # better to have a text to show on the frontend then just nothing.
+                    return jsonify({
+                        'type': 'member',
+                        'memberID': member.memberID,
+                        'first_name': member.first_name,
+                        'last_name': member.last_name,
+                        'email': member.email,
+                        'phone': member.phone,
+                        'address': member.address,
+                        'state': member.state,
+                        'zipcode': member.zipcode,
+                        'join_date': member.join_date,
+                        'SSN': sensitive_info.SSN,
+                        'driverID': sensitive_info.driverID,
+                        'cardInfo': sensitive_info.cardInfo
+                    }), 200
             else:
-                member_SSN = sensitive_info.SSN
+                return jsonify({'error': 'Invalid username or password.'}), 401
+        else:
+            # the username is an email, we check for employee logging in
 
-            return jsonify({
-                'type': 'member',
-                'memberID': member.memberID,
-                'first_name': member.first_name,
-                'last_name': member.last_name,
-                'email': member.email,
-                'phone': member.phone,
-                'address': member.address,
-                'state': member.state,
-                'zipcode': member.zipcode,
-                'join_date': member.join_date,
-                'SSN': member_SSN,
-                'driverID': sensitive_info.driverID,
-                'cardInfo': sensitive_info.cardInfo
-            }), 200
+            email = username
+            password = data.get('password').encode('utf-8')
 
-        # If not a member, check if it's an employee
-        email = data.get('username')
-        employee_data = db.session.query(Employee, EmployeeSensitiveInfo). \
-            join(EmployeeSensitiveInfo, Employee.employeeID == EmployeeSensitiveInfo.employeeID). \
-            filter(Employee.email == email, EmployeeSensitiveInfo.password == password).first()
+            # if none, then there is no username associated with the account
+            sensitive_info_username_match = db.session.query(EmployeeSensitiveInfo). \
+                join(Employee, Employee.employeeID == EmployeeSensitiveInfo.employeeID). \
+                filter(Employee.email == email).first()
 
-        if employee_data:
-            employee, sensitive_info = employee_data
-            session['employee_session_id'] = employee.employeeID
-            response = {
-                'type': 'employee',
-                'employeeID': employee.employeeID,
-                'first_name': employee.first_name,
-                'last_name': employee.last_name,
-                'email': employee.email,
-                'phone': employee.phone,
-                'address': employee.address,
-                'employeeType': employee.employeeType,
-            }
-            return jsonify(response), 200
+            if sensitive_info_username_match is None:
+                return jsonify({'error': 'Invalid username or password.'}), 401
+
+            stored_hash = sensitive_info_username_match.password.encode('utf-8')
+            # Check if password matches
+            if bcrypt.checkpw(password, stored_hash):
+                employee_data = db.session.query(Employee, EmployeeSensitiveInfo). \
+                    join(EmployeeSensitiveInfo, Employee.employeeID == EmployeeSensitiveInfo.employeeID). \
+                    filter(Employee.email == email).first()
+
+                if employee_data:
+                    employee, sensitive_info = employee_data
+                    session['employee_session_id'] = employee.employeeID
+                    response = {
+                        'employeeID': employee.employeeID,
+                        'first_name': employee.first_name,
+                        'last_name': employee.last_name,
+                        'email': employee.email,
+                        'phone': employee.phone,
+                        'address': employee.address,
+                        'employeeType': employee.employeeType,
+                    }
+                    return jsonify(response), 200
+            else:
+                return jsonify({'error': 'Invalid username or password.'}), 401
 
         # If neither member nor employee, return error
         return jsonify({'error': 'Invalid credentials or user type'}), 404
-
     except Exception as e:
         return jsonify({'error': str(e)}), 500

@@ -38,26 +38,26 @@ INSERT INTO Employee (first_name, last_name, email, phone, address, employeeType
 
 
 INSERT INTO EmployeeSensitiveInfo (employeeID, password, SSN, driverID, lastModified) VALUES
-(1, 'on9vlvku', '$2a$04$W4n2hVTiRg53O9hnTis05uoiRXYptdPU/Fc1xSISvo.MRugD/y88S', 'I96670745983742', '2023-08-06 14:41:01'),
-(2, 'ovkkysxn', '$2a$04$siXWpEC1Fi.ijJYH1rpuhO9ipiVwf6cgZdKVDyJYIpPTmB5TuYv1K', 'G23005417297863', '2023-04-08 01:25:21'),
-(3, 'p4r0xd5j', '$2a$04$z/qIqAAvhHQ4p695s2m6WuBka.n7oiPFJymYz2zxAxxSQ7vgVh0Dq', 'F25356251439825', '2023-10-15 13:50:22'),
-(4, 'kg8b4mrc', '$2a$04$lSXhsSToAunz.Mh19118ne0rkwhD3anhE.Fn6o5Hj.ZRy8ZqjBdva', 'U25064328606142', '2023-10-06 20:13:10'),
-(5, 'vye4sn7e', '$2a$04$j8XsPoJAxMwQwX3xDfUnauvHAUwVf.9EN1mmnIDss.8piTp7DHHFa', 'C75881620476833', '2024-03-02 02:57:59'),
-(6, 'x5i9gq7k', '$2a$04$fhxamBlGoBufqR3IR856ley9iMaieOkvmj0yh4yrtWOvVY/gPQdJW', 'L45026077556480', '2023-11-16 07:04:38'),
-(7, 'k9naqhub', '$2a$04$/4s1GNzme2jjlKbe7O4Miufo61uNVD68gWwLbe/MqTwz1OH5p2uQC', 'V19237356992642', '2023-10-23 07:45:01'),
-(8, '4ommnq52', '$2a$04$GkGR6m1OLS3i4zv9dL3w1u6d0l/iOHfMdOPET4/.u3BraIuwLed8a', 'P87226193493909', '2023-06-12 13:41:35'),
-(9, 'g2k3u560', '$2a$04$9qLpb2AiRYr6Smrm3TB7dOnRdXF4tfABNnNY/pvy1ea1XfXHu9aLC', 'N56834854481057', '2023-12-19 03:41:34'),
-(10, '0aw4dgvg', '$2a$04$lqIckzkRsW3xiai2aRj9FOE27XF3OXVaf.X1M8C4EzKmGOy4X1CmK', 'J87895470258351', '2023-02-03 19:55:06'),
-(11, '00fbhmg6', '$2a$04$lLic1DjOedWWnW6FQaiZceQ8jq9OfIBDDe7RPa4qgJ3aqStW6n4mG', 'M90526830311912', '2023-11-04 07:54:15'),
-(12, '1e7g31zt', '$2a$04$YlB23oTjCLPI.OY7FDOIou9BA95QrEKA/AE6vKVfkhw31Fo3oe7c2', 'N60004229422223', '2023-09-24 18:12:18'),
-(13, 'anwcnvvh', '$2a$04$Hv.LEo8S4BtXzJ6baMruG.zFJIEZJQ8tk1rsXaKYF8SWAgwYeiIIq', 'E73725928843550', '2024-02-15 15:37:33'),
-(14, '6g8k0mlr', '$2a$04$S9c0aFQxfKyG3QaH0yr7reV9Ha5CibtI2fwvS1CpLQQhQMRLIroO6', 'U82548510742695', '2023-12-06 04:22:33'),
-(15, 'b86w4tog', '$2a$04$kx4mTJoGOZUmoiukIFXbDeH5nDvoHrGFW4.N/9yQF001FhinoGzjW', 'W55496494796644', '2023-02-10 12:50:11'),
-(16, '9lie9281', '$2a$04$kDOkz7muQc.mmZxr/WA2Uuz3BBRCMCx2/RbDfVaNWF2/TPYxKjy5y', 'Z11226785662506', '2023-08-20 15:37:39'),
-(17, 'ow7a9gcs', '$2a$04$f99z/DJv0Bg9PT1Ld2GaTuTd.3zNZ4QWNZuWCJZ7ScuSnTARI5BAe', 'N87778191930551', '2023-04-07 22:12:22'),
-(18, '07xw1cnt', '$2a$04$q/DJZBPuJzvl/N/JGLjzcO8G6ln1ulQithpCKd13LJB8GN4hI1HIW', 'R36578819583636', '2023-11-14 13:31:26'),
-(19, 'k20bhxcr', '$2a$04$0VTDoNzeyrk/42Y3kLMVHOnRwOGaSEGkHTfWeQFpBLrcMOiJMbPiG', 'A17046949140707', '2023-04-08 23:03:48'),
-(20, 'uveu9bt5', '$2a$04$4Yfo/KdXCgWL97VNF5R./eakmCS8zvGloJJEAJc3iUjJgXtd8Mdxu', 'P84486181854073', '2023-06-06 12:56:11');
+(1, '$2y$10$CNalhwglaOJLYaAql91pg.tpT.zdbG5DF87XB3p.XTCbKkJ1xOjM.', '225-58-2885', 'I96670745983742', '2023-08-06 14:41:01'),
+(2, '$2y$10$j7HGFRktPr7F6TJvLunRmux28fl358rQ0rIr7LkzMUTHIJ90A0MIq', '204-58-7391', 'G23005417297863', '2023-04-08 01:25:21'),
+(3, '$2y$10$knhjRBqoQfqYP9ZMw/DioeVMuF66HAxDusiT1vBEqxQLdc6Xe98fm', '470-71-5618', 'F25356251439825', '2023-10-15 13:50:22'),
+(4, '$2y$10$hu4ZUkAD7ejXycAwjsSiGOIb1huKzXblLQ2Ubii.foZeYDDKBUX9a', '594-56-4959', 'U25064328606142', '2023-10-06 20:13:10'),
+(5, '$2y$10$BEpzGxvUQ/UWHkNOe1jM/OSBh7aaqXy1E.c4Lceh8pom8C0XqteDq', '851-88-7346', 'C75881620476833', '2024-03-02 02:57:59'),
+(6, '$2y$10$RI/WnbY5GWue/PrqUiomTedFC..PtJYp09zDkeQ32ZEaD5vE3T3SG', '762-40-3387', 'L45026077556480', '2023-11-16 07:04:38'),
+(7, '$2y$10$EfXYt1t7pqSqdEwmAb3N2O9Roe5p5vkx1m5be3/8Kj3HazUKNF3Ui', '451-17-7819', 'V19237356992642', '2023-10-23 07:45:01'),
+(8, '$2y$10$Bosx6pABi6MPhcievW8vcOQTP9CTE3nmndZ/DetuadQh9Qea.0oXy', '856-32-3714', 'P87226193493909', '2023-06-12 13:41:35'),
+(9, '$2y$10$vvdEpHLJyVyeogJdNOGhz.sjeexwSJMcE5QF/6NNVaFtCHz9pgYhG', '752-13-8032', 'N56834854481057', '2023-12-19 03:41:34'),
+(10, '$2y$10$xzRWd12h3JPJwBGaT/vctezI55ZYDmX2dMJktQK7mUwRKe6xp4Xxu', '855-29-5657', 'J87895470258351', '2023-02-03 19:55:06'),
+(11, '$2y$10$DKENM1hHWS09alVKX7RwLOVACQ5KApX1nj1dQNQRyiLT8waFROt6a', '583-13-1584', 'M90526830311912', '2023-11-04 07:54:15'),
+(12, '$2y$10$Nmccwo7Nu/tlEPS7Yxuo0emXiSk8XqLxDJZ.DCKp2Llc1UJRiZ3iy', '776-67-3278', 'N60004229422223', '2023-09-24 18:12:18'),
+(13, '$2y$10$DX4wV/5sqxsyBRo8.BIdHe4PK2hGzJ47Ke1HS2bgVhT4ObVH8TukS', '655-95-2169', 'E73725928843550', '2024-02-15 15:37:33'),
+(14, '$2y$10$xguhBwkGCs70Ih.VNwfVyu8bmHzFWGlfkPA5WG6vJ6P04nhpOjvgm', '855-21-3982', 'U82548510742695', '2023-12-06 04:22:33'),
+(15, '$2y$10$2/rlxqy83qwvWXX5UvlWKuxja0Iv8m8qmHXgwKTEJSVuCzU1MxW4q', '825-29-2096', 'W55496494796644', '2023-02-10 12:50:11'),
+(16, '$2y$10$9rfEvdlC/E747xpyAiCAxuROZBb3Qh2LIShTkBeYGo/ZjKDvbEnSC', '556-50-5829', 'Z11226785662506', '2023-08-20 15:37:39'),
+(17, '$2y$10$xzvd/GjRhO4mU5caH7D2NO2EsrhcNsWsHoGCEdubupi2a7eH0qnxG', '550-11-0275', 'N87778191930551', '2023-04-07 22:12:22'),
+(18, '$2y$10$SifLgCXEqvGE9NoJKvBvXedj9EYXW/.HOU5k1o8L./dOSQ8g8QNyK', '240-28-9963', 'R36578819583636', '2023-11-14 13:31:26'),
+(19, '$2y$10$69tvOz5InYvGX5cQnpDPvuWj9Dye2fdqQnSecABIfEjyDSM0OLvDq', '316-68-6670', 'A17046949140707', '2023-04-08 23:03:48'),
+(20, '$2y$10$cwI5VFcke5AyJ8BtKLchv.McDSC4hadEC2KXLPxxQciKx33IdPFeW', '627-14-9533', 'P84486181854073', '2023-06-06 12:56:11');
 
 
 INSERT INTO Member (first_name, last_name, email, phone, address, state, zipcode, join_date) VALUES
@@ -75,16 +75,16 @@ INSERT INTO Member (first_name, last_name, email, phone, address, state, zipcode
 
 
 INSERT INTO MemberSensitiveInfo (memberID, SSN, username, password, driverID, lastModified) VALUES
-(1,'$2a$04$/p41ed.VM6XMUQUPatQeC.rbt32KlkZXTbJdbTOTPZfEwL6iQNLiO', 'kscinelli0','gi2z9nka','R22313811699913', '2023-01-11 07:54:39'),
-(2,'$2a$04$8MsZMk.Gg.M568tLmYG5euCqyDIOBzoCO2PXNlifKcn.iUBQnELkK','jtheyer1','x37eefm6','X95512680606098', '2023-03-14 19:10:16'),
-(3,'$2a$04$Nu1AGJhKxzvcnbJJstAZyuVTW2yxmL76xgrY6wv0OdltKCjCqJtkS','rtrahair2','vkhbwl1u','D08707674135194', '2023-08-31 15:46:47'),
-(4,'$2a$04$klLi7xerdp4EsAUjg54BL.JbpB9AyOR3wDH/TV6f08iioqPaEVBHK','ggoold3','nawl8b8t','C16041684227955', '2024-02-29 22:48:44'),
-(5,'$2a$04$wUm4A8tsXYmZ5PU3zgxMduz.Jtud7QTugW8uo6BL1sdehTXYmZ4V6','hkordas4','a4xjo2w6','K40404256713626','2023-06-08 21:02:47'),
-(6,'$2a$04$PtC4Nfmh6NXRShKs75AYVetR02NIbRRECgtAiQjKqZp53C/yKoLTu','jcressingham5','957xnaoj','R95125829361332', '2023-01-27 01:55:00'),
-(7,'$2a$04$2bozKetHmKLUG80Qh4eWy.OqI2Eq2p4EQK1Psy9IzIlEgfscN5DnC','gmcguffog6','6kue0cr8','C99938545187865', '2023-06-26 10:14:37'),
-(8,'$2a$04$rzqdu619jHkvPjsvytEEvuHb6XTJvBARusNtU/JpQLgAUUcmHN0ES','mcurthoys7','ph759onj','T53807275459626', '2023-01-07 13:34:23'),
-(9,'$2a$04$TWARPHI6IG8IeL8AJaDDxuY5.10DyGcOoWlW0FcYNK2uIItf6J242','lroff8','64stqnqd','P93000133288498', '2023-11-28 03:16:19'),
-(10,'$2a$04$cQHQtF2/gb3BZWBRz05cU.XAbbn.8l4q/5pm705EERJU5UdJ29A8G','dbaszniak9','430m5kn5','F98941422570001', '2023-01-03 12:55:47');
+(1,'873-76-0700', 'kscinelli0','$2y$10$gXyTeH9.nls1yJoAkinBaulYhCZtsp9Kph38eZ2nWZOcNO.7kaWtS','R22313811699913', '2023-01-11 07:54:39'),
+(2,'654-47-6204','jtheyer1','$2y$10$OQirnS4a.NwwpW7qwK04peq6.SsbNvmNATl5j6.29LXUtQqGGTsN.','X95512680606098', '2023-03-14 19:10:16'),
+(3,'298-50-5170','rtrahair2','$2y$10$v8bPfhTYRIcRBEbXTR/4N.f5qp899vSN9edb8xnryoHNB0E/LnqM2','D08707674135194', '2023-08-31 15:46:47'),
+(4,'187-28-8424','ggoold3','$2y$10$RDtA1ZrMOwL7b4nkwao4iOlM4.JzJOKqT4ea0GNE.BxpUEYswnFj6','C16041684227955', '2024-02-29 22:48:44'),
+(5,'357-76-5778','hkordas4','$2y$10$cYGDGekYoPDLABkAbNixmeKWQhH4WQhJDTYm23T5WtXzOqvBcvwRm','K40404256713626','2023-06-08 21:02:47'),
+(6,'125-50-8715','jcressingham5','$2y$10$YcocQ.An2zEJ.RJEubVIKe2/NeDhJbZ6SwFRLV1nx4LlGzmdwL0U6','R95125829361332', '2023-01-27 01:55:00'),
+(7,'408-81-0408','gmcguffog6','$2y$10$HDd7kLjmHnzT015L.z2bZOKO.EprGz42DRWlUrQIu4WItHB28uNN6','C99938545187865', '2023-06-26 10:14:37'),
+(8,'253-54-0141','mcurthoys7','$2y$10$bFT0qBBMWc7xHP0c3oMx9.v8p/1UrLsjUZrpH.TM9iIiZuNOI.Hb.','T53807275459626', '2023-01-07 13:34:23'),
+(9,'736-02-4105','lroff8','$2y$10$kMxQwDJ2zM8S4qIS/9bLbu9kYjw2FGky0NVTi1OW3CHebe8GzFrVy','P93000133288498', '2023-11-28 03:16:19'),
+(10,'795-52-4130','dbaszniak9','$2y$10$cJw47q/HUfsPImSv2M3DJul8sdtQSb5Da6Zvc3wfZqh0dhYhTOWL.','F98941422570001', '2023-01-03 12:55:47');
 
 
 INSERT INTO Financing (memberID, income, credit_score, loan_total, down_payment, percentage, monthly_sum, remaining_months) VALUES
@@ -126,13 +126,23 @@ INSERT INTO TestDrive (memberID, VIN_carID, appointment_date, confirmation) VALU
 (4, '1G6DJ5ED0B0941154', '2024-04-06 13:00:00', 'Cancelled'),
 (9, '1G4HP52KX44657084', '2024-04-07 14:00:00', 'Confirmed');
 
+INSERT INTO Services(service_name) VALUES
+('Oil Change'),
+('Brake Inspection'),
+('Tire Rotation'),
+('Battery Replacement');
 
-INSERT INTO ServiceAppointment (memberID, appointment_date, service_name) VALUES
-(1, '2024-04-10 14:00:00', 'Oil Change'),
-(2, '2024-04-11 15:00:00', 'Brake Inspection'),
-(3, '2024-04-12 16:00:00', 'Tire Rotation'),
-(4, '2024-04-13 17:00:00', 'Battery Replacement');
+INSERT INTO ServiceAppointment (memberID, serviceID, appointment_date, status, last_modified) VALUES
+(1, 1, '2024-04-10 14:00:00', 'Scheduled', NOW()),
+(2, 2, '2024-04-11 15:00:00', 'Scheduled', NOW()),
+(3, 3, '2024-04-12 16:00:00', 'Scheduled', NOW()),
+(4, 4, '2024-04-13 17:00:00', 'Scheduled', NOW());
 
+INSERT INTO ServiceAppointmentEmployeeAssignments (appointment_id, employeeID) VALUES
+(1,2),
+(2,3),
+(3,6),
+(4,9);
 
 INSERT INTO Addons (itemName, totalCost) VALUES
 ('Extended Warranty', 1500.00),

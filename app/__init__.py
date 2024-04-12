@@ -39,6 +39,10 @@ db = SQLAlchemy(app)
 # Set up database migration
 migrate = Migrate(app, db)
 
+# for encryption of sensitive data
+# bcrypt = Bcrypt()
+# bcrypt = bcrypt.init_app(app)
+
 # session app confic code for flask
 app.config['SECRET_KEY'] = 'secret_key'  # sets the secret key for the Flask application for session cookies
 

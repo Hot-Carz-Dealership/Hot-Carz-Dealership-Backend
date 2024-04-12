@@ -24,6 +24,7 @@ class Cars(db.Model):
     status = db.Column(Enum('new', 'sold', 'low-mileage', 'being-watched'))
     price = db.Column(db.DECIMAL(10, 2))
 
+
 class Member(db.Model):
     # Member table model
     __tablename__ = 'Member'
@@ -40,6 +41,7 @@ class Member(db.Model):
     # Define relationship with MemberSensitiveInfo
     sensitive_info = db.relationship('MemberSensitiveInfo', back_populates='member')
 
+
 class TestDrive(db.Model):
     # TestDrive table model
     __tablename__ = 'TestDrive'
@@ -50,13 +52,29 @@ class TestDrive(db.Model):
     confirmation = db.Column(Enum('Confirmed', 'Denied', 'Cancelled', 'Awaiting Confirmation'))
 
 
+class Services(db.Model):
+    __tablename__ = 'Services'
+    serviceID = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    service_name = db.Column(db.String(255))
+
+
 class ServiceAppointment(db.Model):
     # ServiceAppointment table model
     __tablename__ = 'ServiceAppointment'
     appointment_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     memberID = db.Column(db.Integer, ForeignKey('Member.memberID'))
+    serviceID = db.Column(db.Integer, ForeignKey('Services.serviceID'))
     appointment_date = db.Column(db.DATE)
-    service_name = db.Column(db.String(100))
+    comments = db.Column(db.TEXT)
+    status = db.Column(Enum('Scheduled', 'Done'))
+    last_modified = db.Column(db.TIMESTAMP, server_default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+
+
+class ServiceAppointmentEmployeeAssignments(db.Model):
+    __tablename__ = 'ServiceAppointmentEmployeeAssignments'
+    assignmentID = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    appointment_id = db.Column(db.Integer, ForeignKey('ServiceAppointment.appointment_id'))
+    employeeID = db.Column(db.Integer, ForeignKey('Employee.employeeID'))
 
 
 class Employee(db.Model):
