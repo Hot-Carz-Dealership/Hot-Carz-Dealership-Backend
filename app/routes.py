@@ -463,9 +463,8 @@ def get_all_members():
 #         return jsonify({'error': str(e)}), 500
 
 
-# This API creates an employee based on the information passed from the front end to the backend (here)
+# This API creates a member account based on the information passed from the front end to the backend (here)
 @app.route('/api/members/create', methods=['POST'])
-# TESTCASE: DONE
 def create_member():
     try:
         data = request.json
@@ -477,43 +476,47 @@ def create_member():
         phone = data.get('phone')
         driverID = data.get('driverID')
         username = data.get('username')
-        password = data.get('password')
+        password = data.get('password')  # Ensure password is retrieved as bytes
         address = data.get('address')
         state = data.get('state')
         zipcode = data.get('zipcode')
 
-        # Create a new Member object
-        new_member = Member(first_name=first_name,
-                            last_name=last_name,
-                            email=email,
-                            phone=phone,
-                            address=address,
-                            state=state,
-                            zipcode=zipcode,
-                            join_date=datetime.now()
-                            )
+        # Hash the password
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
-        # adds a new value Member value into the DB
+        # Create a new Member object
+        new_member = Member(
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            phone=phone,
+            address=address,
+            state=state,
+            zipcode=zipcode,
+            join_date=datetime.now()
+        )
+
+        # Add the new member to the database session
         db.session.add(new_member)
-        db.session.flush()  # HOLY LINE DUDE, makes it so that we can grab the memberID from the same session before commiting all changes
+        db.session.flush()  # Allows accessing the memberID before committing all changes
 
         # Create a new MemberSensitiveInfo object and associate it with the new member
         new_sensitive_info = MemberSensitiveInfo(
             memberID=new_member.memberID,
             username=username,
-            password=bcrypt.hashpw(password, bcrypt.gensalt()),
+            password=hashed_password,
             SSN="No SSN Inserted with Associated Member Account.",
             driverID=driverID
         )
 
-        # adds the new sensitive info to the database session
+        # Add the new sensitive info to the database session
         db.session.add(new_sensitive_info)
         db.session.commit()
 
-        # Start a session for the new member for better User experience, LMK if it works
+        # Start a session for the new member for better User experience
         session['member_session_id'] = new_member.memberID
 
-        # information to return based on the newly created member
+        # Information to return based on the newly created member
         member_info = {
             'memberID': new_member.memberID,
             'first_name': new_member.first_name,
@@ -530,8 +533,8 @@ def create_member():
     except Exception as e:
         # Rollback the session in case of any exception
         db.session.rollback()
-        logging.exception(e)
-        return jsonify({'error': str(e)}), 500
+        logging.exception(e)  # Log the exception for debugging purposes
+        return jsonify({'error': 'An error occurred while creating the member account.'}), 500
 
 
 @app.route("/@me")
