@@ -126,12 +126,17 @@ INSERT INTO TestDrive (memberID, VIN_carID, appointment_date, confirmation) VALU
 (4, '1G6DJ5ED0B0941154', '2024-04-06 13:00:00', 'Cancelled'),
 (9, '1G4HP52KX44657084', '2024-04-07 14:00:00', 'Confirmed');
 
+INSERT INTO Services(service_name) VALUES
+('Oil Change'),
+('Brake Inspection'),
+('Tire Rotation'),
+('Battery Replacement');
 
-INSERT INTO ServiceAppointment (memberID, appointment_date, service_name, status) VALUES
-(1, '2024-04-10 14:00:00', 'Oil Change', 'Scheduled'),
-(2, '2024-04-11 15:00:00', 'Brake Inspection', 'Scheduled'),
-(3, '2024-04-12 16:00:00', 'Tire Rotation', 'Scheduled'),
-(4, '2024-04-13 17:00:00', 'Battery Replacement', 'Scheduled');
+INSERT INTO ServiceAppointment (memberID, serviceID, appointment_date, status, last_modified) VALUES
+(1, 1, '2024-04-10 14:00:00', 'Scheduled', NOW()),
+(2, 2, '2024-04-11 15:00:00', 'Scheduled', NOW()),
+(3, 3, '2024-04-12 16:00:00', 'Scheduled', NOW()),
+(4, 4, '2024-04-13 17:00:00', 'Scheduled', NOW());
 
 INSERT INTO ServiceAppointmentEmployeeAssignments (appointment_id, employeeID) VALUES
 (1,2),

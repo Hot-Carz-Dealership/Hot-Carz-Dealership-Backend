@@ -52,14 +52,19 @@ class TestDrive(db.Model):
     confirmation = db.Column(Enum('Confirmed', 'Denied', 'Cancelled', 'Awaiting Confirmation'))
 
 
+class Services(db.Model):
+    __tablename__ = 'Services'
+    serviceID = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    service_name = db.Column(db.String(255))
+
+
 class ServiceAppointment(db.Model):
     # ServiceAppointment table model
     __tablename__ = 'ServiceAppointment'
     appointment_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     memberID = db.Column(db.Integer, ForeignKey('Member.memberID'))
-    # employeeID = db.Column(db.Integer, ForeignKey('Employee.employeeID'))
+    serviceID = db.Column(db.Integer, ForeignKey('Services.serviceID'))
     appointment_date = db.Column(db.DATE)
-    service_name = db.Column(db.String(100))
     comments = db.Column(db.TEXT)
     status = db.Column(Enum('Scheduled', 'Done'))
     last_modified = db.Column(db.TIMESTAMP, server_default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())

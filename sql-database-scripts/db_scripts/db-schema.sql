@@ -17,6 +17,7 @@ DROP TABLE IF EXISTS Financing;
 DROP TABLE IF EXISTS TestDrive;
 DROP TABLE IF EXISTS Member;
 DROP TABLE IF EXISTS Cars;
+DROP TABLE IF EXISTS Services;
 DROP TABLE IF EXISTS MemberAuditLog;
 DROP TABLE IF EXISTS EmployeeAuditLog;
 DROP TABLE IF EXISTS ServiceAppointmentEmployeeAssignments;
@@ -97,18 +98,39 @@ CREATE TABLE IF NOT EXISTS MemberSensitiveInfo (
     FOREIGN KEY (memberID) REFERENCES Member(memberID)
 );
 
+CREATE TABLE IF NOT EXISTS Services (
+    serviceID INT AUTO_INCREMENT PRIMARY KEY,
+    service_name VARCHAR(255)
+);
+
 CREATE TABLE IF NOT EXISTS ServiceAppointment (
     -- this table is meant to store information on the service appointments made
     appointment_id INT AUTO_INCREMENT PRIMARY KEY,
     memberID INT,
-#     employeeID INT,
+    serviceID INT,
     appointment_date TIMESTAMP,
-    service_name VARCHAR(100),
     comments TEXT,
     status ENUM ('Scheduled', 'Done'),
-    FOREIGN KEY (memberID) REFERENCES Member(memberID)
-#     FOREIGN KEY (employeeID) REFERENCES Employee(employeeID)
+    last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (memberID) REFERENCES Member(memberID),
+    FOREIGN KEY (serviceID) REFERENCES Services(serviceID)
 );
+
+# CREATE TABLE IF NOT EXISTS ServiceAppointment (
+#     -- this table is meant to store information on the service appointments made
+#     appointment_id INT AUTO_INCREMENT PRIMARY KEY,
+#     memberID INT,
+# #     VIN_carID VARCHAR(17), -- prof clarify
+#     appointment_date TIMESTAMP,
+#     service_name VARCHAR(100),
+#     comments TEXT,
+#     status ENUM ('Scheduled', 'Done'),
+#     last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+#     FOREIGN KEY (memberID) REFERENCES Member(memberID)
+# #     FOREIGN KEY (service_name) REFERENCES Services(service_name)
+# #     FOREIGN KEY (memberID) REFERENCES Purchases(memberID)
+# #     FOREIGN KEY (VIN_carID) REFERENCES Purchases(VIN_carID) -- prof clarify
+# );
 
 -- make fake data for this one
 CREATE TABLE IF NOT EXISTS ServiceAppointmentEmployeeAssignments (
@@ -162,7 +184,6 @@ CREATE TABLE IF NOT EXISTS Bids (
     FOREIGN KEY (memberID) REFERENCES Member(memberID)
 );
 
-
 CREATE TABLE IF NOT EXISTS Purchases (
     -- this table is meant to serve more as a crossroads to connect the bids, payments and financing table
     purchaseID INT AUTO_INCREMENT PRIMARY KEY,
@@ -175,13 +196,13 @@ CREATE TABLE IF NOT EXISTS Purchases (
     FOREIGN KEY (memberID) REFERENCES Member(memberID)
 );
 
-
 CREATE TABLE IF NOT EXISTS Addons (
     -- contains the addons and their cost
     itemID INT AUTO_INCREMENT PRIMARY KEY,
     itemName VARCHAR(100),
     totalCost DECIMAL(10, 2)
 );
+
 
 -- don't worry about these tables yet, later when testing phase comes
 -- Audit tables for tracking events
