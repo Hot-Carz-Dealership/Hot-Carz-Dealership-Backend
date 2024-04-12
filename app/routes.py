@@ -294,38 +294,43 @@ def update_confirmation():
 #         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/employees/create', methods=['POST'])
+
 # This API creates an employee based on all the values passed from the front to the backend
-# TESTCASE: DONE
+@app.route('/api/employees/create', methods=['POST'])
 def create_employee():
     try:
-        employee_id = session['employee_session_id']
+        # Check if employee is authenticated
+        employee_id = session.get('employee_session_id')
         if employee_id is None:
             return jsonify({'message': 'Unauthorized access'}), 401
 
+        # Check if authenticated employee is a super admin
         super_admin = Employee.query.get(employee_id)
         if not super_admin or super_admin.employeeType != 'superAdmin':
             return jsonify({'message': 'Only SuperAdmins can create employee accounts'}), 403
 
         data = request.json
-        # data needed to be passed from the frontend to the backend
+        # Data needed to be passed from the frontend to the backend
         first_name = data.get('first_name')
         last_name = data.get('last_name')
         email = data.get('email')
         phone = data.get('phone')
         address = data.get('address')
         employee_type = data.get('employeeType')
-        password = data.get('password')
+        password = data.get('password')  # Ensure password is retrieved as bytes
         driverID = data.get('driverID')
         ssn = data.get('SSN')
 
-        # email already exists, we cannot have duplicate employees
+        # Check if email already exists, we cannot have duplicate employees
         if Employee.query.filter_by(email=email).first():
             return jsonify({'message': 'Email already exists'}), 400
 
-        # ensures that superAdmins can only create Manager or Technician accounts
-        if employee_type != 'Manager' or employee_type != 'Technician':
+        # Ensure that superAdmins can only create Manager or Technician accounts
+        if employee_type not in ['Manager', 'Technician']:
             return jsonify({'message': 'Only Manager or Technician accounts can be created by SuperAdmins'}), 400
+
+        # Hash the password
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
         # Create a new employee object/record
         new_employee = Employee(
@@ -339,23 +344,23 @@ def create_employee():
         db.session.add(new_employee)
         db.session.flush()
 
-        # added a new create EmployeeSensitiveInfo instance and associate it with the employee
-        # buggy code dont use im fixing it soon.
+        # Create a new EmployeeSensitiveInfo instance and associate it with the employee
         new_sensitive_info = EmployeeSensitiveInfo(
             employeeID=new_employee.employeeID,
-            password=bcrypt.hashpw(password, bcrypt.gensalt()),
-            # SSN=bcrypt.generate_password_hash(ssn),
+            password=hashed_password,
             SSN=ssn,
             driverID=driverID,
             lastModified=datetime.now()
         )
         db.session.add(new_sensitive_info)
         db.session.commit()
+        
         return jsonify({'message': 'Employee account created successfully'}), 201
     except Exception as e:
         # Rollback the session in case of any error
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An error occurred while creating the employee account.'}), 500
+
 
 
 @app.route('/api/employees/technicians', methods=['GET'])
