@@ -7,10 +7,17 @@ from sqlalchemy import Enum, ForeignKey
 # Defined SQLAlchemy models to represent database tables
 
 
-class Cars(db.Model):
+class CarVINs(db.Model):
+    __tablename__ = 'CarVINs'
+    itemID = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    VIN_carID = db.Column(db.String(17), unique=True)
+    purchase_status = db.Column(Enum('Dealership', 'Outside Dealership'))
+
+
+class CarInfo(db.Model):
     # cars table model
     __tablename__ = 'Cars'
-    VIN_carID = db.Column(db.String(17), primary_key=True)
+    VIN_carID = db.Column(db.String(17), )
     make = db.Column(db.String(50))
     model = db.Column(db.String(50))
     body = db.Column(db.String(50))
@@ -64,6 +71,7 @@ class ServiceAppointment(db.Model):
     appointment_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     memberID = db.Column(db.Integer, ForeignKey('Member.memberID'))
     serviceID = db.Column(db.Integer, ForeignKey('Services.serviceID'))
+    VIN_carID = db.Column(db.String(17), ForeignKey('CarVINs.VIN_carID'))  # new for service Appointments
     appointment_date = db.Column(db.DATE)
     comments = db.Column(db.TEXT)
     status = db.Column(Enum('Scheduled', 'Done'))

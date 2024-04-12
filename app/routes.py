@@ -53,15 +53,15 @@ def vehicle_information():
     search_query = request.args.get('search_query')
     if search_query:
         # Query the database for cars matching the search query
-        cars_info = db.session.query(Cars).filter(
+        cars_info = db.session.query(CarInfo).filter(
             db.or_(
-                Cars.make.ilike(f'%{search_query}%'),
-                Cars.model.ilike(f'%{search_query}%')
+                CarInfo.make.ilike(f'%{search_query}%'),
+                CarInfo.model.ilike(f'%{search_query}%')
             )
         ).all()
     else:
         # If no search query provided, retrieve all vehicles
-        cars_info = Cars.query.all()
+        cars_info = CarInfo.query.all()
 
     # Convert the query result to a list of dictionaries
     cars_info_dicts = [car.__dict__ for car in cars_info]
@@ -77,7 +77,7 @@ def vehicle_information():
 # TESTCASE: DONE
 def vehicle():
     VIN_carID = request.args.get('vin')  # get query parameter id
-    vehicle_info = Cars.query.filter_by(VIN_carID=VIN_carID).first()
+    vehicle_info = CarInfo.query.filter_by(VIN_carID=VIN_carID).first()
     if vehicle_info:
         vehicle_info = {
             'VIN_carID': vehicle_info.VIN_carID,
@@ -123,7 +123,7 @@ def add_vehicle():
         price = data.get('price')
 
         # new vehicle record inserted into the DB
-        new_vehicle = Cars(
+        new_vehicle = CarInfo(
             VIN_carID=VIN_carID,
             make=make,
             model=model,
@@ -152,7 +152,7 @@ def add_vehicle():
 def random_vehicles():
     try:
         # Get the total number of vehicles in the database
-        total_vehicles = Cars.query.count()
+        total_vehicles = CarInfo.query.count()
 
         # If there are less than 2 vehicles in the database, return an error
         if total_vehicles < 2:
@@ -164,7 +164,7 @@ def random_vehicles():
         # Retrieve information about the two random vehicles
         random_vehicles_info = []
         for index in random_indices:
-            random_vehicle = Cars.query.offset(index).first()
+            random_vehicle = CarInfo.query.offset(index).first()
             random_vehicle_info = {
                 'VIN_carID': random_vehicle.VIN_carID,
                 'make': random_vehicle.make,
@@ -213,9 +213,9 @@ def get_all_employees():
 # TESTCASE: DONE
 def get_test_drives():
     test_drive_info = []
-    test_drives = db.session.query(TestDrive, Member, Cars). \
+    test_drives = db.session.query(TestDrive, Member, CarInfo). \
         join(Member, TestDrive.memberID == Member.memberID). \
-        join(Cars, TestDrive.VIN_carID == Cars.VIN_carID).all()
+        join(CarInfo, TestDrive.VIN_carID == CarInfo.VIN_carID).all()
 
     for test_drive, member, car in test_drives:
         test_drive_info.append({
@@ -540,6 +540,72 @@ def create_member():
         db.session.rollback()
         logging.exception(e)  # Log the exception for debugging purposes
         return jsonify({'error': 'An error occurred while creating the member account.'}), 500
+
+
+@app.route('/api/member/add-own-car', methods=['POST'])
+# this API is used for members to able to add their own cars into the DB, mainly for service center actions
+def add_car():
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access'}), 401
+
+    # Ensure that the employee is a Manager
+    member = Member.query.filter_by(memberID=member_id).first()
+    if member is None:
+        return jsonify({'message': 'Unauthorized access'}), 401
+
+    try:
+        data = request.json
+
+        # data to be passed from the frontend from the customer inputs
+        vin = data.get('VIN_carID')
+        make = data.get('make')
+        model = data.get('model')
+        body = data.get('body')
+        year = data.get('year')
+        color = data.get('color')
+        mileage = data.get('mileage')
+        # details = data.get('details')
+        # description = data.get('description')
+        # viewsOnPage = data.get('viewsOnPage')
+        # pictureLibraryLink = data.get('pictureLibraryLink')
+        # status = data.get('status')
+        # price = data.get('price')
+
+        # Extract other fields as needed
+
+        # check to make sure that there are no other cars with matching VIN
+        existing_vin = CarVINs.query.filter_by(VIN_carID=vin).first()
+        if existing_vin:
+            return jsonify({'message': 'VIN/Car already exists in the database'}), 400
+
+        # Create new CarVINs record
+        new_vin_record = CarVINs(VIN_carID=vin,
+                                 purchase_status='Outside Dealership'
+                                 )
+
+        # Create new CarInfo record
+        new_carInfo_record = CarInfo(
+            VIN_carID=vin,
+            make=make,
+            model=model,
+            body=body,
+            year=year,
+            color=color,
+            mileage=mileage,
+            status='Outside Dealership',
+            viewsOnPage=0,
+            pictureLibraryLink='None',
+            price=0
+        )
+
+        db.session.add(new_vin_record)
+        db.session.add(new_carInfo_record)
+        db.session.commit()
+        return jsonify({'message': 'Car added successfully'}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Error adding car to the database'}), 500
 
 
 @app.route("/@me")

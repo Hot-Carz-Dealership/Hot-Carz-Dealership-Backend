@@ -6,7 +6,7 @@ import pytest
 import string
 import random
 from app import app, db
-from app.models import Cars, Member, MemberSensitiveInfo, Employee, EmployeeSensitiveInfo, ServiceAppointment
+from app.models import CarInfo, Member, MemberSensitiveInfo, Employee, EmployeeSensitiveInfo, ServiceAppointment
 
 
 @pytest.fixture
@@ -119,11 +119,11 @@ def test_add_vehicle(client):
     assert response.status_code == 201
 
     # assert that the vehicle was added successfully and the request truly was commited to the DB
-    assert Cars.query.filter_by(VIN_carID=data['VIN_carID']).first() is not None
+    assert CarInfo.query.filter_by(VIN_carID=data['VIN_carID']).first() is not None
 
     # manually delete the added vehicle after assertions to not pollute real data
     with app.app_context():
-        Cars.query.filter_by(VIN_carID=data['VIN_carID']).delete()
+        CarInfo.query.filter_by(VIN_carID=data['VIN_carID']).delete()
         db.session.commit()
 
 
