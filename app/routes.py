@@ -304,7 +304,6 @@ def update_confirmation():
 #         return jsonify({'error': str(e)}), 500
 
 
-
 # This API creates an employee based on all the values passed from the front to the backend
 @app.route('/api/employees/create', methods=['POST'])
 def create_employee():
@@ -364,13 +363,12 @@ def create_employee():
         )
         db.session.add(new_sensitive_info)
         db.session.commit()
-        
+
         return jsonify({'message': 'Employee account created successfully'}), 201
     except Exception as e:
         # Rollback the session in case of any error
         db.session.rollback()
         return jsonify({'error': 'An error occurred while creating the employee account.'}), 500
-
 
 
 @app.route('/api/employees/technicians', methods=['GET'])
@@ -711,39 +709,42 @@ def delete_service_appointment():
         return jsonify({'error': str(e)}), 500
 
 
-# ----------- ask the professor to clarfy on this requirement on txt docs -----------
+# ----------- ask the professor to clarify on this requirement on txt docs -----------
 @app.route('/api/member/book-service-appointment', methods=['POST'])
-# DO NOT USE THIS API YET
-# this API allows for customer to book a service appointment based on cars bought from the dealership
+# NEW API: this API allows for customer to book a service appointment based on cars bought from the dealership
 def book_service_appointment():
     # check if the member is logged in, if not redirect them to log in
-    member_id = session.get('member_id')
+    member_id = session.get('member_session_id')
     if not member_id:
         return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
 
-    data = request.json
-
-    # data that needs to be sent from the frontend to the backend here
-    member_id = data.get('memberID')
-    appointment_date = data.get('appointment_date')
-    service_name = data.get('service_name')
-    # VIN_carID = data.get('VIN_carID')
-
-    # Check if required data is provided
-    if not member_id or not appointment_date or not service_name:
-        return jsonify({'message': 'Member ID, appointment date, and service name are required'}), 400
-
-    # Check if the member exists
+    # check if the member exists
     member = Member.query.get(member_id)
     if not member:
         return jsonify({'message': 'Member not found'}), 404
 
+    data = request.json
+
+    # data that needs to be sent from the frontend to the backend here
+    appointment_date = data.get('appointment_date')
+    serviceID = data.get('serviceID')  # needed for the customer to choose what service they want on their car
+    VIN_carID = data.get('VIN_carID')
+
+    vehicle = CarVINs.query.filter_by(vehicleID=VIN_carID).first()
+    if not vehicle:
+        return jsonify({
+                           'message': 'Vehicle is not associated with the Member for them to be able to make a service appt. for it.'}), 400
+
+    # Check if required data is provided
+    if not VIN_carID or not appointment_date or not serviceID:
+        return jsonify({'message': 'Car VIN ID, appointment date, and serviceID name are required'}), 400
+
     # Create a new service appointment
     appointment = ServiceAppointment(
         memberID=member_id,
-        # VIN_carID=VIN_carID,
+        VIN_carID=VIN_carID,
+        serviceID=serviceID,
         appointment_date=appointment_date,
-        service_name=service_name,
         status='Scheduled',
         last_modified=datetime.now()
     )
