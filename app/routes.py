@@ -131,6 +131,7 @@ def add_vehicle():
         new_vin = CarVINs(VIN_carID=VIN_carID,
                           purchase_status='Dealership')
         db.session.add(new_vin)
+        db.session.flush()
 
         # Create new CarInfo record
         new_vehicle = CarInfo(
@@ -730,10 +731,10 @@ def book_service_appointment():
     serviceID = data.get('serviceID')  # needed for the customer to choose what service they want on their car
     VIN_carID = data.get('VIN_carID')
 
-    vehicle = CarVINs.query.filter_by(vehicleID=VIN_carID).first()
+    vehicle = CarVINs.query.filter_by(VIN_carID=VIN_carID).first()
     if not vehicle:
         return jsonify({
-                           'message': 'Vehicle is not associated with the Member for them to be able to make a service appt. for it.'}), 400
+            'message': 'Vehicle is not associated with the Member for them to be able to make a service appt. for it.'}), 400
 
     # Check if required data is provided
     if not VIN_carID or not appointment_date or not serviceID:

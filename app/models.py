@@ -16,7 +16,8 @@ class CarVINs(db.Model):
 
 class CarInfo(db.Model):
     # cars table model
-    __tablename__ = 'Cars'
+    __tablename__ = 'CarInfo'
+    itemID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     VIN_carID = db.Column(db.String(17), ForeignKey('CarVINs.itemID'))
     make = db.Column(db.String(50))
     model = db.Column(db.String(50))
