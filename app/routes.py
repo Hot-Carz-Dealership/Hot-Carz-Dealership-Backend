@@ -294,38 +294,43 @@ def update_confirmation():
 #         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/employees/create', methods=['POST'])
+
 # This API creates an employee based on all the values passed from the front to the backend
-# TESTCASE: DONE
+@app.route('/api/employees/create', methods=['POST'])
 def create_employee():
     try:
-        employee_id = session['employee_session_id']
+        # Check if employee is authenticated
+        employee_id = session.get('employee_session_id')
         if employee_id is None:
             return jsonify({'message': 'Unauthorized access'}), 401
 
+        # Check if authenticated employee is a super admin
         super_admin = Employee.query.get(employee_id)
         if not super_admin or super_admin.employeeType != 'superAdmin':
             return jsonify({'message': 'Only SuperAdmins can create employee accounts'}), 403
 
         data = request.json
-        # data needed to be passed from the frontend to the backend
+        # Data needed to be passed from the frontend to the backend
         first_name = data.get('first_name')
         last_name = data.get('last_name')
         email = data.get('email')
         phone = data.get('phone')
         address = data.get('address')
         employee_type = data.get('employeeType')
-        password = data.get('password')
+        password = data.get('password')  # Ensure password is retrieved as bytes
         driverID = data.get('driverID')
         ssn = data.get('SSN')
 
-        # email already exists, we cannot have duplicate employees
+        # Check if email already exists, we cannot have duplicate employees
         if Employee.query.filter_by(email=email).first():
             return jsonify({'message': 'Email already exists'}), 400
 
-        # ensures that superAdmins can only create Manager or Technician accounts
-        if employee_type != 'Manager' or employee_type != 'Technician':
+        # Ensure that superAdmins can only create Manager or Technician accounts
+        if employee_type not in ['Manager', 'Technician']:
             return jsonify({'message': 'Only Manager or Technician accounts can be created by SuperAdmins'}), 400
+
+        # Hash the password
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
         # Create a new employee object/record
         new_employee = Employee(
@@ -339,23 +344,23 @@ def create_employee():
         db.session.add(new_employee)
         db.session.flush()
 
-        # added a new create EmployeeSensitiveInfo instance and associate it with the employee
-        # buggy code dont use im fixing it soon.
+        # Create a new EmployeeSensitiveInfo instance and associate it with the employee
         new_sensitive_info = EmployeeSensitiveInfo(
             employeeID=new_employee.employeeID,
-            password=bcrypt.hashpw(password, bcrypt.gensalt()),
-            # SSN=bcrypt.generate_password_hash(ssn),
+            password=hashed_password,
             SSN=ssn,
             driverID=driverID,
             lastModified=datetime.now()
         )
         db.session.add(new_sensitive_info)
         db.session.commit()
+        
         return jsonify({'message': 'Employee account created successfully'}), 201
     except Exception as e:
         # Rollback the session in case of any error
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An error occurred while creating the employee account.'}), 500
+
 
 
 @app.route('/api/employees/technicians', methods=['GET'])
@@ -463,9 +468,8 @@ def get_all_members():
 #         return jsonify({'error': str(e)}), 500
 
 
-# This API creates an employee based on the information passed from the front end to the backend (here)
+# This API creates a member account based on the information passed from the front end to the backend (here)
 @app.route('/api/members/create', methods=['POST'])
-# TESTCASE: DONE
 def create_member():
     try:
         data = request.json
@@ -477,43 +481,47 @@ def create_member():
         phone = data.get('phone')
         driverID = data.get('driverID')
         username = data.get('username')
-        password = data.get('password')
+        password = data.get('password')  # Ensure password is retrieved as bytes
         address = data.get('address')
         state = data.get('state')
         zipcode = data.get('zipcode')
 
-        # Create a new Member object
-        new_member = Member(first_name=first_name,
-                            last_name=last_name,
-                            email=email,
-                            phone=phone,
-                            address=address,
-                            state=state,
-                            zipcode=zipcode,
-                            join_date=datetime.now()
-                            )
+        # Hash the password
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
-        # adds a new value Member value into the DB
+        # Create a new Member object
+        new_member = Member(
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            phone=phone,
+            address=address,
+            state=state,
+            zipcode=zipcode,
+            join_date=datetime.now()
+        )
+
+        # Add the new member to the database session
         db.session.add(new_member)
-        db.session.flush()  # HOLY LINE DUDE, makes it so that we can grab the memberID from the same session before commiting all changes
+        db.session.flush()  # Allows accessing the memberID before committing all changes
 
         # Create a new MemberSensitiveInfo object and associate it with the new member
         new_sensitive_info = MemberSensitiveInfo(
             memberID=new_member.memberID,
             username=username,
-            password=bcrypt.hashpw(password, bcrypt.gensalt()),
+            password=hashed_password,
             SSN="No SSN Inserted with Associated Member Account.",
             driverID=driverID
         )
 
-        # adds the new sensitive info to the database session
+        # Add the new sensitive info to the database session
         db.session.add(new_sensitive_info)
         db.session.commit()
 
-        # Start a session for the new member for better User experience, LMK if it works
+        # Start a session for the new member for better User experience
         session['member_session_id'] = new_member.memberID
 
-        # information to return based on the newly created member
+        # Information to return based on the newly created member
         member_info = {
             'memberID': new_member.memberID,
             'first_name': new_member.first_name,
@@ -530,8 +538,8 @@ def create_member():
     except Exception as e:
         # Rollback the session in case of any exception
         db.session.rollback()
-        logging.exception(e)
-        return jsonify({'error': str(e)}), 500
+        logging.exception(e)  # Log the exception for debugging purposes
+        return jsonify({'error': 'An error occurred while creating the member account.'}), 500
 
 
 @app.route("/@me")
