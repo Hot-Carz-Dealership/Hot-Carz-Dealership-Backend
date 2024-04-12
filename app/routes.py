@@ -119,10 +119,20 @@ def add_vehicle():
         description = data.get('description')
         viewsOnPage = data.get('viewsOnPage')
         pictureLibraryLink = data.get('pictureLibraryLink')
-        status = data.get('status')
+        # status = data.get('status')
         price = data.get('price')
 
-        # new vehicle record inserted into the DB
+        # check if there are any duplicates before inserting
+        existing_vin = CarVINs.query.filter_by(VIN_carID=VIN_carID).first()
+        if existing_vin:
+            return jsonify({'error': 'Vehicle with VIN already exists'}), 400
+
+        # Create new CarVINs record
+        new_vin = CarVINs(VIN_carID=VIN_carID,
+                          purchase_status='Dealership')
+        db.session.add(new_vin)
+
+        # Create new CarInfo record
         new_vehicle = CarInfo(
             VIN_carID=VIN_carID,
             make=make,
@@ -135,7 +145,7 @@ def add_vehicle():
             description=description,
             viewsOnPage=viewsOnPage,
             pictureLibraryLink=pictureLibraryLink,
-            status=status,
+            status='new',
             price=price
         )
         db.session.add(new_vehicle)
@@ -543,7 +553,7 @@ def create_member():
 
 
 @app.route('/api/member/add-own-car', methods=['POST'])
-# this API is used for members to able to add their own cars into the DB, mainly for service center actions
+# this API is used for members to be able to add their own cars into the DB, mainly for service center actions
 def add_car():
     member_id = session.get('member_session_id')
     if not member_id:
