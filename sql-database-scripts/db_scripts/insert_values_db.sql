@@ -1,6 +1,20 @@
 USE dealership_backend;
 
-INSERT INTO Cars (VIN_carID, make, model, body, year, color, mileage, details, description, viewsOnPage, pictureLibraryLink, status, price) VALUES
+INSERT INTO CarVINs(VIN_carID, purchase_status) VALUES
+('SALSF2D47CA305941', 'Dealership'),
+('2G4GU5GV1D9224709', 'Dealership'),
+('WAUEG94F16N011182', 'Dealership'),
+('1G4HP57M79U336833', 'Dealership'),
+('2T1KE4EEXDC541493', 'Dealership'),
+('WDDHF2EBXBA659567', 'Dealership'),
+('WVWED7AJ7CW030690', 'Dealership'),
+('WBSBR93441E328102', 'Dealership'),
+('3VW517AT2FM570847', 'Dealership'),
+('1G6DJ5ED0B0941154', 'Dealership'),
+('1G4HP52KX44657084', 'Dealership');
+
+
+INSERT INTO CarInfo (VIN_carID, make, model, body, year, color, mileage, details, description, viewsOnPage, pictureLibraryLink, status, price) VALUES
 ('SALSF2D47CA305941', 'Ford', 'Mustang', 'Coupe', 2023, 'Orange', 35198, 'An iconic American muscle car known for its sleek design and powerful performance.', 'The Ford Mustang is a two-door sports car featuring a sleek and aerodynamic exterior design, with a powerful engine lineup ranging from fuel-efficient options to high-performance V8s, coupled with advanced technology and comfort features, making it a versatile and thrilling driving machine beloved by enthusiasts worldwide.',  7, 'https://pngimg.com/uploads/mustang/mustang_PNG15.png', 'being-watched', 81576.00),
 ('2G4GU5GV1D9224709', 'Ford', 'Focus', 'Hatchback', 2024, 'Blue', 6980, 'The Ford Focus is a versatile compact car renowned for its fuel efficiency, agile handling, and practical design, making it a popular choice for urban commuters and small families alike.', 'The Ford Focus is a compact car designed with a focus on efficiency and versatility, featuring a sleek exterior design complemented by a comfortable and well-equipped interior, offering ample space for passengers and cargo, while its responsive handling and range of available engines provide a dynamic driving experience suited for city streets or long highway journeys.',  1, 'https://pngimg.com/uploads/ford/ford_PNG12204.png', 'low-mileage', 65203.00),
 ('WAUEG94F16N011182', 'Toyota', 'RAV4', 'SUV', 2023, 'Silver', 22872, 'The Toyota RAV4 is a highly versatile compact SUV renowned for its reliability, practicality, and impressive off-road capability, making it a top choice for adventurous families and urban commuters alike.', 'The Toyota RAV4 stands as a stalwart in the compact SUV segment, boasting a sleek and modern design coupled with a spacious interior, advanced safety features, and optional all-wheel drive, making it a dependable and versatile choice for both urban and off-road adventures, while its fuel-efficient engines ensure economical journeys for drivers around the globe.',  2, 'https://alcf.s3.us-west-1.amazonaws.com/_custom/2023/toyota/rav4/2023-toyota-rav4-main.png', 'being-watched', 35955.00),
@@ -132,11 +146,11 @@ INSERT INTO Services(service_name) VALUES
 ('Tire Rotation'),
 ('Battery Replacement');
 
-INSERT INTO ServiceAppointment (memberID, serviceID, appointment_date, status, last_modified) VALUES
-(1, 1, '2024-04-10 14:00:00', 'Scheduled', NOW()),
-(2, 2, '2024-04-11 15:00:00', 'Scheduled', NOW()),
-(3, 3, '2024-04-12 16:00:00', 'Scheduled', NOW()),
-(4, 4, '2024-04-13 17:00:00', 'Scheduled', NOW());
+INSERT INTO ServiceAppointment (memberID, serviceID,  VIN_carID, appointment_date, status, last_modified) VALUES
+(1, 1, 'SALSF2D47CA305941', '2024-04-10 14:00:00', 'Scheduled', NOW()),
+(2, 2, 'WAUEG94F16N011182', '2024-04-11 15:00:00', 'Scheduled', NOW()),
+(5, 3, '1G4HP52KX44657084', '2024-04-12 16:00:00', 'Scheduled', NOW()),
+(4, 4, '3VW517AT2FM570847', '2024-04-13 17:00:00', 'Scheduled', NOW());
 
 INSERT INTO ServiceAppointmentEmployeeAssignments (appointment_id, employeeID) VALUES
 (1,2),

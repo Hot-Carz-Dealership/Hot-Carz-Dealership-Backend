@@ -72,11 +72,12 @@ class ServiceAppointment(db.Model):
     appointment_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     memberID = db.Column(db.Integer, ForeignKey('Member.memberID'))
     serviceID = db.Column(db.Integer, ForeignKey('Services.serviceID'))
-    VIN_carID = db.Column(db.String(17), ForeignKey(' CarVINs.VIN_carID'))  # new for service Appointments
+    VIN_carID = db.Column(db.String(17), ForeignKey('CarVINs.VIN_carID'))  # new for service Appointments
     appointment_date = db.Column(db.DATE)
     comments = db.Column(db.TEXT)
     status = db.Column(Enum('Scheduled', 'Done'))
-    last_modified = db.Column(db.TIMESTAMP, server_default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    last_modified = db.Column(db.TIMESTAMP, server_default=db.func.current_timestamp(),
+                              onupdate=db.func.current_timestamp())
 
 
 class ServiceAppointmentEmployeeAssignments(db.Model):
