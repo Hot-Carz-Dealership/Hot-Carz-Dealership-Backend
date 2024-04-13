@@ -52,8 +52,9 @@ def addon_information():
 def vehicle_information():
     search_query = request.args.get('search_query')
     if search_query:
-        # Query the database for cars matching the search query
-        cars_info = db.session.query(CarInfo).filter(
+        # match only with cars that are from only the dealership and return them
+        cars_info = db.session.query(CarInfo).join(CarVINs).filter(
+            CarVINs.purchase_status == 'Dealership',
             db.or_(
                 CarInfo.make.ilike(f'%{search_query}%'),
                 CarInfo.model.ilike(f'%{search_query}%')
@@ -77,7 +78,8 @@ def vehicle_information():
 # TESTCASE: DONE
 def vehicle():
     VIN_carID = request.args.get('vin')  # get query parameter id
-    vehicle_info = CarInfo.query.filter_by(VIN_carID=VIN_carID).first()
+    vehicle_info = CarInfo.query.join(CarVINs).filter(CarVINs.VIN_carID == VIN_carID,
+                                                      CarVINs.purchase_status == 'Dealership').first()  # used to ensure that the cars shown are from the Dealership only and now customer private owned
     if vehicle_info:
         vehicle_info = {
             'VIN_carID': vehicle_info.VIN_carID,
@@ -162,12 +164,12 @@ def add_vehicle():
 # TESTCASE: DONE
 def random_vehicles():
     try:
-        # Get the total number of vehicles in the database
-        total_vehicles = CarInfo.query.count()
+        # Get the total number of vehicles in the database from 'Dealership'
+        total_vehicles = CarInfo.query.join(CarVINs).filter(CarVINs.purchase_status == 'Dealership').count()
 
-        # If there are less than 2 vehicles in the database, return an error
+        # If there are less than 2 vehicles in the database from 'Dealership', return an error
         if total_vehicles < 2:
-            return jsonify({'error': 'Insufficient vehicles in the database to select random ones.'}), 404
+            return jsonify({'error': 'Insufficient vehicles in the dealership to select random ones.'}), 404
 
         # Generate two random indices within the range of total vehicles
         random_indices = random.sample(range(total_vehicles), 2)
@@ -175,7 +177,8 @@ def random_vehicles():
         # Retrieve information about the two random vehicles
         random_vehicles_info = []
         for index in random_indices:
-            random_vehicle = CarInfo.query.offset(index).first()
+            random_vehicle = CarInfo.query.join(CarVINs).filter(CarVINs.purchase_status == 'Dealership').offset(
+                index).first()
             random_vehicle_info = {
                 'VIN_carID': random_vehicle.VIN_carID,
                 'make': random_vehicle.make,
@@ -196,7 +199,7 @@ def random_vehicles():
         return jsonify(random_vehicles_info), 200
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': str(e)}), 5000
 
 
 @app.route('/api/employees', methods=['GET'])
