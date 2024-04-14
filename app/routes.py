@@ -52,16 +52,17 @@ def addon_information():
 def vehicle_information():
     search_query = request.args.get('search_query')
     if search_query:
-        # Query the database for cars matching the search query
-        cars_info = db.session.query(Cars).filter(
+        # match only with cars that are from only the dealership and return them
+        cars_info = db.session.query(CarInfo).join(CarVINs).filter(
+            CarVINs.purchase_status == 'Dealership',
             db.or_(
-                Cars.make.ilike(f'%{search_query}%'),
-                Cars.model.ilike(f'%{search_query}%')
+                CarInfo.make.ilike(f'%{search_query}%'),
+                CarInfo.model.ilike(f'%{search_query}%')
             )
         ).all()
     else:
         # If no search query provided, retrieve all vehicles
-        cars_info = Cars.query.all()
+        cars_info = CarInfo.query.all()
 
     # Convert the query result to a list of dictionaries
     cars_info_dicts = [car.__dict__ for car in cars_info]
@@ -77,7 +78,8 @@ def vehicle_information():
 # TESTCASE: DONE
 def vehicle():
     VIN_carID = request.args.get('vin')  # get query parameter id
-    vehicle_info = Cars.query.filter_by(VIN_carID=VIN_carID).first()
+    vehicle_info = CarInfo.query.join(CarVINs).filter(CarVINs.VIN_carID == VIN_carID,
+                                                      CarVINs.purchase_status == 'Dealership').first()  # used to ensure that the cars shown are from the Dealership only and now customer private owned
     if vehicle_info:
         vehicle_info = {
             'VIN_carID': vehicle_info.VIN_carID,
@@ -119,11 +121,22 @@ def add_vehicle():
         description = data.get('description')
         viewsOnPage = data.get('viewsOnPage')
         pictureLibraryLink = data.get('pictureLibraryLink')
-        status = data.get('status')
+        # status = data.get('status')
         price = data.get('price')
 
-        # new vehicle record inserted into the DB
-        new_vehicle = Cars(
+        # check if there are any duplicates before inserting
+        existing_vin = CarVINs.query.filter_by(VIN_carID=VIN_carID).first()
+        if existing_vin:
+            return jsonify({'error': 'Vehicle with VIN already exists'}), 400
+
+        # Create new CarVINs record
+        new_vin = CarVINs(VIN_carID=VIN_carID,
+                          purchase_status='Dealership')
+        db.session.add(new_vin)
+        db.session.flush()
+
+        # Create new CarInfo record
+        new_vehicle = CarInfo(
             VIN_carID=VIN_carID,
             make=make,
             model=model,
@@ -135,7 +148,7 @@ def add_vehicle():
             description=description,
             viewsOnPage=viewsOnPage,
             pictureLibraryLink=pictureLibraryLink,
-            status=status,
+            status='new',
             price=price
         )
         db.session.add(new_vehicle)
@@ -151,12 +164,12 @@ def add_vehicle():
 # TESTCASE: DONE
 def random_vehicles():
     try:
-        # Get the total number of vehicles in the database
-        total_vehicles = Cars.query.count()
+        # Get the total number of vehicles in the database from 'Dealership'
+        total_vehicles = CarInfo.query.join(CarVINs).filter(CarVINs.purchase_status == 'Dealership').count()
 
-        # If there are less than 2 vehicles in the database, return an error
+        # If there are less than 2 vehicles in the database from 'Dealership', return an error
         if total_vehicles < 2:
-            return jsonify({'error': 'Insufficient vehicles in the database to select random ones.'}), 404
+            return jsonify({'error': 'Insufficient vehicles in the dealership to select random ones.'}), 404
 
         # Generate two random indices within the range of total vehicles
         random_indices = random.sample(range(total_vehicles), 2)
@@ -164,7 +177,8 @@ def random_vehicles():
         # Retrieve information about the two random vehicles
         random_vehicles_info = []
         for index in random_indices:
-            random_vehicle = Cars.query.offset(index).first()
+            random_vehicle = CarInfo.query.join(CarVINs).filter(CarVINs.purchase_status == 'Dealership').offset(
+                index).first()
             random_vehicle_info = {
                 'VIN_carID': random_vehicle.VIN_carID,
                 'make': random_vehicle.make,
@@ -185,7 +199,7 @@ def random_vehicles():
         return jsonify(random_vehicles_info), 200
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': str(e)}), 5000
 
 
 @app.route('/api/employees', methods=['GET'])
@@ -213,9 +227,9 @@ def get_all_employees():
 # TESTCASE: DONE
 def get_test_drives():
     test_drive_info = []
-    test_drives = db.session.query(TestDrive, Member, Cars). \
+    test_drives = db.session.query(TestDrive, Member, CarInfo). \
         join(Member, TestDrive.memberID == Member.memberID). \
-        join(Cars, TestDrive.VIN_carID == Cars.VIN_carID).all()
+        join(CarInfo, TestDrive.VIN_carID == CarInfo.VIN_carID).all()
 
     for test_drive, member, car in test_drives:
         test_drive_info.append({
@@ -294,7 +308,6 @@ def update_confirmation():
 #         return jsonify({'error': str(e)}), 500
 
 
-
 # This API creates an employee based on all the values passed from the front to the backend
 @app.route('/api/employees/create', methods=['POST'])
 def create_employee():
@@ -354,13 +367,12 @@ def create_employee():
         )
         db.session.add(new_sensitive_info)
         db.session.commit()
-        
+
         return jsonify({'message': 'Employee account created successfully'}), 201
     except Exception as e:
         # Rollback the session in case of any error
         db.session.rollback()
         return jsonify({'error': 'An error occurred while creating the employee account.'}), 500
-
 
 
 @app.route('/api/employees/technicians', methods=['GET'])
@@ -542,6 +554,72 @@ def create_member():
         return jsonify({'error': 'An error occurred while creating the member account.'}), 500
 
 
+@app.route('/api/member/add-own-car', methods=['POST'])
+# this API is used for members to be able to add their own cars into the DB, mainly for service center actions
+def add_car():
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access'}), 401
+
+    # Ensure that the employee is a Manager
+    member = Member.query.filter_by(memberID=member_id).first()
+    if member is None:
+        return jsonify({'message': 'Unauthorized access'}), 401
+
+    try:
+        data = request.json
+
+        # data to be passed from the frontend from the customer inputs
+        vin = data.get('VIN_carID')
+        make = data.get('make')
+        model = data.get('model')
+        body = data.get('body')
+        year = data.get('year')
+        color = data.get('color')
+        mileage = data.get('mileage')
+        # details = data.get('details')
+        # description = data.get('description')
+        # viewsOnPage = data.get('viewsOnPage')
+        # pictureLibraryLink = data.get('pictureLibraryLink')
+        # status = data.get('status')
+        # price = data.get('price')
+
+        # Extract other fields as needed
+
+        # check to make sure that there are no other cars with matching VIN
+        existing_vin = CarVINs.query.filter_by(VIN_carID=vin).first()
+        if existing_vin:
+            return jsonify({'message': 'VIN/Car already exists in the database'}), 400
+
+        # Create new CarVINs record
+        new_vin_record = CarVINs(VIN_carID=vin,
+                                 purchase_status='Outside Dealership'
+                                 )
+
+        # Create new CarInfo record
+        new_carInfo_record = CarInfo(
+            VIN_carID=vin,
+            make=make,
+            model=model,
+            body=body,
+            year=year,
+            color=color,
+            mileage=mileage,
+            status='Outside Dealership',
+            viewsOnPage=0,
+            pictureLibraryLink='None',
+            price=0
+        )
+
+        db.session.add(new_vin_record)
+        db.session.add(new_carInfo_record)
+        db.session.commit()
+        return jsonify({'message': 'Car added successfully'}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Error adding car to the database'}), 500
+
+
 @app.route("/@me")
 # Gets user for active session for Members
 def get_current_user():
@@ -635,39 +713,42 @@ def delete_service_appointment():
         return jsonify({'error': str(e)}), 500
 
 
-# ----------- ask the professor to clarfy on this requirement on txt docs -----------
+# ----------- ask the professor to clarify on this requirement on txt docs -----------
 @app.route('/api/member/book-service-appointment', methods=['POST'])
-# DO NOT USE THIS API YET
-# this API allows for customer to book a service appointment based on cars bought from the dealership
+# NEW API: this API allows for customer to book a service appointment based on cars bought from the dealership
 def book_service_appointment():
     # check if the member is logged in, if not redirect them to log in
-    member_id = session.get('member_id')
+    member_id = session.get('member_session_id')
     if not member_id:
         return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
 
-    data = request.json
-
-    # data that needs to be sent from the frontend to the backend here
-    member_id = data.get('memberID')
-    appointment_date = data.get('appointment_date')
-    service_name = data.get('service_name')
-    # VIN_carID = data.get('VIN_carID')
-
-    # Check if required data is provided
-    if not member_id or not appointment_date or not service_name:
-        return jsonify({'message': 'Member ID, appointment date, and service name are required'}), 400
-
-    # Check if the member exists
+    # check if the member exists
     member = Member.query.get(member_id)
     if not member:
         return jsonify({'message': 'Member not found'}), 404
 
+    data = request.json
+
+    # data that needs to be sent from the frontend to the backend here
+    appointment_date = data.get('appointment_date')
+    serviceID = data.get('serviceID')  # needed for the customer to choose what service they want on their car
+    VIN_carID = data.get('VIN_carID')
+
+    vehicle = CarVINs.query.filter_by(VIN_carID=VIN_carID).first()
+    if not vehicle:
+        return jsonify({
+            'message': 'Vehicle is not associated with the Member for them to be able to make a service appt. for it.'}), 400
+
+    # Check if required data is provided
+    if not VIN_carID or not appointment_date or not serviceID:
+        return jsonify({'message': 'Car VIN ID, appointment date, and serviceID name are required'}), 400
+
     # Create a new service appointment
     appointment = ServiceAppointment(
         memberID=member_id,
-        # VIN_carID=VIN_carID,
+        VIN_carID=VIN_carID,
+        serviceID=serviceID,
         appointment_date=appointment_date,
-        service_name=service_name,
         status='Scheduled',
         last_modified=datetime.now()
     )

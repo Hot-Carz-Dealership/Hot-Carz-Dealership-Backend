@@ -16,15 +16,25 @@ DROP TABLE IF EXISTS ServiceAppointment;
 DROP TABLE IF EXISTS Financing;
 DROP TABLE IF EXISTS TestDrive;
 DROP TABLE IF EXISTS Member;
-DROP TABLE IF EXISTS Cars;
+DROP TABLE IF EXISTS CarVINs;
+DROP TABLE IF EXISTS CarInfo;
 DROP TABLE IF EXISTS Services;
 DROP TABLE IF EXISTS MemberAuditLog;
 DROP TABLE IF EXISTS EmployeeAuditLog;
 DROP TABLE IF EXISTS ServiceAppointmentEmployeeAssignments;
 
-CREATE TABLE IF NOT EXISTS Cars (
+
+CREATE TABLE IF NOT EXISTS CarVINs (
+    # needed to differentiate between the car brought into the service center being bought from outside ot inside the dealership
+    itemID INT AUTO_INCREMENT PRIMARY KEY,
+    VIN_carID VARCHAR(17) UNIQUE,
+    purchase_status ENUM ('Dealership', 'Outside Dealership')
+);
+
+CREATE TABLE IF NOT EXISTS CarInfo (  # prev. known as  Cars
     # this table is meant to serve the purpose of containing information on the cars stored in the dealership for sale
-    VIN_carID VARCHAR(17) PRIMARY KEY,
+    itemID INT AUTO_INCREMENT PRIMARY KEY,
+    VIN_carID VARCHAR(17),
     make VARCHAR(50),
     model VARCHAR(50),
     body VARCHAR(50),
@@ -35,8 +45,9 @@ CREATE TABLE IF NOT EXISTS Cars (
     description TEXT,
     viewsOnPage INT,
     pictureLibraryLink TEXT,
-    status ENUM('new', 'sold', 'low-mileage', 'being-watched'),
-    price DECIMAL(10, 2)
+    status ENUM('new', 'sold', 'low-mileage', 'being-watched', 'Outside Dealership'),
+    price DECIMAL(10, 2),
+    FOREIGN KEY (VIN_carID) REFERENCES CarVINs(VIN_carID)
 );
 
 CREATE TABLE IF NOT EXISTS Member (
@@ -60,7 +71,7 @@ CREATE TABLE IF NOT EXISTS TestDrive (
     appointment_date TIMESTAMP,
     confirmation ENUM ('Confirmed', 'Denied', 'Cancelled', 'Awaiting Confirmation') default NULL,
     FOREIGN KEY (memberID) REFERENCES Member(memberID),
-    FOREIGN KEY (VIN_carID) REFERENCES Cars(VIN_carID)
+    FOREIGN KEY (VIN_carID) REFERENCES CarInfo(VIN_carID)
 );
 
 CREATE TABLE IF NOT EXISTS Employee (
@@ -107,13 +118,15 @@ CREATE TABLE IF NOT EXISTS ServiceAppointment (
     -- this table is meant to store information on the service appointments made
     appointment_id INT AUTO_INCREMENT PRIMARY KEY,
     memberID INT,
+    VIN_carID VARCHAR(17),
     serviceID INT,
     appointment_date TIMESTAMP,
     comments TEXT,
     status ENUM ('Scheduled', 'Done'),
     last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (memberID) REFERENCES Member(memberID),
-    FOREIGN KEY (serviceID) REFERENCES Services(serviceID)
+    FOREIGN KEY (serviceID) REFERENCES Services(serviceID),
+    FOREIGN KEY (VIN_carID) REFERENCES CarInfo(VIN_carID)
 );
 
 # CREATE TABLE IF NOT EXISTS ServiceAppointment (
@@ -192,7 +205,7 @@ CREATE TABLE IF NOT EXISTS Purchases (
     memberID INT,
     confirmationNumber VARCHAR(13) UNIQUE,
     FOREIGN KEY (bidID) REFERENCES Bids(bidID),
-    FOREIGN KEY (VIN_carID) REFERENCES Cars(VIN_carID),
+    FOREIGN KEY (VIN_carID) REFERENCES CarInfo(VIN_carID),
     FOREIGN KEY (memberID) REFERENCES Member(memberID)
 );
 
