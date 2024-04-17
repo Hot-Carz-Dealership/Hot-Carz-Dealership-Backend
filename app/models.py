@@ -18,7 +18,7 @@ class CarInfo(db.Model):
     # cars table model
     __tablename__ = 'CarInfo'
     itemID = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    VIN_carID = db.Column(db.String(17), ForeignKey('CarVINs.itemID'))
+    VIN_carID = db.Column(db.String(17), ForeignKey('CarVINs.VIN_carID'))  # Changed ForeignKey reference
     make = db.Column(db.String(50))
     model = db.Column(db.String(50))
     body = db.Column(db.String(50))
