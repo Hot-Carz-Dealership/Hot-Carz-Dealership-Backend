@@ -24,11 +24,27 @@ DROP TABLE IF EXISTS EmployeeAuditLog;
 DROP TABLE IF EXISTS ServiceAppointmentEmployeeAssignments;
 
 
+CREATE TABLE IF NOT EXISTS Member (
+    -- this table is meant to serve the purpose of containing basic information of the dealership memebrs
+    memberID INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    email VARCHAR(100),
+    phone VARCHAR(20),
+    address VARCHAR(255),
+    city VARCHAR(20),
+    state VARCHAR(2),
+    zipcode VARCHAR(5),
+    join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS CarVINs (
     # needed to differentiate between the car brought into the service center being bought from outside ot inside the dealership
     itemID INT AUTO_INCREMENT PRIMARY KEY,
     VIN_carID VARCHAR(17) UNIQUE,
-    purchase_status ENUM ('Dealership - Not Purchased', 'Dealership - Purchased', 'Outside Dealership')
+    purchase_status ENUM ('Dealership - Not Purchased', 'Dealership - Purchased', 'Outside Dealership'),
+    memberID INT,
+    FOREIGN KEY (memberID) REFERENCES Member(memberID)
 );
 -- will have to change endpoints to ensure that carVins are valid in purchases and such with key relationships if their
 -- purchase status is 'Dealership - Purchased'
@@ -51,20 +67,6 @@ CREATE TABLE IF NOT EXISTS CarInfo (  # prev. known as  Cars
     status ENUM('new', 'sold', 'low-mileage', 'being-watched', 'Outside Dealership'),
     price DECIMAL(10, 2),
     FOREIGN KEY (VIN_carID) REFERENCES CarVINs(VIN_carID)
-);
-
-CREATE TABLE IF NOT EXISTS Member (
-    -- this table is meant to serve the purpose of containing basic information of the dealership memebrs
-    memberID INT AUTO_INCREMENT PRIMARY KEY,
-    first_name VARCHAR(100),
-    last_name VARCHAR(100),
-    email VARCHAR(100),
-    phone VARCHAR(20),
-    address VARCHAR(255),
-    city VARCHAR(20),
-    state VARCHAR(2),
-    zipcode VARCHAR(5),
-    join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS TestDrive (
@@ -98,7 +100,7 @@ CREATE TABLE IF NOT EXISTS EmployeeSensitiveInfo (
     employeeID INT,
     password VARCHAR(255),
     SSN VARCHAR(255) UNIQUE,
-    driverID VARCHAR(255),
+    driverID VARCHAR(255) UNIQUE,
     lastModified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (employeeID) REFERENCES Employee(employeeID)
 );
@@ -111,7 +113,6 @@ CREATE TABLE IF NOT EXISTS MemberSensitiveInfo (
     username VARCHAR(50) UNIQUE,
     password TEXT,
     driverID VARCHAR(15) UNIQUE,
-    cardInfo TEXT, -- this does literally nothing but im gonna keep it here because it just works and i don't wanna keep breaking stuff rn
     lastModified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (memberID) REFERENCES Member(memberID)
 );
@@ -132,8 +133,8 @@ CREATE TABLE IF NOT EXISTS ServiceAppointment (
     status ENUM ('Scheduled', 'Done', 'Cancelled'),
     last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (memberID) REFERENCES Member(memberID),
-    FOREIGN KEY (serviceID) REFERENCES Services(serviceID),
-    FOREIGN KEY (VIN_carID) REFERENCES CarInfo(VIN_carID)
+    FOREIGN KEY (VIN_carID) REFERENCES CarVINs(VIN_carID),
+    FOREIGN KEY (serviceID) REFERENCES Services(serviceID)
 );
 
 CREATE TABLE IF NOT EXISTS ServiceAppointmentEmployeeAssignments (
@@ -153,7 +154,7 @@ CREATE TABLE IF NOT EXISTS Financing (
     loan_total INT,
     down_payment INT,
     percentage INT,
-    monthly_sum INT, # how much they have to pay for per month
+    monthly_payment_sum INT, # how much they have to pay for per month
     remaining_months INT,
     FOREIGN KEY (memberID) REFERENCES Member(memberID)
 );

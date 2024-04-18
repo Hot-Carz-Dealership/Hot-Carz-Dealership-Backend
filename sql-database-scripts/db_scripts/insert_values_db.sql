@@ -1,96 +1,109 @@
 USE dealership_backend;
 
+INSERT INTO Member (first_name, last_name, email, phone, address, city, state, zipcode, join_date) VALUES
+('John', 'Doe', 'john.doe@example.com', '1234567890', '123 Main St', 'Los Angeles', 'CA', '12345', '2024-04-02 15:00:00'),
+('Alice', 'Smith', 'alice.smith@example.com', '2345678901', '456 Elm St', 'New York City', 'NY', '23456', '2024-03-02 11:00:00'),
+('Bob', 'Johnson', 'bob.johnson@example.com', '3456789012', '789 Oak St', 'Houston', 'TX', '34567', '2024-03-03 12:00:00'),
+('Emma', 'Brown', 'emma.brown@example.com', '4567890123', '101 Pine St', 'Miami', 'FL', '45678', '2024-03-03 13:00:00'),
+('Michael', 'Davis', 'michael.davis@example.com', '5678901234', '202 Elm St', 'San Francisco', 'CA', '56789', '2024-04-03 14:00:00'),
+('Sarah', 'Wilson', 'sarah.wilson@example.com', '6789012345', '303 Maple St', 'Buffalo', 'NY', '67890', '2024-04-05 15:00:00'),
+('David', 'Martinez', 'david.martinez@example.com', '7890123456', '505 Oak St', 'Austin', 'TX', '78901', '2024-04-02 16:00:00'),
+('Michelle', 'Lopez', 'michelle.lopez@example.com', '8901234567', '707 Cedar St', 'Orlando', 'FL', '89012', '2024-04-04 17:00:00'),
+('James', 'Taylor', 'james.taylor@example.com', '9012345678', '909 Pine St', 'San Diego', 'CA', '90123', '2024-04-02 18:00:00'),
+('Emma', 'Garcia', 'emma.garcia@example.com', '0123456789', '111 Walnut St', 'Albany', 'NY', '01234', '2024-04-02 19:00:00'),
+('PLACEHOLDER', 'PLACEHOLDER', 'PLACEHOLDER@example.com', '0000000000', '123 Sesame Street', 'Cincinnati', 'OH', '00000', NOW());  -- bids has a placeholder for memberID for customers that buy without bidding, this is meant as a placeholder for customer who do not BID ONLY to be referenced in the BID table
+-- add city for the members -> (DONE)
 
-INSERT INTO CarVINs(VIN_carID, purchase_status) VALUES
-('SALSF2D47CA305941', 'Dealership - Not Purchased'), -- cars on the lot
-('2G4GU5GV1D9224709', 'Dealership - Not Purchased'),
-('WAUEG94F16N011182', 'Dealership - Not Purchased'),
-('1G4HP57M79U336833', 'Dealership - Not Purchased'),
-('2T1KE4EEXDC541493', 'Dealership - Not Purchased'),
-('WDDHF2EBXBA659567', 'Dealership - Not Purchased'),
-('WVWED7AJ7CW030690', 'Dealership - Not Purchased'),
-('WBSBR93441E328102', 'Dealership - Not Purchased'),
-('3VW517AT2FM570847', 'Dealership - Not Purchased'),
-('1G6DJ5ED0B0941154', 'Dealership - Not Purchased'),
-('1G4HP52KX44657084', 'Dealership - Not Purchased'),
-('JN8AZ2KRXAT240808', 'Dealership - Not Purchased'),
-('3C4PDCABXCT526082', 'Dealership - Not Purchased'),
-('WA1DKBFP7BA136094', 'Dealership - Not Purchased'),
-('2T1KE4EE8BC840347', 'Dealership - Not Purchased'),
-('WAUJT54B03N038966', 'Dealership - Not Purchased'),
-('WAUBFBFL5AN763430', 'Dealership - Not Purchased'),
-('SCFBF04B27G426214', 'Dealership - Not Purchased'),
-('5N1AA0NE2FN817354', 'Dealership - Not Purchased'),
-('KNALN4D74F5929503', 'Dealership - Not Purchased'),
-('JTDZN3EU7FJ029990', 'Dealership - Not Purchased'),
-('KM8JT3AB0BU232473', 'Dealership - Not Purchased'),
-('ZHWGU5AU9CL270811', 'Dealership - Not Purchased'),
-('KMHHT6KD5DU114602', 'Dealership - Not Purchased'),
-('ZHWGU5BZ8CL986853', 'Dealership - Not Purchased'),
-('JN1BJ0HP7EM887736', 'Dealership - Not Purchased'),
-('1FT8W3BT0NEA56299', 'Dealership - Not Purchased'),
-('NM0LS7E23J1365784', 'Dealership - Not Purchased'),
-('WA1YD64B23N299062', 'Dealership - Not Purchased'),
-('WBA4J3C56KB000100', 'Dealership - Not Purchased'),
-('4T1BK1EB3EU579953', 'Dealership - Not Purchased'),
-('3D73Y4EL4BG548166', 'Dealership - Not Purchased'),
-('WAUDF48H57A145781', 'Dealership - Not Purchased'),
-('1B3CB3HA6AD530751', 'Dealership - Not Purchased'),
-('5YJYGDEF7DF485512', 'Dealership - Purchased'), -- new spot for Dealership purchased vehicles
-('7YJSKDVF8MF475533', 'Dealership - Purchased'),
-('5YJYCDED8MF475533', 'Dealership - Purchased'),
-('4YJSA1DG9MF395318', 'Dealership - Purchased'),
-('5G3S2DKL1MR150912', 'Dealership - Purchased'),
-('3GTU2NEC7JG152638', 'Dealership - Purchased'),
-('5N1AA0ND2EN467326', 'Dealership - Purchased'),
-('JN1CV6FE1FM347717', 'Dealership - Purchased'),
-('3FA6P0LU7ER984703', 'Dealership - Purchased'),
-('WD3PE8CB6D5769421', 'Dealership - Purchased'),
-('WAUKH98E87A124721', 'Dealership - Purchased'),
-('19UUA66298A039588', 'Dealership - Purchased'),
-('WBADN53481G171888', 'Dealership - Purchased'),
-('SAJWA1EK7EM977306', 'Dealership - Purchased'),
-('WAUJEGF4E87465621', 'Dealership - Purchased'),
-('WBAVA37567N303400', 'Dealership - Purchased'),
-('1C3BC4FBXBN521723', 'Dealership - Purchased'),
-('JH4DC54895S001234', 'Dealership - Purchased'),
-('1FTMF1E85AK857700', 'Dealership - Purchased'),
-('1GYS4DKL7MR225532', 'Dealership - Purchased'),
-('1G4HP54K74U724821', 'Dealership - Purchased'),
-('WAUUFAFH4AN515152', 'Dealership - Purchased'),
-('JTDJTUD38ED022075', 'Dealership - Purchased'), -- add info for tthese into the db for car info bruh
-('1G6DE5EG4A0418636', 'Dealership - Purchased'),
-('1FTEW1E8XAK386177', 'Dealership - Purchased'),
-('WBAAX134X4P941020', 'Dealership - Purchased'),
-('WAUHF78P19A929792', 'Dealership - Purchased'),
-('WBXPA93444W811966', 'Dealership - Purchased'),
-('ZFBCFADH1EZ980832', 'Dealership - Purchased'),
-('WAUNF98P37A160773', 'Dealership - Purchased'),
-('WUATNAFG2EN786809', 'Dealership - Purchased'),
-('1B3CC5FBXAN551956', 'Dealership - Purchased'),
-('1G6DV1EP4F0840180', 'Dealership - Purchased'),
-('1D7RW3BK8BS446576', 'Dealership - Purchased'),
-('JTHKD5BH1C2538310', 'Dealership - Purchased'),
-('WAULT58E03A107692', 'Dealership - Purchased'),
-('SCFEBBAK9EG600978', 'Dealership - Purchased'),
-('1LNHL9DR1CG561984', 'Dealership - Purchased'),
-('5FRYD3H48FB697538','Outside Dealership'), -- customer added cars
-('WA1CMAFE1CD332305','Outside Dealership'),
-('WA1MYAFE8AD005776','Outside Dealership'),
-('1FTNF2A59AE274535','Outside Dealership'),
-('4USBU33577L779003','Outside Dealership'),
-('1YVHZ8AHXA5361715','Outside Dealership'),
-('JN8AZ2KRXET870589','Outside Dealership'),
-('WAUAF78E35A401889','Outside Dealership'),
-('1G6DA8E5XC0766424','Outside Dealership'),
-('5UXWX9C54D0838067','Outside Dealership'),
-('WVWED7AJ6DW427020','Outside Dealership'),
-('WBAAX13423P051870','Outside Dealership'),
-('1FTSW2B58AE824132','Outside Dealership'),
-('WUARL48H58K525655','Outside Dealership'),
-('WVWAA7AH3AV482448','Outside Dealership'),
-('WBAVM5C59EV711847','Outside Dealership'),
-('SCBLC37F43C179911','Outside Dealership');
+INSERT INTO CarVINs(VIN_carID, purchase_status, memberID) VALUES
+('SALSF2D47CA305941', 'Dealership - Not Purchased', NULL), -- cars on the lot
+('2G4GU5GV1D9224709', 'Dealership - Not Purchased', NULL),
+('WAUEG94F16N011182', 'Dealership - Not Purchased', NULL),
+('1G4HP57M79U336833', 'Dealership - Not Purchased', NULL),
+('2T1KE4EEXDC541493', 'Dealership - Not Purchased', NULL),
+('WDDHF2EBXBA659567', 'Dealership - Not Purchased', NULL),
+('WVWED7AJ7CW030690', 'Dealership - Not Purchased', NULL),
+('WBSBR93441E328102', 'Dealership - Not Purchased', NULL),
+('3VW517AT2FM570847', 'Dealership - Not Purchased', NULL),
+('1G6DJ5ED0B0941154', 'Dealership - Not Purchased', NULL),
+('1G4HP52KX44657084', 'Dealership - Not Purchased', NULL),
+('JN8AZ2KRXAT240808', 'Dealership - Not Purchased', NULL),
+('3C4PDCABXCT526082', 'Dealership - Not Purchased', NULL),
+('WA1DKBFP7BA136094', 'Dealership - Not Purchased', NULL),
+('2T1KE4EE8BC840347', 'Dealership - Not Purchased', NULL),
+('WAUJT54B03N038966', 'Dealership - Not Purchased', NULL),
+('WAUBFBFL5AN763430', 'Dealership - Not Purchased', NULL),
+('SCFBF04B27G426214', 'Dealership - Not Purchased', NULL),
+('5N1AA0NE2FN817354', 'Dealership - Not Purchased', NULL),
+('KNALN4D74F5929503', 'Dealership - Not Purchased', NULL),
+('JTDZN3EU7FJ029990', 'Dealership - Not Purchased', NULL),
+('KM8JT3AB0BU232473', 'Dealership - Not Purchased', NULL),
+('ZHWGU5AU9CL270811', 'Dealership - Not Purchased', NULL),
+('KMHHT6KD5DU114602', 'Dealership - Not Purchased', NULL),
+('ZHWGU5BZ8CL986853', 'Dealership - Not Purchased', NULL),
+('JN1BJ0HP7EM887736', 'Dealership - Not Purchased', NULL),
+('1FT8W3BT0NEA56299', 'Dealership - Not Purchased', NULL),
+('NM0LS7E23J1365784', 'Dealership - Not Purchased', NULL),
+('WA1YD64B23N299062', 'Dealership - Not Purchased', NULL),
+('WBA4J3C56KB000100', 'Dealership - Not Purchased', NULL),
+('4T1BK1EB3EU579953', 'Dealership - Not Purchased', NULL),
+('3D73Y4EL4BG548166', 'Dealership - Not Purchased', NULL),
+('WAUDF48H57A145781', 'Dealership - Not Purchased', NULL),
+('1B3CB3HA6AD530751', 'Dealership - Not Purchased', NULL),
+('5YJYGDEF7DF485512', 'Dealership - Purchased', 1), -- new spot for Dealership purchased vehicles
+('7YJSKDVF8MF475533', 'Dealership - Purchased', 2),
+('5YJYCDED8MF475533', 'Dealership - Purchased', 2),
+('4YJSA1DG9MF395318', 'Dealership - Purchased', 3),
+('5G3S2DKL1MR150912', 'Dealership - Purchased', 4),
+('3GTU2NEC7JG152638', 'Dealership - Purchased', 5),
+('5N1AA0ND2EN467326', 'Dealership - Purchased', 5),
+('JN1CV6FE1FM347717', 'Dealership - Purchased', 5),
+('3FA6P0LU7ER984703', 'Dealership - Purchased', 6),
+('WD3PE8CB6D5769421', 'Dealership - Purchased', 7),
+('WAUKH98E87A124721', 'Dealership - Purchased', 7),
+('19UUA66298A039588', 'Dealership - Purchased', 1),
+('WBADN53481G171888', 'Dealership - Purchased', 2),
+('SAJWA1EK7EM977306', 'Dealership - Purchased', 3),
+('WAUJEGF4E87465621', 'Dealership - Purchased', 4),
+('WBAVA37567N303400', 'Dealership - Purchased', 5),
+('1C3BC4FBXBN521723', 'Dealership - Purchased', 6),
+('JH4DC54895S001234', 'Dealership - Purchased', 7),
+('1FTMF1E85AK857700', 'Dealership - Purchased', 8),
+('1GYS4DKL7MR225532', 'Dealership - Purchased', 9),
+('1G4HP54K74U724821', 'Dealership - Purchased', 10),
+('WAUUFAFH4AN515152', 'Dealership - Purchased', 1),
+('JTDJTUD38ED022075', 'Dealership - Purchased', 2), -- add info for tthese into the db for car info bruh
+('1G6DE5EG4A0418636', 'Dealership - Purchased', 3),
+('1FTEW1E8XAK386177', 'Dealership - Purchased', 4),
+('WBAAX134X4P941020', 'Dealership - Purchased', 5),
+('WAUHF78P19A929792', 'Dealership - Purchased', 6),
+('WBXPA93444W811966', 'Dealership - Purchased', 7),
+('ZFBCFADH1EZ980832', 'Dealership - Purchased', 8),
+('WAUNF98P37A160773', 'Dealership - Purchased', 9),
+('WUATNAFG2EN786809', 'Dealership - Purchased', 10),
+('1B3CC5FBXAN551956', 'Dealership - Purchased', 1),
+('1G6DV1EP4F0840180', 'Dealership - Purchased', 2),
+('1D7RW3BK8BS446576', 'Dealership - Purchased', 3),
+('JTHKD5BH1C2538310', 'Dealership - Purchased', 4),
+('WAULT58E03A107692', 'Dealership - Purchased', 5),
+('SCFEBBAK9EG600978', 'Dealership - Purchased', 6),
+('1LNHL9DR1CG561984', 'Dealership - Purchased', 7),
+('5FRYD3H48FB697538','Outside Dealership', 1), -- customer added cars
+('WA1CMAFE1CD332305','Outside Dealership', 2),
+('WA1MYAFE8AD005776','Outside Dealership', 3),
+('1FTNF2A59AE274535','Outside Dealership', 4),
+('4USBU33577L779003','Outside Dealership', 5),
+('1YVHZ8AHXA5361715','Outside Dealership', 6),
+('JN8AZ2KRXET870589','Outside Dealership', 7),
+('WAUAF78E35A401889','Outside Dealership', 8),
+('1G6DA8E5XC0766424','Outside Dealership', 9),
+('5UXWX9C54D0838067','Outside Dealership', 10),
+('WVWED7AJ6DW427020','Outside Dealership', 1),
+('WBAAX13423P051870','Outside Dealership', 2),
+('1FTSW2B58AE824132','Outside Dealership', 3),
+('WUARL48H58K525655','Outside Dealership', 4),
+('WVWAA7AH3AV482448','Outside Dealership', 5),
+('WBAVM5C59EV711847','Outside Dealership', 6),
+('SCBLC37F43C179911','Outside Dealership', 7);
 -- make up mock data for vins of dealership purchased cars -> (DONE)
 
 
@@ -188,11 +201,8 @@ INSERT INTO CarInfo (VIN_carID, make, model, body, year, color, mileage, details
 ('WBAVA37567N303400', 'Tesla', 'Model 3', 'Sedan', 2023, 'Blue', 5000, '-', '-', 0, '-', 'new', 45000.00),
 ('1C3BC4FBXBN521723', 'Volvo', 'S60', 'Sedan', 2023, 'Red', 4000, '-', '-', 0, '-', 'new', 40000.00),
 ('SCFEBBAK9EG600978', 'Porsche', '911', 'Coupe', 2023, 'Yellow', 3000, '-', '-', 0, '-', 'new', 150000.00);
-
-
-
-
 -- add more data for cars regarding body types [convertible, coupe, hatchback, pickup_truck, sedan, suv, and van] -> (DONE)
+
 
 
 INSERT INTO Employee (first_name, last_name, email, phone, address, city, state, zipcode, employeeType) VALUES
@@ -243,19 +253,7 @@ INSERT INTO EmployeeSensitiveInfo (employeeID, password, SSN, driverID, lastModi
 -- hash the ssn -> (DONE)
 
 
-INSERT INTO Member (first_name, last_name, email, phone, address, city, state, zipcode, join_date) VALUES
-('John', 'Doe', 'john.doe@example.com', '1234567890', '123 Main St', 'Los Angeles', 'CA', '12345', '2024-04-02 15:00:00'),
-('Alice', 'Smith', 'alice.smith@example.com', '2345678901', '456 Elm St', 'New York City', 'NY', '23456', '2024-03-02 11:00:00'),
-('Bob', 'Johnson', 'bob.johnson@example.com', '3456789012', '789 Oak St', 'Houston', 'TX', '34567', '2024-03-03 12:00:00'),
-('Emma', 'Brown', 'emma.brown@example.com', '4567890123', '101 Pine St', 'Miami', 'FL', '45678', '2024-03-03 13:00:00'),
-('Michael', 'Davis', 'michael.davis@example.com', '5678901234', '202 Elm St', 'San Francisco', 'CA', '56789', '2024-04-03 14:00:00'),
-('Sarah', 'Wilson', 'sarah.wilson@example.com', '6789012345', '303 Maple St', 'Buffalo', 'NY', '67890', '2024-04-05 15:00:00'),
-('David', 'Martinez', 'david.martinez@example.com', '7890123456', '505 Oak St', 'Austin', 'TX', '78901', '2024-04-02 16:00:00'),
-('Michelle', 'Lopez', 'michelle.lopez@example.com', '8901234567', '707 Cedar St', 'Orlando', 'FL', '89012', '2024-04-04 17:00:00'),
-('James', 'Taylor', 'james.taylor@example.com', '9012345678', '909 Pine St', 'San Diego', 'CA', '90123', '2024-04-02 18:00:00'),
-('Emma', 'Garcia', 'emma.garcia@example.com', '0123456789', '111 Walnut St', 'Albany', 'NY', '01234', '2024-04-02 19:00:00'),
-('PLACEHOLDER', 'PLACEHOLDER', 'PLACEHOLDER@example.com', '0000000000', '123 Sesame Street', 'Cincinnati', 'OH', '00000', NOW());  -- bids has a placeholder for memberID for customers that buy without bidding, this is meant as a placeholder for customer who do not BID ONLY to be referenced in the BID table
--- add city for the members -> (DONE)
+
 
 
 INSERT INTO MemberSensitiveInfo (memberID, SSN, username, password, driverID, lastModified) VALUES
@@ -272,7 +270,7 @@ INSERT INTO MemberSensitiveInfo (memberID, SSN, username, password, driverID, la
 -- hash the ssn -> (DONE)
 
 
-INSERT INTO Financing (memberID, income, credit_score, loan_total, down_payment, percentage, monthly_sum, remaining_months) VALUES
+INSERT INTO Financing (memberID, income, credit_score, loan_total, down_payment, percentage, monthly_payment_sum, remaining_months) VALUES
 (1, 100000, 750, 15000.00, 5000, 10, 205.00, 48),
 (2, 200000, 750, 18000.00, 6000, 10, 250.00, 60),
 (3, 80000, 700, 12000.00, 4000, 8, 180.00, 72),
@@ -433,25 +431,25 @@ INSERT INTO Services(service_name) VALUES
 
 
 INSERT INTO ServiceAppointment (memberID, serviceID,  VIN_carID, appointment_date, status, last_modified) VALUES
-(1, 1, 'SALSF2D47CA305941', '2024-04-01 09:00:00', 'Done', '2024-04-01 08:30:00'),
-(2, 2, 'WAUEG94F16N011182', '2024-04-02 10:00:00', 'Done', '2024-04-02 09:30:00'),
-(3, 3, '1G4HP57M79U336833', '2024-04-03 11:00:00', 'Done', '2024-04-03 10:30:00'),
-(4, 4, '2T1KE4EEXDC541493', '2024-04-04 12:00:00', 'Cancelled', '2024-04-04 11:30:00'),
-(5, 5, 'WDDHF2EBXBA659567', '2024-04-05 13:00:00', 'Done', '2024-04-05 12:30:00'),
-(7, 7, '3VW517AT2FM570847', '2024-04-07 15:00:00', 'Done', '2024-04-07 14:30:00'),
-(8, 8, '1G6DJ5ED0B0941154', '2024-04-08 16:00:00', 'Done', '2024-04-08 15:30:00'),
-(9, 9, '1G4HP52KX44657084', '2024-04-09 17:00:00', 'Done', '2024-04-09 16:30:00'),
-(10, 1, '1G6DJ5ED0B0941154', '2024-04-19 18:00:00', 'Scheduled', '2024-05-19 17:30:00'),
-(1, 2, '1G4HP52KX44657084', '2024-04-20 09:00:00', 'Scheduled', '2024-05-20 08:30:00'),
-(2, 3, 'JN8AZ2KRXAT240808', '2024-04-21 10:00:00', 'Scheduled', '2024-05-21 09:30:00'),
-(3, 4, '3C4PDCABXCT526082', '2024-04-22 11:00:00', 'Cancelled', '2024-05-22 10:30:00'),
-(4, 5, 'WA1DKBFP7BA136094', '2024-04-23 12:00:00', 'Cancelled', '2024-05-23 11:30:00'),
-(5, 6, '2T1KE4EE8BC840347', '2024-04-24 13:00:00', 'Scheduled', '2024-05-24 12:30:00'),
-(6, 7, 'WAUJT54B03N038966', '2024-04-25 14:00:00', 'Scheduled', '2024-05-25 13:30:00'),
-(7, 8, 'WAUBFBFL5AN763430', '2024-04-26 15:00:00', 'Scheduled', '2024-05-26 14:30:00'),
-(8, 9, 'SCFBF04B27G426214', '2024-04-27 16:00:00', 'Scheduled', '2024-05-27 15:30:00'),
-(9, 1, '5N1AA0NE2FN817354', '2024-04-28 17:00:00', 'Cancelled', '2024-05-28 16:30:00'),
-(10, 2, 'KNALN4D74F5929503', '2024-04-29 18:00:00', 'Scheduled', '2024-05-29 17:30:00');
+(1, 1, '5YJYGDEF7DF485512', '2024-04-01 09:00:00', 'Done', '2024-04-01 08:30:00'),
+(2, 2, '7YJSKDVF8MF475533', '2024-04-02 10:00:00', 'Done', '2024-04-02 09:30:00'),
+(3, 3, '4YJSA1DG9MF395318', '2024-04-03 11:00:00', 'Done', '2024-04-03 10:30:00'),
+(4, 4, '5G3S2DKL1MR150912', '2024-04-04 12:00:00', 'Cancelled', '2024-04-04 11:30:00'),
+(5, 5, '3GTU2NEC7JG152638', '2024-04-05 13:00:00', 'Done', '2024-04-05 12:30:00'),
+(7, 7, 'WD3PE8CB6D5769421', '2024-04-07 15:00:00', 'Done', '2024-04-07 14:30:00'),
+(8, 8, '1FTMF1E85AK857700', '2024-04-08 16:00:00', 'Done', '2024-04-08 15:30:00'),
+(9, 9, '1GYS4DKL7MR225532', '2024-04-09 17:00:00', 'Done', '2024-04-09 16:30:00'),
+(10, 1, '1G4HP54K74U724821', '2024-04-19 18:00:00', 'Scheduled', '2024-05-19 17:30:00'),
+(1, 2, '5FRYD3H48FB697538', '2024-04-20 09:00:00', 'Scheduled', '2024-05-20 08:30:00'),
+(2, 3, 'WA1CMAFE1CD332305', '2024-04-21 10:00:00', 'Scheduled', '2024-05-21 09:30:00'),
+(3, 4, 'WA1MYAFE8AD005776', '2024-04-22 11:00:00', 'Cancelled', '2024-05-22 10:30:00'),
+(4, 5, '1FTNF2A59AE274535', '2024-04-23 12:00:00', 'Cancelled', '2024-05-23 11:30:00'),
+(5, 6, '4USBU33577L779003', '2024-04-24 13:00:00', 'Scheduled', '2024-05-24 12:30:00'),
+(6, 7, '1YVHZ8AHXA5361715', '2024-04-25 14:00:00', 'Scheduled', '2024-05-25 13:30:00'),
+(7, 8, 'JN8AZ2KRXET870589', '2024-04-26 15:00:00', 'Scheduled', '2024-05-26 14:30:00'),
+(8, 9, 'WAUAF78E35A401889', '2024-04-27 16:00:00', 'Scheduled', '2024-05-27 15:30:00'),
+(9, 1, '1G6DA8E5XC0766424', '2024-04-28 17:00:00', 'Cancelled', '2024-05-28 16:30:00'),
+(10, 2, '5UXWX9C54D0838067', '2024-04-29 18:00:00', 'Scheduled', '2024-05-29 17:30:00');
 
 
 INSERT INTO ServiceAppointmentEmployeeAssignments (appointment_id, employeeID) VALUES
