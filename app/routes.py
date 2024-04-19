@@ -11,6 +11,7 @@ from sqlalchemy import text
 from datetime import datetime, timedelta
 from flask import jsonify, request, session
 
+
 ''' all the NON FINANCIAL route API's here. All Passwords and sensitive information use Bcrypt hash'''
 
 
@@ -171,7 +172,7 @@ def add_vehicle():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/vehicles/random', methods=['GET'])  # **
+@app.route('/api/vehicles/random', methods=['GET'])  # test ready
 # This API returns all info on 2 random vehicles in the database for the homepage
 # TESTCASE: DONE
 def random_vehicles():
@@ -214,7 +215,7 @@ def random_vehicles():
         return jsonify({'error': str(e)}), 5000
 
 
-@app.route('/api/employees', methods=['GET'])  # **
+@app.route('/api/employees', methods=['GET'])  # test ready
 # This API returns all employees and their information
 # TESTCASE: DONE
 def get_all_employees():
@@ -237,7 +238,7 @@ def get_all_employees():
     return jsonify(employee_info), 200
 
 
-@app.route('/api/testdrives', methods=['GET'])  # **
+@app.route('/api/testdrives', methods=['GET'])  # test ready
 # THIS ENDPOINT return all testdrive information and joins with the Member and Cars table for better information to view on the manager View
 # TESTCASE: DONE
 def get_test_drives():
@@ -257,7 +258,7 @@ def get_test_drives():
     return jsonify(test_drive_info), 200
 
 
-@app.route('/api/testdrives/update_confirmation', methods=['POST'])  # **
+@app.route('/api/testdrives/update_confirmation', methods=['POST'])  # test ready
 # this API is POST request used by the manager to Confirm or Deny confirmations
 def update_confirmation():
     data = request.json
@@ -272,8 +273,12 @@ def update_confirmation():
 
     if confirmation == 1:
         confirmation_value = 'Confirmed'
-    else:
+    elif confirmation == 2:
         confirmation_value = 'Denied'
+    elif confirmation == 3:
+        confirmation_value = 'Cancelled'
+    else:
+        confirmation_value = 'Awaiting Confirmation'
 
     try:
         # revised the work done here to make is follow SQL Alchemy model and rest of codebase
@@ -328,10 +333,10 @@ def update_confirmation():
 
 
 # This API creates an employee based on all the values passed from the front to the backend
-@app.route('/api/employees/create', methods=['POST'])  # **
+@app.route('/api/employees/create', methods=['POST'])  # test ready
 def create_employee():
     try:
-        # Check if employee is authenticated
+        # # Check if employee is authenticated
         employee_id = session.get('employee_session_id')
         if employee_id is None:
             return jsonify({'message': 'Unauthorized access'}), 401
@@ -401,7 +406,7 @@ def create_employee():
         return jsonify({'error': 'An error occurred while creating the employee account.'}), 500
 
 
-@app.route('/api/employees/technicians', methods=['GET'])  # **
+@app.route('/api/employees/technicians', methods=['GET'])  # test ready
 # this API is used to return all technicians in the DB from employees table
 def get_technicians():
     # retrieve all technicians from the database
@@ -445,7 +450,7 @@ def get_technicians():
 #     }), 200
 
 
-@app.route('/api/members', methods=['GET'])  # **
+@app.route('/api/members', methods=['GET'])  # test ready
 def get_all_members():
     # Retrieves all the members and their information
     try:
@@ -510,12 +515,13 @@ def get_all_members():
 
 
 # This API creates a member account based on the information passed from the front end to the backend (here)
-@app.route('/api/members/create', methods=['POST'])  # **
+@app.route('/api/members/create', methods=['POST'])  # test ready
 def create_member():
     try:
         data = request.json
 
         # data to be passed from the frontend to the backend
+        # members cannot have the same username & driverID as others
         first_name = data.get('first_name')
         last_name = data.get('last_name')
         email = data.get('email')
@@ -524,6 +530,7 @@ def create_member():
         username = data.get('username')
         password = data.get('password')
         address = data.get('address')
+        city = data.get('city')
         state = data.get('state')
         zipcode = data.get('zipcode')
 
@@ -537,6 +544,7 @@ def create_member():
             email=email,
             phone=phone,
             address=address,
+            city=city,
             state=state,
             zipcode=zipcode,
             join_date=datetime.now()
@@ -549,7 +557,7 @@ def create_member():
             memberID=new_member.memberID,
             username=username,
             password=hashed_password,
-            SSN="No SSN Inserted with Associated Member Account.",
+            # SSN=", leave this commented it out, its unique so NULL is automatic my sql rules in commits
             driverID=driverID
         )
         db.session.add(new_sensitive_info)
@@ -579,17 +587,17 @@ def create_member():
         return jsonify({'error': 'An error occurred while creating the member account.'}), 500
 
 
-@app.route('/api/member/add-own-car', methods=['POST'])  # **
+@app.route('/api/member/add-own-car', methods=['POST'])  # test ready
 # this API is used for members to be able to add their own cars into the DB, mainly for service center actions
 def add_car():
     member_id = session.get('member_session_id')
     if not member_id:
         return jsonify({'message': 'Unauthorized access'}), 401
 
-    # Ensure that the employee is a Manager
+    # Ensure that the employee is a member
     member = Member.query.filter_by(memberID=member_id).first()
     if member is None:
-        return jsonify({'message': 'Unauthorized access'}), 401
+        return jsonify({'message': 'You are not a signed up member at this Dealership'}), 401
 
     try:
         data = request.json
@@ -647,7 +655,7 @@ def add_car():
         return jsonify({'message': 'Error adding car to the database'}), 500
 
 
-@app.route("/@me")  # **
+@app.route("/@me")  # test ready
 # Gets user for active session for Members
 def get_current_user():
     user_id = session.get("member_session_id")
@@ -690,7 +698,7 @@ def get_current_user():
     }), 200
 
 
-@app.route('/api/service-appointments', methods=['GET'])  # **
+@app.route('/api/service-appointments', methods=['GET'])  # test ready
 # GET protocol return all service appointment information
 # POST protocol is used for managers to cancel appointments on their views when they are logged in
 # TESTCASE: DONE FOR GET AND POST
@@ -711,19 +719,20 @@ def service_appointments():
     return jsonify(appointments_info), 200
 
 
-@app.route('/api/manager/cancel-service-appointments', methods=['DELETE'])  # **
-# ask for feed back on this one
+@app.route('/api/manager/cancel-service-appointments', methods=['POST'])  # test ready
 # this api used to be a part of the /api/service-appointments but i moved it here for better separation
+# was delete, now is post. We shouldn't delete service appointments but instead just store them in case we need information on it
+# to view
 def delete_service_appointment():
     # ensures that the manager or superAdmin is logged in
     employee_id = session.get('employee_session_id')
     if not employee_id:
         return jsonify({'message': 'Unauthorized access'}), 401
 
-    # Ensure that the employee is a Manager
+    # Ensure that the employee exists
     employee = Employee.query.filter_by(employeeID=employee_id).first()
-    if employee.employeeType not in ['Manager', 'superAdmin']:
-        return jsonify({'message': 'Unauthorized access'}), 401
+    if employee is None:
+        return jsonify({'message': 'Employee is not in the System'}), 401
 
     try:
         data = request.json
@@ -738,16 +747,13 @@ def delete_service_appointment():
             return jsonify({'error': 'Appointment not found.'}), 404
 
         appointment_to_cancel.status = 'Cancelled'
-        # Delete the appointment
-        # db.session.delete(appointment_to_cancel)
         db.session.commit()
         return jsonify({'message': 'Appointment canceled successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
-# ----------- ask the professor to clarify on this requirement on txt docs -----------
-@app.route('/api/member/book-service-appointment', methods=['POST'])
+@app.route('/api/member/book-service-appointment', methods=['POST'])  # test ready
 # NEW API: this API allows for customer to book a service appointment based on cars bought from the dealership
 def book_service_appointment():
     # check if the member is logged in, if not redirect them to log in
@@ -773,6 +779,10 @@ def book_service_appointment():
         return jsonify({
             'message': 'Vehicle is not associated with the Member for them to be able to make a service appt. for it.'}), 400
 
+    appointment_date = datetime.strptime(appointment_date, '%Y-%m-%d %H:%M:%S')
+    if appointment_date <= datetime.now():
+        return jsonify({'message': 'Appointment date must be after today'}), 400
+
     # Check if required data is provided
     if not VIN_carID or not appointment_date or not serviceID:
         return jsonify({'message': 'Car VIN ID, appointment date, and serviceID name are required'}), 400
@@ -792,7 +802,7 @@ def book_service_appointment():
     return jsonify({'message': 'Service appointment booked successfully'}), 201
 
 
-@app.route('/api/service-menu', methods=['GET'])  # **
+@app.route('/api/service-menu', methods=['GET'])  # test ready
 # this api i hate it, it made me make another table and have to refactor everything.
 # returns all values in the Services table for users to choose what services they want.
 def get_services():
@@ -808,7 +818,7 @@ def get_services():
             return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/manager/edit-service-menu', methods=['POST', 'DELETE'])  # **
+@app.route('/api/manager/edit-service-menu', methods=['POST', 'DELETE'])  # test ready
 def edit_service_menu():
     # ensures that the manager or superAdmin is logged in
     employee_id = session.get('employee_session_id')
@@ -827,6 +837,9 @@ def edit_service_menu():
         try:
             data = request.json
             service_name = data.get('service_name')
+            if service_name is None:
+                return jsonify({'message': 'Service name is required'}), 400
+
             new_service = Services(service_name=service_name)
             db.session.add(new_service)
             db.session.commit()
@@ -834,11 +847,25 @@ def edit_service_menu():
         except Exception as e:
             db.session.rollback()
             return jsonify({'error': str(e)}), 500
-    elif request.method == 'DELETE':
+    elif request.method == 'DELETE':  # why doesnt delete protocol work???
         try:
-            # here we want to make a delete a service we offer by passing the service ID to the Delete request
             data = request.json
             service_id = data.get('service_id')
+
+            # lots of relationships here to deal with
+            # first, i have to delete the associated records from ServiceAppointmentEmployeeAssignments
+            appointments = ServiceAppointment.query.filter_by(serviceID=service_id).all()
+            for appointment in appointments:
+                ServiceAppointmentEmployeeAssignments.query.filter_by(
+                    appointment_id=appointment.appointment_id).delete()
+
+            # next, don't delete but only change the status and serviceID in the associated records from ServiceAppointment
+            appts = ServiceAppointment.query.filter_by(serviceID=service_id).all()
+            for app in appts:
+                app.status = 'Cancelled'
+                app.serviceID = sqlalchemy.sql.null()
+
+            # last, actually delete the service from Services table
             service = Services.query.filter_by(serviceID=service_id).first()
             if service:
                 db.session.delete(service)
@@ -851,14 +878,14 @@ def edit_service_menu():
             return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/manager/assign-service-appointments', methods=['POST'])  # **
+@app.route('/api/manager/assign-service-appointments', methods=['POST'])  # test ready
 def assign_service_appointments():
     # Check if the user is logged in and is a manager/superAdmin
-    emplpyee_session_id = session.get('employee_session_id')
-    if not emplpyee_session_id:
+    employee_session_id = session.get('employee_session_id')
+    if not employee_session_id:
         return jsonify({'message': 'Unauthorized access'}), 401
 
-    employee = Employee.query.get(emplpyee_session_id)
+    employee = Employee.query.get(employee_session_id)
     if not employee or employee.employeeType not in ['Manager', 'superAdmin']:
         return jsonify({'message': 'Unauthorized access'}), 403
 
@@ -882,14 +909,22 @@ def assign_service_appointments():
     if not technician:
         return jsonify({'message': 'Technician not found or not a valid Technician'}), 404
 
-    # assign the appointment to the technician
-    assignment = ServiceAppointmentEmployeeAssignments(appointment_id=appointment_id, employeeID=employee_id)
+    # functionality here works where if the serviceAssignment is already assigned, we just assign it to another technician
+    # if there is no one assigned to the serviceAppointment, then we just assign a technician to it and add a new row of data
+    # ServiceAppointmentEmployeeAssignments table
+    assignment = ServiceAppointmentEmployeeAssignments.query.get(appointment_id)
+    if assignment:
+        assignment.employeeID = employee_id
+    else:
+        # assign the appointment to the technician
+        assignment = ServiceAppointmentEmployeeAssignments(appointment_id=appointment_id, employeeID=employee_id)
+
     db.session.add(assignment)
     db.session.commit()
     return jsonify({'message': 'Appointment assigned successfully'}), 200
 
 
-@app.route('/api/technician-view-service-appointments', methods=['GET'])  # **
+@app.route('/api/technician-view-service-appointments', methods=['GET'])  # test ready
 # --- NEW API ---
 # this API is used for technicians to view their service appointment
 def technician_view_service_appointments():
@@ -901,7 +936,7 @@ def technician_view_service_appointments():
     # ensures that the employee is a Technician
     employee = Employee.query.filter_by(employeeID=employee_id, employeeType='Technician').first()
     if not employee:
-        return jsonify({'message': 'Unauthorized access'}), 401
+        return jsonify({'message': 'This employee is not a technician'}), 401
 
     # wow
     # here we query all the technician appointments up and if they are Done, they are still to be shown the technician
@@ -934,7 +969,7 @@ def technician_view_service_appointments():
     return jsonify(appointments_data), 200
 
 
-@app.route('/api/technician-view-service-appointments/technician-edit', methods=['POST'])  # **
+@app.route('/api/technician-view-service-appointments/technician-edit', methods=['POST'])  # test ready
 def technician_edit():
     # checks if user is logged in
     employee_id = session.get('employee_session_id')
@@ -969,7 +1004,7 @@ def technician_edit():
 
     # technicians can update the appointment details
     if comment:
-        appointment.comment = comment
+        appointment.comments = comment
 
     # technicians can update the appointment status
     if status == 'Done':
@@ -985,7 +1020,7 @@ def technician_edit():
     return jsonify({'message': 'Appointment updated successfully'}), 200
 
 
-@app.route('/api/logout', methods=['POST'])
+@app.route('/api/logout', methods=['POST'])  # test ready
 def logout():
     # THE FRONTEND NEEDS TO REDIRECT WHEN U CALL THIS ENDPOINT BACK TO THE LOGIN SCREEN ON that END.
     # LMK if IT WORKS OR NOT
@@ -994,7 +1029,7 @@ def logout():
 
 
 # Route for user authentication
-@app.route('/api/login', methods=['POST'])  # **
+@app.route('/api/login', methods=['POST'])  # test ready
 def login():
     re_string = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     try:
