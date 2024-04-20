@@ -1,5 +1,7 @@
 # app/__init__.py
 
+import os
+import sys
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -12,7 +14,10 @@ API_URL = '/static/docs.yml'  # Our API url (can of course be a local resource)
 
 app = Flask(__name__)
 
-db_name = 'dealership_backend'
+if os.getenv('FLASK_ENV') == 'testing':
+    db_name = 'dealership_testing'
+else:
+    db_name = 'dealership_backend'
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:password@localhost/' + db_name
 
