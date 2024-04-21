@@ -1116,7 +1116,7 @@ def add_to_cart():
 
 
 @app.route('/api/member/delete_from_cart/<int:item_id>', methods=['DELETE'])
-# Route to Remove Stuff from the cart
+# Route to Remove Stuff from the cart one by one
 def delete_from_cart(item_id):
     member_id = session.get('member_session_id')
     if not member_id:
@@ -1148,6 +1148,7 @@ def delete_from_cart(item_id):
 
 
 @app.route('/api/member/cart', methods=['GET'])
+# This route displays everything in a members cart and also totals everything 
 def get_cart():
     member_id = session.get('member_session_id')
     if not member_id:
