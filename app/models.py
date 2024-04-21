@@ -204,6 +204,7 @@ class CheckoutCart(db.Model):
     memberID = db.Column(db.Integer, db.ForeignKey('Member.memberID'), nullable=False)
     VIN_carID = db.Column(db.String(45), db.ForeignKey('CarInfo.VIN_carID'))
     addon_ID = db.Column(db.Integer, db.ForeignKey('Addons.itemID'))
+    serviceID = db.Column(db.Integer, db.ForeignKey('Services.serviceID'))
     item_name = db.Column(db.String(120), nullable=False)
     item_price = db.Column(db.DECIMAL(10, 2), nullable=False)
     last_updated = db.Column(db.DateTime, nullable=False, server_default=db.func.current_timestamp(),

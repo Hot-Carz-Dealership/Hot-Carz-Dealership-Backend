@@ -1057,14 +1057,15 @@ def add_to_cart():
     item_price = data.get('item_price')
     VIN_carID = data.get('VIN_carID')
     addon_ID = data.get('addon_ID')
-    
+    serviceID = data.get('serviceID')
+
     if not member_id or not item_name or not item_price:
         return jsonify({'error': 'Missing required fields'}), 400
     
-    if VIN_carID and addon_ID:
-        return jsonify({'error': 'Both VIN_carID and addon_ID cannot be provided together'}), 400
-    elif not VIN_carID and not addon_ID:
-        return jsonify({'error': 'Either VIN_carID or addon_ID must be provided'}), 400
+    # Ensure only one of VIN_carID, addon_ID, or serviceID is provided
+    provided_ids = [VIN_carID, addon_ID, serviceID]
+    if sum(id is not None for id in provided_ids) != 1:
+        return jsonify({'error': 'Exactly one of VIN_carID, addon_ID, or serviceID must be provided'}), 400
     
 
     try:
@@ -1079,6 +1080,12 @@ def add_to_cart():
             addon = Addons.query.filter_by(itemID=addon_ID).first()
             if not addon:
                 return jsonify({'error': 'Addon with provided ID not found'}), 404
+        elif serviceID:
+            # Check if the provided service ID exists in the services table
+            service = Services.query.filter_by(serviceID=serviceID).first()
+            if not service:
+                return jsonify({'error': 'Service with provided ID not found'}), 404
+            
             
     # Create a new checkout cart item with the VIN
         new_item = CheckoutCart(
@@ -1086,7 +1093,9 @@ def add_to_cart():
             item_name=item_name,
             item_price=item_price,
             VIN_carID=VIN_carID,
-            addon_ID=addon_ID
+            addon_ID=addon_ID,
+            serviceID=serviceID
+
             )
         
         # Add the new item to the database
