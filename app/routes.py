@@ -1130,3 +1130,67 @@ def login():
         return jsonify({'error': str(e)}), 500
 
 ### Just Going to code everything into here for now and move it to the financial stub if needed
+
+
+@app.route('/api/member/add_to_cart', methods=['POST'])
+# Route to add 
+def add_to_cart():
+    
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+
+    # check if the member exists
+    member = Member.query.get(member_id)
+    if not member:
+        return jsonify({'message': 'Member not found'}), 404
+    
+    data = request.json
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    # Extract data from JSON request
+    item_name = data.get('item_name')
+    item_price = data.get('item_price')
+    VIN_carID = data.get('VIN_carID')
+    addon_ID = data.get('addon_ID')
+    
+    if not member_id or not item_name or not item_price:
+        return jsonify({'error': 'Missing required fields'}), 400
+    
+    if VIN_carID and addon_ID:
+        return jsonify({'error': 'Both VIN_carID and addon_ID cannot be provided together'}), 400
+    elif not VIN_carID and not addon_ID:
+        return jsonify({'error': 'Either VIN_carID or addon_ID must be provided'}), 400
+    
+
+    try:
+        if VIN_carID:
+            # Check if the provided VIN exists in the carinfo table
+            car = CarInfo.query.filter_by(VIN_carID=VIN_carID).first()
+            if not car:
+                return jsonify({'error': 'Car with provided VIN not found'}), 404
+            
+        elif addon_ID:
+            # Check if the provided addon ID exists in the addons table
+            addon = Addons.query.filter_by(itemID=addon_ID).first()
+            if not addon:
+                return jsonify({'error': 'Addon with provided ID not found'}), 404
+            
+    # Create a new checkout cart item with the VIN
+        new_item = CheckoutCart(
+            memberID=member_id,
+            item_name=item_name,
+            item_price=item_price,
+            VIN_carID=VIN_carID,
+            addon_ID=addon_ID
+            )
+        
+        # Add the new item to the database
+        db.session.add(new_item)
+        db.session.commit()
+        
+        return jsonify({'success': 'Item added successfully to cart'}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500

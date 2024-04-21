@@ -199,13 +199,11 @@ class CheckoutCart(db.Model):
     __tablename__ = 'checkoutcart'
     
     cart_item_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    memberID = db.Column(db.Integer, ForeignKey('member.memberID'), nullable=False)
-    VIN_carID = db.Column(db.String(45), ForeignKey('carinfo.VIN_carID'))
-    addon_ID = db.Column(db.Integer, ForeignKey('addons.itemID'))
+    memberID = db.Column(db.Integer, db.ForeignKey('Member.memberID'), nullable=False)
+    VIN_carID = db.Column(db.String(45), db.ForeignKey('CarInfo.VIN_carID'))
+    addon_ID = db.Column(db.Integer, db.ForeignKey('Addons.itemID'))
     item_name = db.Column(db.String(120), nullable=False)
     item_price = db.Column(db.DECIMAL(10, 2), nullable=False)
     last_updated = db.Column(db.DateTime, nullable=False, server_default=db.func.current_timestamp(),
                           onupdate=db.func.current_timestamp())
-    
-    # Define relationship with Member
-    member = db.relationship('Member', back_populates='checkout_carts')
+
