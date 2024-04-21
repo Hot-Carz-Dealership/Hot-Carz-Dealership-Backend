@@ -1128,3 +1128,5 @@ def login():
         return jsonify({'error': 'Invalid credentials or user type'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+### Just Going to code everything into here for now and move it to the financial stub if needed
