@@ -1036,7 +1036,7 @@ def login():
 
 
 @app.route('/api/member/add_to_cart', methods=['POST'])
-# Route to add 
+# Route to add either a service, a vehicle, and/or add ons.
 def add_to_cart():
     
     member_id = session.get('member_session_id')
