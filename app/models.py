@@ -65,6 +65,8 @@ class Services(db.Model):
     __tablename__ = 'Services'
     serviceID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     service_name = db.Column(db.String(255))
+    price = db.Column(db.DECIMAL(10, 2))
+
 
 
 class ServiceAppointment(db.Model):

@@ -120,7 +120,8 @@ CREATE TABLE IF NOT EXISTS MemberSensitiveInfo (
 
 CREATE TABLE IF NOT EXISTS Services (
     serviceID INT AUTO_INCREMENT PRIMARY KEY,
-    service_name VARCHAR(255)
+    service_name VARCHAR(255),
+    price DECIMAL(10, 2)
 );
 
 CREATE TABLE IF NOT EXISTS ServiceAppointment (

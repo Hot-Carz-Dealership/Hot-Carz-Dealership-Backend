@@ -418,16 +418,16 @@ INSERT INTO TestDrive (memberID, VIN_carID, appointment_date, confirmation) VALU
 (5, '4T1BK1EB3EU579953', '2024-04-27 09:00:00', 'Awaiting Confirmation');
 
 
-INSERT INTO Services(service_name) VALUES
-('Oil Change'),
-('Brake Inspection'),
-('Tire Rotation'),
-('Battery Replacement'),
-('Wheel Alignment'),
-('Diagnostic Services'),
-('Spark Plug Replacement'),
-('Battery Replacement'),
-('Cabin Air Filter Replacement:');
+INSERT INTO Services(service_name, price) VALUES
+('Oil Change',39.99),
+('Brake Inspection',79.99),
+('Tire Rotation'),30.00,
+('Battery Replacement',149.99),
+('Wheel Alignment'),80.00,
+('Diagnostic Services',50.00),
+('Spark Plug Replacement',99.99),
+('Air Conditioner Recharge', 89.99),
+('Cabin Air Filter Replacement:', 115.99);
 
 
 INSERT INTO ServiceAppointment (memberID, serviceID,  VIN_carID, appointment_date, status, last_modified) VALUES

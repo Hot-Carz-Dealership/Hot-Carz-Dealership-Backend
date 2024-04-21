@@ -713,7 +713,8 @@ def get_services():
             services = Services.query.all()
             services_info = [{
                 'serviceID': service.serviceID,
-                'service_name': service.service_name
+                'service_name': service.service_name,
+                'price': service.price
             } for service in services]
             return jsonify(services_info), 200
         except Exception as e:
