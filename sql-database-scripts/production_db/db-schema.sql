@@ -218,6 +218,7 @@ CREATE TABLE IF NOT EXISTS checkoutcart (
   `memberID` int NOT NULL,
   `VIN_carID` varchar(45) DEFAULT NULL,
   `addon_ID` int DEFAULT NULL,
+  `serviceID` int DEFAULT NULL,
   `item_name` varchar(120) NOT NULL,
   `item_price` decimal(10,2) NOT NULL,
   `last_updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -225,7 +226,9 @@ CREATE TABLE IF NOT EXISTS checkoutcart (
   KEY `userID_FK_idx` (`memberID`),
   KEY `VIN_carID_FK_idx` (`VIN_carID`),
   KEY `addonID_FK_idx` (`addon_ID`),
+  KEY `serviceID_FK_idx` (`serviceID`),
   CONSTRAINT `addonID_FK` FOREIGN KEY (`addon_ID`) REFERENCES `addons` (`itemID`),
   CONSTRAINT `memberID_FK` FOREIGN KEY (`memberID`) REFERENCES `member` (`memberID`),
+  CONSTRAINT `serviceID_FK` FOREIGN KEY (`serviceID`) REFERENCES `services` (`serviceID`),
   CONSTRAINT `VIN_carID_FK` FOREIGN KEY (`VIN_carID`) REFERENCES `carinfo` (`VIN_carID`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
