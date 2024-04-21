@@ -10,6 +10,8 @@ from .models import *
 from sqlalchemy import text
 from datetime import datetime, timedelta
 from flask import jsonify, request, session
+from decimal import Decimal, ROUND_HALF_UP
+
 
 
 ''' all the NON FINANCIAL route API's here. All Passwords and sensitive information use Bcrypt hash'''
@@ -1110,7 +1112,87 @@ def add_to_cart():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
-    
+
+
+
+@app.route('/api/member/delete_from_cart/<int:item_id>', methods=['DELETE'])
+# Route to Remove Stuff from the cart
+def delete_from_cart(item_id):
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+
+    # Check if the member exists
+    member = Member.query.get(member_id)
+    if not member:
+        return jsonify({'message': 'Member not found'}), 404
+
+    # Check if the item exists in the cart
+    item = CheckoutCart.query.get(item_id)
+    if not item:
+        return jsonify({'error': 'Item not found in the cart'}), 404
+
+    # Check if the item belongs to the logged-in member
+    if item.memberID != member_id:
+        return jsonify({'error': 'Unauthorized to delete this item from the cart'}), 403
+
+    try:
+        # Delete the item from the database
+        db.session.delete(item)
+        db.session.commit()
+
+        return jsonify({'success': 'Item deleted successfully from the cart'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/member/cart', methods=['GET'])
+def get_cart():
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+
+    # Check if the member exists
+    member = Member.query.get(member_id)
+    if not member:
+        return jsonify({'message': 'Member not found'}), 404
+
+    try:
+        # Retrieve items in the cart for the member
+        cart_items = CheckoutCart.query.filter_by(memberID=member_id).all()
+        
+        # Initialize variables for calculating totals
+        subtotal = 0
+        financed_total = 0
+
+        # Serialize the cart items
+        serialized_cart = []
+        for item in cart_items:
+            serialized_item = {
+                'cart_item_id': item.cart_item_id,
+                'item_name': item.item_name,
+                'item_price': item.item_price,
+                'VIN_carID': item.VIN_carID,
+                'addon_ID': item.addon_ID,
+                'serviceID': item.serviceID,
+                'financed_amount': item.financed_amount
+            }
+            serialized_cart.append(serialized_item)
+            subtotal += item.item_price
+            financed_total += item.financed_amount
+
+        # Calculate other totals and taxes
+        taxes = (subtotal * Decimal('0.05')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)  # 5% taxes as per prof
+        grand_total = (subtotal + taxes).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        due_now_total = (subtotal - financed_total).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        ## quantize() is used to round the values to two decimal places, and ROUND_HALF_UP is used as the rounding mode to round halfway cases up.
+            
+
+        return jsonify({'cart': serialized_cart, 'Grand Total': grand_total, 'Subtotal': subtotal, 'Financed Amount':financed_total, 'Taxes': taxes, 'Amount Due Now': due_now_total }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 ## Need to find a way to apply for financing first
 ## Then if theyre approved Show the terms
 ## If not ask them to put in more downpayemnt
