@@ -1058,6 +1058,7 @@ def add_to_cart():
     VIN_carID = data.get('VIN_carID')
     addon_ID = data.get('addon_ID')
     serviceID = data.get('serviceID')
+    financed_amount = data.get('financed_amount')
 
     if not member_id or not item_name or not item_price:
         return jsonify({'error': 'Missing required fields'}), 400
@@ -1066,7 +1067,9 @@ def add_to_cart():
     provided_ids = [VIN_carID, addon_ID, serviceID]
     if sum(id is not None for id in provided_ids) != 1:
         return jsonify({'error': 'Exactly one of VIN_carID, addon_ID, or serviceID must be provided'}), 400
-    
+
+    if not financed_amount:
+        financed_amount = 0
 
     try:
         if VIN_carID:
@@ -1094,7 +1097,8 @@ def add_to_cart():
             item_price=item_price,
             VIN_carID=VIN_carID,
             addon_ID=addon_ID,
-            serviceID=serviceID
+            serviceID=serviceID,
+            financed_amount=financed_amount 
 
             )
         
@@ -1106,3 +1110,7 @@ def add_to_cart():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+    
+## Need to find a way to apply for financing first
+## Then if theyre approved Show the terms
+## If not ask them to put in more downpayemnt

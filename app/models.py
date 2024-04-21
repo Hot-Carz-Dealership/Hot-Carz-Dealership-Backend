@@ -198,7 +198,7 @@ class Addons(db.Model):
 
 class CheckoutCart(db.Model):
     # CheckoutCart table model
-    __tablename__ = 'checkoutcart'
+    __tablename__ = 'Checkoutcart'
     
     cart_item_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     memberID = db.Column(db.Integer, db.ForeignKey('Member.memberID'), nullable=False)
@@ -207,6 +207,7 @@ class CheckoutCart(db.Model):
     serviceID = db.Column(db.Integer, db.ForeignKey('Services.serviceID'))
     item_name = db.Column(db.String(120), nullable=False)
     item_price = db.Column(db.DECIMAL(10, 2), nullable=False)
+    financed_amount = db.Column(db.DECIMAL(10, 2), nullable=False)
     last_updated = db.Column(db.DateTime, nullable=False, server_default=db.func.current_timestamp(),
                           onupdate=db.func.current_timestamp())
 
