@@ -3,6 +3,7 @@
 import re
 import bcrypt
 import random
+import hashlib
 import logging
 from . import app
 import sqlalchemy.sql
@@ -1197,3 +1198,108 @@ def get_cart():
 ## Need to find a way to apply for financing first
 ## Then if theyre approved Show the terms
 ## If not ask them to put in more downpayemnt
+
+def creditScoreGenerator(member_id: int, monthly_income: float) -> int:
+    # Creates a random credit score based on id and income so that the same is always returned
+    # Create a unique seed based on member_id and monthly_income
+    seed = hashlib.sha256(f"{member_id}-{monthly_income}".encode()).hexdigest()
+    # Convert the seed to an integer for seeding the random number generator
+    seed_int = int(seed, 16) % (10 ** 8)  # Modulo to keep the number within an appropriate range
+    # Seed the random number generator
+    random.seed(seed_int)
+    # Generate a random credit score
+    return random.randint(500, 850)
+
+def interest_rate(creditScore: int) -> int:
+    # calculates the base interest rate
+    if creditScore >= 750:
+        return 5
+    elif creditScore >= 700:
+        return 10
+    elif creditScore >= 650:
+        return 15
+    else:
+        return 20
+    
+def adjust_loan_with_downpayment(vehicle_cost, down_payment):
+    # Recalculate the loan amount based on the new down_payment
+    loan_amount = vehicle_cost - down_payment
+    return loan_amount
+
+def calculateInterest(vehicleCost: int, monthlyIncome: int, creditscore: int) -> float:
+    # generates the total amount financed after interest 
+
+    base_loan_interest_rate = interest_rate(creditscore)
+    # Calculate financing value based on vehicle cost and monthly income
+    final_financing_percentage = base_loan_interest_rate + ((vehicleCost / monthlyIncome) * 100)
+    financing_loan_value = (final_financing_percentage / 100) * vehicleCost
+    return round(financing_loan_value, 2)
+
+def check_loan_eligibility(loan_amount: float, monthly_income: int) -> bool:
+    # Calculate yearly income from monthly income
+    yearly_income = monthly_income * 12
+
+    # Calculate the loan amount and check if it's less than 10% of the yearly income
+    if loan_amount <= (yearly_income * 0.1):
+        return True  # User is eligible for the loan
+    else:
+        return False  # User is not eligible for the loan
+
+@app.route('/api/vehicle-purchase/apply-for-financing', methods=['POST'])
+#Route just to apply for financing and returns terms if user is eligible
+#This wont add to any tables yet, 
+#we'll have the front end send back the same terms if users accepts in another route
+##The user will accept by typing in their name or initials(aka signing)
+def apply_for_financing():
+    
+    try:
+        # customer auth for making sure they are logged in and have an account
+        member_id = session.get('member_session_id')
+        if member_id is None:
+            return jsonify({'message': 'Invalid session'}), 400
+
+        # frontend needs to send these values to the backend
+        data = request.json
+        Vin_carID = data.get('Vin_carID')
+        down_payment = data.get('down_payment')
+        monthly_income = data.get('monthly_income')
+        vehicle_cost = data.get('vehicle_cost') #Front end can send this based on if the user won a bid or buying at MSRP
+        
+        
+        credit_score = creditScoreGenerator(member_id, monthly_income)
+        total_cost = adjust_loan_with_downpayment(vehicle_cost, down_payment)
+        finance_interest = calculateInterest(total_cost, monthly_income, credit_score)
+        
+        # Loan eligibility
+        loan_eligibility = check_loan_eligibility(total_cost, monthly_income)
+        if not loan_eligibility:
+            return jsonify({'message': 'Your yearly income is not sufficient to take on this loan. Reapply with more down payment'}), 400
+        
+        # downPayment_value = total_cost - financing_loan_amount
+        valueToPay_value = round(total_cost + finance_interest, 2)
+        paymentPerMonth_value = round(valueToPay_value / 48, 2)
+
+        
+        # Create a dictionary with financing terms
+        financing_terms = {
+            'member_id': member_id,
+            'income': int(monthly_income) * 12,
+            'credit_score': credit_score,
+            'loan_total': valueToPay_value,
+            'down_payment': down_payment,
+            'percentage': interest_rate(credit_score),
+            'monthly_payment_sum': paymentPerMonth_value,
+            'remaining_months': 48,
+            'Vin_carID': Vin_carID,
+            'financed_amount':total_cost,
+            'interest_total':finance_interest
+        }
+        
+        # Return the financing terms as JSON
+        # Front End should save this somewhere
+        # If the user accepts by signing then use the /accept-loan route
+    
+        return jsonify({'financing_terms': financing_terms}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'Error: {str(e)}'}), 500
