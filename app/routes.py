@@ -1186,7 +1186,7 @@ def get_cart():
         # Calculate other totals and taxes
         taxes = (subtotal * Decimal('0.05')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)  # 5% taxes as per prof
         grand_total = (subtotal + taxes).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-        due_now_total = (subtotal - financed_total).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        due_now_total = (grand_total - financed_total).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         ## quantize() is used to round the values to two decimal places, and ROUND_HALF_UP is used as the rounding mode to round halfway cases up.
             
 
