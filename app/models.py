@@ -137,6 +137,7 @@ class Financing(db.Model):
     __tablename__ = 'Financing'
     financingID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     memberID = db.Column(db.Integer, ForeignKey('Member.memberID'))
+    VIN_carID = db.Column(db.String(17), db.ForeignKey('CarInfo.VIN_carID'))
     income = db.Column(db.Integer)
     credit_score = db.Column(db.Integer)
     loan_total = db.Column(db.Integer)
