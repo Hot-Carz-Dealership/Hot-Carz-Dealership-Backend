@@ -119,10 +119,11 @@ CREATE TABLE IF NOT EXISTS MemberSensitiveInfo (
 );
 
 CREATE TABLE IF NOT EXISTS Services (
-    serviceID INT AUTO_INCREMENT PRIMARY KEY,
-    service_name VARCHAR(255),
-    price DECIMAL(10, 2)
-);
+  `serviceID` int NOT NULL AUTO_INCREMENT,
+  `service_name` varchar(255) DEFAULT NULL,
+  `price` decimal(10,2) DEFAULT NULL,
+  PRIMARY KEY (`serviceID`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 
 CREATE TABLE IF NOT EXISTS ServiceAppointment (
     -- this table is meant to store information on the service appointments made
@@ -149,17 +150,22 @@ CREATE TABLE IF NOT EXISTS ServiceAppointmentEmployeeAssignments (
 
 CREATE TABLE IF NOT EXISTS Financing (
     -- this table is meant to keep information on financing if the customer buys and finances
-    financingID INT AUTO_INCREMENT PRIMARY KEY,
-    memberID INT,
-    income INT,
-    credit_score INT,
-    loan_total INT,
-    down_payment INT,
-    percentage INT,
-    monthly_payment_sum INT, # how much they have to pay for per month
-    remaining_months INT,
-    FOREIGN KEY (memberID) REFERENCES Member(memberID)
-);
+  `financingID` int NOT NULL AUTO_INCREMENT,
+  `memberID` int DEFAULT NULL,
+  `VIN_carID` varchar(17) DEFAULT NULL,
+  `income` int DEFAULT NULL,
+  `credit_score` int DEFAULT NULL,
+  `loan_total` int DEFAULT NULL,
+  `down_payment` int DEFAULT NULL,
+  `percentage` int DEFAULT NULL,
+  `monthly_payment_sum` int DEFAULT NULL,
+  `remaining_months` int DEFAULT NULL,
+  PRIMARY KEY (`financingID`),
+  KEY `memberID` (`memberID`),
+  KEY `vin_carID_FK_idx` (`VIN_carID`),
+  CONSTRAINT `financing_ibfk_1` FOREIGN KEY (`memberID`) REFERENCES `member` (`memberID`),
+  CONSTRAINT `vin_carIDFK` FOREIGN KEY (`VIN_carID`) REFERENCES `carinfo` (`VIN_carID`)
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 
 CREATE TABLE IF NOT EXISTS Payments (
     paymentID INT AUTO_INCREMENT PRIMARY KEY,
@@ -182,13 +188,21 @@ CREATE TABLE IF NOT EXISTS Payments (
 
 CREATE TABLE IF NOT EXISTS Bids (
     -- this table is meant to store all bids and their information
-    bidID INT AUTO_INCREMENT PRIMARY KEY,
-    memberID INT,
-    bidValue DECIMAL(10,2),
-    bidStatus ENUM ('Confirmed', 'Denied', 'Processing', 'None'),
-    bidTimestamp TIMESTAMP,
-    FOREIGN KEY (memberID) REFERENCES Member(memberID)
-);
+  `bidID` int NOT NULL AUTO_INCREMENT,
+  `memberID` int DEFAULT NULL,
+  `VIN_carID` varchar(17) DEFAULT NULL,
+  `bidValue` decimal(10,2) DEFAULT NULL,
+  `bidStatus` enum('Confirmed','Denied','Processing','None') DEFAULT NULL,
+  `bidTimestamp` timestamp NULL DEFAULT NULL,
+  `last_updated_by` int DEFAULT '1',
+  PRIMARY KEY (`bidID`),
+  KEY `memberID` (`memberID`),
+  KEY `bid_ibfk_2_idx` (`VIN_carID`),
+  KEY `bids_ibfk_3_idx` (`last_updated_by`),
+  CONSTRAINT `bids_ibfk_1` FOREIGN KEY (`memberID`) REFERENCES `member` (`memberID`),
+  CONSTRAINT `bids_ibfk_2` FOREIGN KEY (`VIN_carID`) REFERENCES `carinfo` (`VIN_carID`),
+  CONSTRAINT `bids_ibfk_3` FOREIGN KEY (`last_updated_by`) REFERENCES `employee` (`employeeID`)
+) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 
 CREATE TABLE IF NOT EXISTS Purchases (
     -- this table is meant to serve more as a crossroads to connect the bids, payments and financing table
