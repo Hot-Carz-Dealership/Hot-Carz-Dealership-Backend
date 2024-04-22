@@ -1305,6 +1305,7 @@ def apply_for_financing():
         return jsonify({'message': f'Error: {str(e)}'}), 500
 
 @app.route('/api/vehicle-purchase/insert-financing', methods=['POST'])
+#Use this route whenever the user accepts the loan to add it to the db
 def insert_financing():
     try:
         
@@ -1349,3 +1350,79 @@ def insert_financing():
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': f'Error: {str(e)}'}), 500
+    
+## User get sent to add ons page
+## Anything they add on that page gets added to the users cart
+
+#Finally they hit the final check out
+#Display all the items in the cart with /api/member/cart
+
+
+
+@app.route('/api/members/update', methods=['POST'])  
+# Route to update logged in users account info
+def update_member():
+    try:
+        data = request.json
+
+        # Customer auth for making sure they are logged in and have an account
+        member_id = session.get('member_session_id')
+        if member_id is None:
+            return jsonify({'message': 'Invalid session'}), 400
+
+        # Retrieve the member based on the current session
+        existing_member = Member.query.get(member_id)
+        if existing_member is None:
+            return jsonify({'error': 'Member not found.'}), 404
+
+        # Update member information
+        existing_member.first_name = data.get('first_name', existing_member.first_name)
+        existing_member.last_name = data.get('last_name', existing_member.last_name)
+        existing_member.email = data.get('email', existing_member.email)
+        existing_member.phone = data.get('phone', existing_member.phone)
+        existing_member.address = data.get('address', existing_member.address)
+        existing_member.city = data.get('city', existing_member.city)
+        existing_member.state = data.get('state', existing_member.state) #Must be state code (NJ, NY, etc)
+        existing_member.zipcode = data.get('zipcode', existing_member.zipcode)
+
+        # Commit changes to the database
+        db.session.commit()
+        
+        # Update driverID if provided
+        driverID = data.get('driverID')
+        if driverID:
+            existing_sensitive_info = MemberSensitiveInfo.query.filter_by(memberID=member_id).first()
+            if existing_sensitive_info:
+                existing_sensitive_info.driverID = driverID
+                db.session.commit()
+
+        # Update SSN if provided
+        SSN = data.get('SSN')
+        if SSN:
+            # Hash the SSN before storing it
+            hashed_ssn = bcrypt.hashpw(SSN.encode('utf-8'), bcrypt.gensalt())
+
+            existing_sensitive_info = MemberSensitiveInfo.query.filter_by(memberID=member_id).first()
+            if existing_sensitive_info:
+                existing_sensitive_info.SSN = hashed_ssn
+                db.session.commit()
+
+        # Return updated member information
+        member_info = {
+            'memberID': existing_member.memberID,
+            'first_name': existing_member.first_name,
+            'last_name': existing_member.last_name,
+            'email': existing_member.email,
+            'phone': existing_member.phone,
+            'address': existing_member.address,
+            'state': existing_member.state, #Must be state code (NJ, NY, etc)
+            'zipcode': existing_member.zipcode,
+            'join_date': existing_member.join_date,
+        }
+        return jsonify({'message': 'Member account updated successfully', 'member_info': member_info}), 200
+
+    except Exception as e:
+        # Rollback the session in case of any exception
+        db.session.rollback()
+        logging.exception(e)  # Log the exception for debugging purposes
+        return jsonify({'error': 'An error occurred while updating the member account.'}), 500
