@@ -78,8 +78,35 @@ def vehicle_information():
     return jsonify(cars_info_dicts), 200
 
 
-# insane im gonna go insane i have to now modify it where we also grab and can connect certain user inserted vehicles to their own cars
-'''make an API to return cars to specfic people based on their memberID'''
+@app.route('/api/member/vehicles', methods=['GET'])  # test ready
+def member_vehicles():
+    # this API returns cars to specific members logged in. It returns both cars bought from the dealership and cars that
+    # they inserted into the system for service appointments.
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access'}), 401
+
+    # Ensure that the employee is a member
+    member = Member.query.filter_by(memberID=member_id).first()
+    if member is None:
+        return jsonify({'message': 'You are not a signed up member at this Dealership'}), 401
+
+    # returns all the vehicles matching with the member_id
+    vehicles = CarVINs.query.filter_by(memberID=member_id).all()
+
+    vehicles_info = []
+    for vehicle_info in vehicles:
+        # Fetch additional information from CarInfo table using VIN_carID
+        car_info = CarInfo.query.filter_by(VIN_carID=vehicle_info.VIN_carID).first()
+        vehicles_info.append({
+            'VIN_carID': vehicle_info.VIN_carID,
+            'make': car_info.make,
+            'model': car_info.model,
+            'year': car_info.year,
+            'color': car_info.color,
+            'mileage': car_info.mileage,
+        })
+    return jsonify(vehicles_info), 200
 
 
 @app.route('/api/vehicles', methods=['GET'])  # test ready
@@ -704,18 +731,27 @@ def get_current_user():
 # TESTCASE: DONE FOR GET AND POST
 def service_appointments():
     # get request, we return all data form service appointments
-    appointments = ServiceAppointment.query.all()
+    # returns more info now
+    appointments = db.session.query(ServiceAppointment, ServiceAppointmentEmployeeAssignments.employeeID).join(
+        ServiceAppointmentEmployeeAssignments,
+        ServiceAppointment.appointment_id == ServiceAppointmentEmployeeAssignments.appointment_id).all()
 
-    appointments_info = [{
-        'appointment_id': appointment.appointment_id,
-        'memberID': appointment.memberID,
-        'VIN_carID': appointment.VIN_carID,
-        'serviceID': appointment.serviceID,
-        'appointment_date': appointment.appointment_date,
-        'comments': appointment.comments,
-        'status': appointment.status,
-        'last_modified': appointment.last_modified
-    } for appointment in appointments]
+    appointments_info = []
+    for appointment, employee_id in appointments:
+        # Query Services table to get service name
+        service_name = Services.query.filter_by(serviceID=appointment.serviceID).first().service_name
+        appointments_info.append({
+            'appointment_id': appointment.appointment_id,
+            'memberID': appointment.memberID,
+            'VIN_carID': appointment.VIN_carID,
+            'serviceID': appointment.serviceID,
+            'appointment_date': appointment.appointment_date,
+            'comments': appointment.comments,
+            'status': appointment.status,
+            'last_modified': appointment.last_modified,
+            'service_name': service_name,
+            'employeeID': employee_id
+        })
     return jsonify(appointments_info), 200
 
 
@@ -836,14 +872,24 @@ def edit_service_menu():
         # here we want to make a new service
         try:
             data = request.json
-            service_name = data.get('service_name')
-            if service_name is None:
-                return jsonify({'message': 'Service name is required'}), 400
+            edit_or_add = data.get('edit_or_add')
+            if edit_or_add == 1:  # add
+                service_name = data.get('service_name')
+                if service_name is None:
+                    return jsonify({'message': 'Service name is required'}), 400
 
-            new_service = Services(service_name=service_name)
-            db.session.add(new_service)
-            db.session.commit()
-            return jsonify({'message': 'Service added successfully'}), 201
+                new_service = Services(service_name=service_name)
+                db.session.add(new_service)
+                db.session.commit()
+                return jsonify({'message': 'Service added successfully'}), 201
+            elif edit_or_add == 2:  # edit
+                serviceID = data.get('serviceID')
+                service_name = data.get('service_name')
+                service_item = Services.query.filter_by(serviceID=serviceID).first()
+                service_item.serviceName = service_name
+                db.session.add(service_item)
+                db.session.commit()
+                return jsonify({'message': 'Service Successfully Edited'}), 201
         except Exception as e:
             db.session.rollback()
             return jsonify({'error': str(e)}), 500
