@@ -1297,9 +1297,55 @@ def apply_for_financing():
         
         # Return the financing terms as JSON
         # Front End should save this somewhere
-        # If the user accepts by signing then use the /accept-loan route
+        # If the user accepts by signing then use the /insert-financing route
     
         return jsonify({'financing_terms': financing_terms}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'Error: {str(e)}'}), 500
+
+@app.route('/api/vehicle-purchase/insert-financing', methods=['POST'])
+def insert_financing():
+    try:
+        
+        # customer auth for making sure they are logged in and have an account
+        member_id = session.get('member_session_id')
+        if member_id is None:
+            return jsonify({'message': 'Invalid session'}), 400
+        
+        # Retrieve data from the request
+        data = request.json
+        VIN_carID = data.get('VIN_carID')
+        income = data.get('income')
+        credit_score = data.get('credit_score')
+        loan_total = data.get('loan_total')
+        down_payment = data.get('down_payment')
+        percentage = data.get('percentage')
+        monthly_payment_sum = data.get('monthly_payment_sum')
+        remaining_months = data.get('remaining_months')
+
+        if VIN_carID:
+            # Check if the provided VIN exists in the carinfo table
+            car = CarInfo.query.filter_by(VIN_carID=VIN_carID).first()
+            if not car:
+                return jsonify({'error': 'Car with provided VIN not found'}), 404
+            
+        # Insert data into the database
+        new_financing = Financing(
+            memberID=member_id,
+            VIN_carID=VIN_carID,
+            income=income,
+            credit_score=credit_score,
+            loan_total=loan_total,
+            down_payment=down_payment,
+            percentage=percentage,
+            monthly_payment_sum=monthly_payment_sum,
+            remaining_months=remaining_months
+        )
+        db.session.add(new_financing)
+        db.session.commit()
+
+        return jsonify({'message': 'Financing information inserted successfully.'}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': f'Error: {str(e)}'}), 500
