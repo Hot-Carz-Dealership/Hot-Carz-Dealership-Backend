@@ -1429,3 +1429,95 @@ def insert_financing():
 
 
 
+@app.route('/api/vehicle-purchase/make-purchase', methods=['POST'])
+def make_purchase():
+    # here we deal with Purchases and Payments table    
+    try:
+        member_id = session.get('member_session_id')
+        if not member_id:
+            return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+        
+        data = request.json
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Extract data from JSON request
+        
+        # Needed for purchases table
+        VIN_carID = data.get('VIN_carID')
+        addon_ID = data.get('addon_ID')
+        serviceID = data.get('serviceID')
+        
+        # Needed for payments table
+        financed_amount = data.get('financed_amount')
+        valuePaid = data.get('Amount Due Now')
+        valueToPay = data.get ('Financed Amount')
+        routingNumber = data.get ('routingNumber')
+        bankAcctNumber = data.get('bankAcctNumber')
+        financingID = data.get('financingID')
+        
+        
+        # Ensure only one of VIN_carID, addon_ID, or serviceID is provided
+        provided_ids = [VIN_carID, addon_ID, serviceID]
+        if sum(id is not None for id in provided_ids) != 1:
+            return jsonify({'error': 'Exactly one of VIN_carID, addon_ID, or serviceID must be provided'}), 400
+
+        
+        if VIN_carID:
+            # Check if the provided VIN exists in the carinfo table
+            car = CarInfo.query.filter_by(VIN_carID=VIN_carID).first()
+            if not car:
+                return jsonify({'error': 'Car with provided VIN not found'}), 404
+                
+        elif addon_ID:
+            # Check if the provided addon ID exists in the addons table
+            addon = Addons.query.filter_by(itemID=addon_ID).first()
+            if not addon:
+                return jsonify({'error': 'Addon with provided ID not found'}), 404
+        elif serviceID:
+            # Check if the provided service ID exists in the services table
+            service = Services.query.filter_by(serviceID=serviceID).first()
+            if not service:
+                return jsonify({'error': 'Service with provided ID not found'}), 404
+                
+            
+        if not financed_amount:
+            financed_amount = 0
+        else:
+            # looks up the financing id of the car being financed
+            financingID = Financing.query.filter_by(VIN_carID=VIN_carID).first()
+            
+        
+            # DB insert for new purchase with financing
+        new_payment = Payments(
+            paymentStatus='Completed',
+            valuePaid=valuePaid,
+            valueToPay=valueToPay,
+            initialPurchase=datetime.now(),
+            lastPayment=datetime.now(),
+            routingNumber=routingNumber,
+            bankAcctNumber=bankAcctNumber,
+            memberID=member_id,       
+            financingID=financingID
+            )
+        db.session.add(new_payment)
+        db.session.commit()
+
+        new_purchase = Purchases(
+            # no Bid ID since this is not a BID Operation
+            VIN_carID=VIN_carID,
+            memberID=member_id,
+            confirmationNumber=confirmation_number_generation()  # You may generate a confirmation number here
+            # signature='YES'
+            )
+        db.session.add(new_purchase)
+        db.session.commit()
+
+            # payment stub generation can occur through the means of functions above with endpoints
+            # /api/member
+            # /api/payments
+
+        return jsonify({'message': 'Vehicle purchase with financing processed successfully.'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'Error: {str(e)}'}), 500
