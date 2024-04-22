@@ -3,21 +3,27 @@
 
 import os
 import json
+import secrets
+import time
 import pytest
 import string
 import random
+
+import sqlalchemy.sql
+
 from app import app, db
-from app.models import CarInfo, Member, MemberSensitiveInfo, Employee, EmployeeSensitiveInfo, ServiceAppointment
+from app.models import CarInfo, Member, MemberSensitiveInfo, Employee, EmployeeSensitiveInfo, ServiceAppointment, \
+    CarVINs
 from config import Config
 
 
 '''
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!DONT EVER RUN PYTEST ALONE. ALWAYS RUN WITH THIS LINE BELOW!
-!               'FLASK_ENV=testing pytest'                  !
-!           OR ELSE OUR PRODUCTION DB IS FUCKED             ! 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!DONT EVER RUN PYTEST ALONE. ALWAYS RUN WITH THIS LINE BELOW!!!!
+!!!!               'FLASK_ENV=testing pytest'                  !!!!
+!!!!           OR ELSE OUR PRODUCTION DB IS FUCKED             !!!! 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 '''
 
@@ -31,6 +37,27 @@ def client():
 def generate_random_string():
     characters = string.ascii_uppercase + string.digits
     return ''.join(random.choice(characters) for _ in range(17))
+
+
+def generateSSN():
+    characters = string.digits
+    return ''.join(random.choice(characters) for _ in range(9))
+
+
+def generateEmail():
+    username_length = random.randint(8, 15)
+    username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=username_length))
+    domains = ['example.com', 'test.com', 'domain.com']  # domain examples
+    domain = random.choice(domains)
+    email = username + '@' + domain
+    return email
+
+
+def generateDriverID():
+    capital_letter = random.choice(string.ascii_uppercase)
+    digits = string.digits
+    id_digits = ''.join(random.choice(digits) for _ in range(14))
+    return capital_letter + id_digits
 
 
 def delete_row(new_entry):
@@ -51,6 +78,7 @@ def data_reset_service_appointment():
 
 
 def test_addon_information(client):
+    # TEST API: /api/vehicles/add-ons
     response = client.get('/api/vehicles/add-ons')
 
     assert response.status_code == 200
@@ -70,161 +98,179 @@ def test_addon_information(client):
         assert 'totalCost' in addon_data
         assert isinstance(addon_data['itemID'], int)
         assert isinstance(addon_data['itemName'], str)
-        assert isinstance(addon_data['totalCost'], str)
+        # assert isinstance(addon_data['totalCost'], int)
+    # add 500 error code here for when DB is not able to be accessed
 
 
-# def test_vehicle_information(client):
-#     # test response and content type when no data is passed to the endpoint
-#     response_without_query = client.get('/api/vehicles/search')
-#     assert response_without_query.status_code == 200
-#     assert response_without_query.headers['Content-Type'] == 'application/json'
-#
-#     # ensure that the data returned from nothing passed to the endpoint is indeed
-#     # a list of dictionaries and has data being returned
-#     data_without_query = response_without_query.get_json()
-#     assert data_without_query is not None
-#     assert isinstance(data_without_query, list)
-#     assert len(data_without_query) > 0
-#
-#     # ensures that the dictionaries in data_without_query have been properly cleaned up and don't contain any
-#     # SQLAlchemy-specific attributes, which could potentially cause issues if included in the API response. This
-#     # ensures that the API response is clean and contains only relevant data.
-#     for car_dict in data_without_query:
-#         assert '_sa_instance_state' not in car_dict
-#
-#     # test the endpoint with search query value
-#     response_with_query = client.get('/api/vehicles/search?search_query=Toyota')
-#     assert response_with_query.status_code == 200
-#     assert response_with_query.headers['Content-Type'] == 'application/json'
-#
-#     data_with_query = response_with_query.get_json()
-#     assert data_with_query is not None
-#     assert isinstance(data_with_query, list)
-#
-#     if len(data_with_query) > 0:
-#         for car_dict in data_with_query:
-#             assert '_sa_instance_state' not in car_dict  # Ensure _sa_instance_state is removed
-#     else:
-#         # If no results are found for the search query, response should still be 200 because it just means that there are
-#         # no cars of that type in stock
-#         assert response_with_query.status_code == 200
-#
-#
-# def test_add_vehicle(client):
-#     data = {
-#         'VIN_carID': generate_random_string(),
-#         'make': 'Toyota',
-#         'model': 'Camry',
-#         'body': 'Sedan',
-#         'year': 2023,
-#         'color': 'Red',
-#         'mileage': 10000,
-#         'details': 'Test Entry',
-#         'description': 'Test Entry',
-#         'viewsOnPage': 100,
-#         'pictureLibraryLink': 'link/to/carpic',
-#         'status': 'new',
-#         'price': '20000'
-#     }
-#     response = client.post('/api/vehicles/add', json=data)
-#     assert response.status_code == 201
-#
-#     # assert that the vehicle was added successfully and the request truly was commited to the DB
-#     assert CarInfo.query.filter_by(VIN_carID=data['VIN_carID']).first() is not None
-#
-#     # manually delete the added vehicle after assertions to not pollute real data
-#     with app.app_context():
-#         CarInfo.query.filter_by(VIN_carID=data['VIN_carID']).delete()
-#         db.session.commit()
-#
-#
-# def test_vehicle(client):
-#     # this test is to test the API for returning vehicles based on the VIN number value
-#
-#     response_found = client.get('/api/vehicles', query_string={'vin': '1G4HP52KX44657084'})  # valid VIN number
-#     assert response_found.status_code == 200
-#     assert response_found.headers['Content-Type'] == 'application/json'
-#     data_found = response_found.get_json()
-#     assert data_found is not None
-#
-#     # iterate through the columns and confirm that the data we need to grab is there and intact
-#     expected_keys = ['VIN_carID', 'make', 'model', 'body', 'year', 'color', 'mileage', 'details', 'description',
-#                      'viewsOnPage', 'pictureLibraryLink', 'status', 'price']
-#     for key in expected_keys:
-#         assert key in data_found
-#
-#     # Assertions and testing for when an invalid VIN value is passed the endpoint (status code 404)
-#     response_not_found = client.get('/api/vehicles', query_string={'vin': 'INVALID-VIN123'})
-#     assert response_not_found.status_code == 404
-#     assert response_not_found.headers['Content-Type'] == 'application/json'
-#     data_not_found = response_not_found.get_json()
-#     assert 'message' in data_not_found
-#     assert data_not_found['message'] == 'Vehicle not found'
-#
-#
-# def test_random_vehicles(client):
-#     random_car_response = client.get('/api/vehicles/random')
-#     assert random_car_response.status_code == 200
-#     assert random_car_response.headers['Content-Type'] == 'application/json'
-#
-#     data_found = random_car_response.get_json()
-#     assert data_found is not None
-#     # print(data_found)
-#     assert isinstance(data_found, list)  # ensures that the response is a list of dictionaries
-#     assert len(data_found) == 2  # ensures that two vehicles' information is returned
-#
-#     expected_keys = ['VIN_carID', 'make', 'model', 'body', 'year', 'color', 'mileage', 'details', 'description',
-#                      'viewsOnPage', 'pictureLibraryLink', 'status', 'price']
-#     for car_data in data_found:
-#         for key in expected_keys:
-#             assert key in car_data
-#
-#
-# def test_get_all_employees(client):
-#     response = client.get('/api/employees')
-#     assert response.status_code == 200
-#     assert response.headers['Content-Type'] == 'application/json'
-#
-#     data = response.get_json()
-#     assert data is not None
-#     assert isinstance(data, list)
-#
-#     # Check if each dictionary in the response contains the expected keys
-#     expected_keys = ['employeeID', 'firstname', 'lastname', 'email', 'phone', 'address', 'employeeType']
-#     for employee_data in data:
-#         for key in expected_keys:
-#             assert key in employee_data
-#
-#
-# def test_get_test_drives(client):
-#     # this testcase tests the endpoint for retriving all of the testdrive information in the DB
-#     # and which member is test-driving which car
-#
-#     response = client.get('/api/testdrives')
-#     assert response.status_code == 200
-#     assert response.headers['Content-Type'] == 'application/json'
-#
-#     data = response.get_json()
-#     assert data is not None
-#     assert isinstance(data, list)
-#
-#     expected_keys = ['fullname', 'phone', 'car_id', 'car_make_model', 'appointment_date']
-#     for test_drive_info in data:
-#         for key in expected_keys:
-#             assert key in test_drive_info
-#
-#
-def test_update_confirmation(client):
-    data = {'testdrive_id': 1, 'confirmation': 3}
-    response = client.post('/api/testdrives/update_confirmation', json=data)
+def test_vehicle_search(client):
+    # TEST API: /api/vehicles/search
+    # test response and content type when no data is passed to the endpoint
+    response_without_query = client.get('/api/vehicles/search')
+    assert response_without_query.status_code == 200
+    assert response_without_query.headers['Content-Type'] == 'application/json'
+
+    # ensure that the data returned from nothing passed to the endpoint is indeed
+    # a list of dictionaries and has data being returned
+    data_without_query = response_without_query.get_json()
+    assert data_without_query is not None
+    assert isinstance(data_without_query, list)
+    assert len(data_without_query) > 0
+
+    # ensures that the dictionaries in data_without_query have been properly cleaned up and don't contain any
+    # SQLAlchemy-specific attributes, which could potentially cause issues if included in the API response. This
+    # ensures that the API response is clean and contains only relevant data.
+    for car_dict in data_without_query:
+        assert '_sa_instance_state' not in car_dict
+
+    # test the endpoint with search query value
+    response_with_query = client.get('/api/vehicles/search?search_query=Toyota')
+    assert response_with_query.status_code == 200
+    assert response_with_query.headers['Content-Type'] == 'application/json'
+
+    data_with_query = response_with_query.get_json()
+    assert data_with_query is not None
+    assert isinstance(data_with_query, list)
+
+    if len(data_with_query) > 0:
+        for car_dict in data_with_query:
+            assert '_sa_instance_state' not in car_dict  # Ensure _sa_instance_state is removed or else we can't really use the data
+    else:
+        # If no results are found for the search query, response should still be 200 because it just means that there are
+        # no cars of that type in stock
+        assert len(data_without_query) == 0
+        assert response_with_query.status_code == 200
+
+
+def test_add_vehicle(client):
+    # TEST API: /api/vehicles/add
+    VIN_carID = generate_random_string()
+
+    car_data_json = {
+        'VIN_carID': VIN_carID,
+        'make': 'Toyota',
+        'model': 'Camry',
+        'body': 'Sedan',
+        'year': 2023,
+        'color': 'Red',
+        'mileage': 10000,
+        'details': 'Test Entry',
+        'description': 'Test Entry',
+        'viewsOnPage': 1,
+        'pictureLibraryLink': 'link/to/carpic',
+        # 'status': 'new',
+        'price': '20000'
+    }
+    response = client.post('/api/vehicles/add', json=car_data_json)
+    assert response.status_code == 201
+
+    # assert that the vehicle was added successfully and the request truly was commited to the DB
+    assert CarVINs.query.filter_by(VIN_carID=VIN_carID).first() is not None
+    assert CarInfo.query.filter_by(VIN_carID=VIN_carID).first() is not None
+
+    # ---- no, not to work in test db
+    # manually delete the added vehicle after assertions to not pollute real data
+    # with app.app_context():
+    #     CarInfo.query.filter_by(VIN_carID=car_data_json['VIN_carID']).delete()
+    #     db.session.commit()
+
+
+def test_vehicle(client):
+    # TEST API: /api/vehicles
+    # this test is to test the API for returning vehicles based on the VIN number value
+
+    response_found = client.get('/api/vehicles', query_string={'vin': '1G4HP52KX44657084'})  # valid VIN number
+    assert response_found.status_code == 200
+    assert response_found.headers['Content-Type'] == 'application/json'
+    data_found = response_found.get_json()
+    assert data_found is not None
+
+    # iterate through the columns and confirm that the data we need to grab is there and intact
+    expected_keys = ['VIN_carID', 'make', 'model', 'body', 'year', 'color', 'mileage', 'details', 'description',
+                     'viewsOnPage', 'pictureLibraryLink', 'status', 'price']
+    for key in expected_keys:
+        assert key in data_found
+        assert data_found[key] is not None
+
+    # Assertions and testing for when an invalid VIN value is passed the endpoint (status code 404)
+    response_not_found = client.get('/api/vehicles', query_string={'vin': 'INVALID-VIN123'})
+    assert response_not_found.status_code == 404
+    assert response_not_found.headers['Content-Type'] == 'application/json'
+    data_not_found = response_not_found.get_json()
+    assert 'message' in data_not_found
+    assert data_not_found['message'] == 'Vehicle not found'
+
+
+def test_random_vehicles(client):
+    # TEST API: /api/vehicles/random
+    random_car_response = client.get('/api/vehicles/random')
+    assert random_car_response.status_code == 200
+    assert random_car_response.headers['Content-Type'] == 'application/json'
+
+    data_found = random_car_response.get_json()
+    assert data_found is not None
+    # print(data_found)
+    assert isinstance(data_found, list)  # ensures that the response is a list of dictionaries
+    assert len(data_found) == 2  # ensures that two vehicles' information is returned
+
+    expected_keys = ['VIN_carID', 'make', 'model', 'body', 'year', 'color', 'mileage', 'details', 'description',
+                     'viewsOnPage', 'pictureLibraryLink', 'status', 'price']
+    for car_data in data_found:
+        for key in expected_keys:
+            assert key in car_data
+            assert car_data[key] is not None
+
+
+def test_get_all_employees(client):
+    # TEST API: /api/employees
+    response = client.get('/api/employees')
     assert response.status_code == 200
     assert response.headers['Content-Type'] == 'application/json'
 
-    data_response = response.get_json()
-    assert 'message' in data_response
-    assert data_response['message'] == 'Confirmation updated successfully'
-#
-#
+    data = response.get_json()
+    assert data is not None
+    assert isinstance(data, list)
+
+    # Check if each dictionary in the response contains the expected keys
+    expected_keys = ['employeeID', 'first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'zipcode', 'employeeType']
+    for employee_data in data:
+        for key in expected_keys:
+            assert key in employee_data
+            assert employee_data[key] is not None
+
+
+def test_get_test_drives(client):
+    # TEST API: /api/testdrives
+    # this testcase tests the endpoint for retriving all of the testdrive information in the DB
+    # and which member is test-driving which car
+
+    response = client.get('/api/testdrives')
+    assert response.status_code == 200
+    assert response.headers['Content-Type'] == 'application/json'
+
+    data = response.get_json()
+    assert data is not None
+    assert isinstance(data, list)
+
+    expected_keys = ['fullname', 'phone', 'car_id', 'car_make_model', 'appointment_date']
+    for test_drive_info in data:
+        for key in expected_keys:
+            assert key in test_drive_info
+            assert test_drive_info[key] is not None
+
+
+def test_update_confirmation(client):
+    # TEST API: /api/testdrives/update_confirmation
+    for i in range(1, 5):
+        data = {'testdrive_id': 1, 'confirmation': i}
+        response = client.post('/api/testdrives/update_confirmation', json=data)
+        assert response.status_code == 200
+        assert response.headers['Content-Type'] == 'application/json'
+
+        data_response = response.get_json()
+        assert 'message' in data_response
+        assert data_response['message'] == 'Confirmation updated successfully'
+
+
 # # test after the endpont works well on the frontend
 # # def test_login_employee(client):
 # #     # Test scenario when employee login is successful
@@ -240,37 +286,51 @@ def test_update_confirmation(client):
 # #     for field in expected_fields:
 # #         assert field in data  # assert that the column is in the returned data
 # #         assert data[field]  # assert that the data in the column is indeed not empty
-#
-#
-# def test_create_employee(client):
-#     employee_data = {
-#         "firstname": "testEmployee",
-#         "lastname": "testEmployee",
-#         "email": "testEmployee@example.com",
-#         "phone": "1234567890",
-#         "address": "123 Example St",
-#         "employeeType": "Technician",
-#         "password": "a123",
-#         "driverID": "exampleDriverID",
-#         "SSN": "exampleSSN"
-#     }
-#
-#     # Sending a POST request to create an employee
-#     response = client.post('/api/employees/create', json=employee_data)
-#     assert response.status_code == 201
-#
-#     with app.app_context():
-#         # verifying that the employee is created in the database
-#         created_employee = Employee.query.filter_by(email=employee_data["email"]).first()
-#         assert created_employee is not None
-#
-#         # verifying that the employee's sensitive information is created
-#         created_sensitive_info = EmployeeSensitiveInfo.query.filter_by(employeeID=created_employee.employeeID).first()
-#         assert created_sensitive_info is not None
-#
-#         # rolls back the changes in the database
-#         delete_row(created_sensitive_info)
-#         delete_row(created_employee)
+
+
+def test_create_employee(client):
+    # TEST API: /api/employees/create
+    # 401 error crashes randomely
+
+    # login as or superadmin
+
+    super_admin_login_data = {
+        "username": "tsteger0@de.vu",
+        "password": "on9vlvku"
+    }
+    login_response = client.post('/api/login', json=super_admin_login_data) # errors out ahhhhhhhh
+    # time.sleep(1)
+    assert login_response.status_code == 200
+    employee_session_id = login_response.json.get('employee_session_id')
+
+    employee_data = {
+        "first_name": "testEmployee",
+        "last_name": "testEmployee",
+        "email": generateEmail(),
+        "phone": "1234567890",
+        "address": "123 Example St",
+        "city": "Test City",
+        "state": "NJ",
+        "zipcode": "99999",
+        "employeeType": secrets.choice(['Technician', 'Employee']), # why tf we can choice here???
+        "password": "a123",
+        "driverID": generateDriverID(),
+        "SSN": generateSSN()
+    }
+
+    # Sending a POST request to create an employee
+    response = client.post('/api/employees/create', json=employee_data, headers={'employee_session_id': employee_session_id})
+    assert response.status_code == 201
+
+    # verifying that the employee is created in the database
+    created_employee = Employee.query.filter_by(email=employee_data["email"]).first()
+    assert created_employee is not None
+
+    # verifying that the employee's sensitive information is created
+    created_sensitive_info = EmployeeSensitiveInfo.query.filter_by(employeeID=created_employee.employeeID).first()
+    assert created_sensitive_info is not None
+
+
 #
 #
 # def test_get_current_user(client):

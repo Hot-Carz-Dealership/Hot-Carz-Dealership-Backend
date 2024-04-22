@@ -239,7 +239,7 @@ def random_vehicles():
             random_vehicles_info.append(random_vehicle_info)
         return jsonify(random_vehicles_info), 200
     except Exception as e:
-        return jsonify({'error': str(e)}), 5000
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/employees', methods=['GET'])  # test ready
