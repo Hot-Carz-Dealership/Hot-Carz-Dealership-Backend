@@ -421,9 +421,9 @@ INSERT INTO TestDrive (memberID, VIN_carID, appointment_date, confirmation) VALU
 INSERT INTO Services(service_name, price) VALUES
 ('Oil Change',39.99),
 ('Brake Inspection',79.99),
-('Tire Rotation'),30.00,
+('Tire Rotation',30.00),
 ('Battery Replacement',149.99),
-('Wheel Alignment'),80.00,
+('Wheel Alignment',80.00),
 ('Diagnostic Services',50.00),
 ('Spark Plug Replacement',99.99),
 ('Air Conditioner Recharge', 89.99),

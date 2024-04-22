@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS Services (
   `service_name` varchar(255) DEFAULT NULL,
   `price` decimal(10,2) DEFAULT NULL,
   PRIMARY KEY (`serviceID`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+) ;
 
 CREATE TABLE IF NOT EXISTS ServiceAppointment (
     -- this table is meant to store information on the service appointments made
@@ -165,7 +165,7 @@ CREATE TABLE IF NOT EXISTS Financing (
   KEY `vin_carID_FK_idx` (`VIN_carID`),
   CONSTRAINT `financing_ibfk_1` FOREIGN KEY (`memberID`) REFERENCES `member` (`memberID`),
   CONSTRAINT `vin_carIDFK` FOREIGN KEY (`VIN_carID`) REFERENCES `carinfo` (`VIN_carID`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+);
 
 CREATE TABLE IF NOT EXISTS Payments (
     paymentID INT AUTO_INCREMENT PRIMARY KEY,
@@ -202,7 +202,7 @@ CREATE TABLE IF NOT EXISTS Bids (
   CONSTRAINT `bids_ibfk_1` FOREIGN KEY (`memberID`) REFERENCES `member` (`memberID`),
   CONSTRAINT `bids_ibfk_2` FOREIGN KEY (`VIN_carID`) REFERENCES `carinfo` (`VIN_carID`),
   CONSTRAINT `bids_ibfk_3` FOREIGN KEY (`last_updated_by`) REFERENCES `employee` (`employeeID`)
-) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+) ;
 
 CREATE TABLE IF NOT EXISTS Purchases (
     -- this table is meant to serve more as a crossroads to connect the bids, payments and financing table
@@ -246,4 +246,4 @@ CREATE TABLE IF NOT EXISTS checkoutcart (
   CONSTRAINT `memberID_FK` FOREIGN KEY (`memberID`) REFERENCES `member` (`memberID`),
   CONSTRAINT `serviceID_FK` FOREIGN KEY (`serviceID`) REFERENCES `services` (`serviceID`),
   CONSTRAINT `VIN_carID_FK` FOREIGN KEY (`VIN_carID`) REFERENCES `carinfo` (`VIN_carID`)
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+) ;
