@@ -5,6 +5,7 @@ import bcrypt
 import random
 import hashlib
 import logging
+import string
 from . import app
 import sqlalchemy.sql
 from .models import *
@@ -1427,9 +1428,17 @@ def insert_financing():
 #Display all the items in the cart with /api/member/cart
 
 
-
+def confirmation_number_generation() -> str:
+    try:
+        total_chars = string.ascii_uppercase + string.digits
+        return ''.join(random.choice(total_chars) for i in range(13))
+    except Exception as e:
+        # Log the exception or handle it appropriately
+        print(f"Error generating confirmation number: {e}")
+        return None
 
 @app.route('/api/vehicle-purchase/make-purchase', methods=['POST'])
+#Didnt test this yet but we'll bug fix it later
 def make_purchase():
     # here we deal with Purchases and Payments table    
     try:
@@ -1447,6 +1456,9 @@ def make_purchase():
         VIN_carID = data.get('VIN_carID')
         addon_ID = data.get('addon_ID')
         serviceID = data.get('serviceID')
+        bidID = None
+        purchaseType = data.get('purchaseType') #maybe seperate routes if in service
+        
         
         # Needed for payments table
         financed_amount = data.get('financed_amount')
@@ -1487,6 +1499,12 @@ def make_purchase():
             # looks up the financing id of the car being financed
             financingID = Financing.query.filter_by(VIN_carID=VIN_carID).first()
             
+            
+        # Check if VIN_carID exists in the bids table and get bidID if it does
+        if VIN_carID:
+            bid = Bids.query.filter_by(VIN_carID=VIN_carID).first()
+            if bid:
+                bidID = bid.bidID
         
             # DB insert for new purchase with financing
         new_payment = Payments(
@@ -1504,11 +1522,15 @@ def make_purchase():
         db.session.commit()
 
         new_purchase = Purchases(
-            # no Bid ID since this is not a BID Operation
+            bidID=bidID,
+            member_id=member_id,
             VIN_carID=VIN_carID,
-            memberID=member_id,
-            confirmationNumber=confirmation_number_generation()  # You may generate a confirmation number here
-            # signature='YES'
+            addon_ID=addon_ID,
+            serviceID=serviceID,
+            confirmationNumber=confirmation_number_generation(),  # You may generate a confirmation number here
+            purchaseType='Vehicle/Add-on Purchase', #Hardcoded for now
+            purchaseDate=datetime.now(),
+            signature='YES' 
             )
         db.session.add(new_purchase)
         db.session.commit()
