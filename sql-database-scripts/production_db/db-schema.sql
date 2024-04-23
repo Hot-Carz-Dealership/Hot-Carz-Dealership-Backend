@@ -206,17 +206,23 @@ CREATE TABLE IF NOT EXISTS Bids (
 
 CREATE TABLE IF NOT EXISTS Purchases (
     -- this table is meant to serve more as a crossroads to connect the bids, payments and financing table
-    purchaseID INT AUTO_INCREMENT PRIMARY KEY,
-    bidID INT,
-    VIN_carID VARCHAR(17),
-    memberID INT,
-    confirmationNumber VARCHAR(13) UNIQUE,
-    purchaseType ENUM ('Vehicle/Add-on Purchase', 'Vehicle/Add-on Continuing Payment', 'Service Payment'),
-    purchaseDate TIMESTAMP,
-    signature ENUM ('Yes', 'No'),
-    FOREIGN KEY (bidID) REFERENCES Bids(bidID),
-    FOREIGN KEY (VIN_carID) REFERENCES CarVINs(VIN_carID),
-    FOREIGN KEY (memberID) REFERENCES Member(memberID)
+  `purchaseID` int NOT NULL AUTO_INCREMENT,
+  `bidID` int DEFAULT NULL,
+  `memberID` int DEFAULT NULL,
+  `VIN_carID` varchar(17) DEFAULT NULL,
+  `addon_ID` int DEFAULT NULL,
+  `serviceID` int DEFAULT NULL,
+  `confirmationNumber` varchar(13) DEFAULT NULL,
+  `purchaseType` enum('Vehicle/Add-on Purchase','Vehicle/Add-on Continuing Payment','Service Payment') DEFAULT NULL,
+  `purchaseDate` timestamp NULL DEFAULT NULL,
+  `signature` enum('Yes','No') DEFAULT NULL,
+  PRIMARY KEY (`purchaseID`),
+  KEY `bidID` (`bidID`),
+  KEY `VIN_carID` (`VIN_carID`),
+  KEY `memberID` (`memberID`),
+  CONSTRAINT `purchases_ibfk_1` FOREIGN KEY (`bidID`) REFERENCES `bids` (`bidID`),
+  CONSTRAINT `purchases_ibfk_2` FOREIGN KEY (`VIN_carID`) REFERENCES `carvins` (`VIN_carID`),
+  CONSTRAINT `purchases_ibfk_3` FOREIGN KEY (`memberID`) REFERENCES `member` (`memberID`)
 );
 
 CREATE TABLE IF NOT EXISTS Addons (
