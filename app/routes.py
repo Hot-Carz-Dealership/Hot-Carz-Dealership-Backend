@@ -1487,13 +1487,13 @@ def confirmation_number_generation() -> str:
         return None
 
 @app.route('/api/vehicle-purchase/make-purchase', methods=['POST'])
-#Didnt test this yet but we'll bug fix it later
+# Route Where all purchases will be made for car,addons, or service center
 def make_purchase():
     # here we deal with Purchases and Payments table    
     try:
         member_id = session.get('member_session_id')
         if not member_id:
-            return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+            return jsonify({'message': 'Unauthorized access. Please log in.'}), 403
         
         data = request.json
         if not data:
@@ -1527,13 +1527,19 @@ def make_purchase():
         
         # Add cart items to the Purchases table
         for item in cart_items:
-            
+            bidID = None
             # Check if VIN_carID exists in the bids table and get bidID if it does
             VIN_carID=item.VIN_carID
             if VIN_carID:
                 bid = Bids.query.filter_by(VIN_carID=VIN_carID).first()
                 if bid:
                     bidID = bid.bidID
+                if item.financed_amount:
+                    # looks up the financing id of the car being financed
+                    financing = Financing.query.filter_by(VIN_carID=VIN_carID).first()
+                    if financing:
+                        financingID = financing.financingID
+                    
                     
             new_purchase = Purchases(
                 bidID=bidID,
@@ -1554,12 +1560,6 @@ def make_purchase():
             elif serviceID and not Services.query.filter_by(serviceID=serviceID).first():
                 return jsonify({'error': 'Service with provided ID not found'}), 404
             
-            if not financed_amount:
-                financed_amount = 0
-            else:
-                # looks up the financing id of the car being financed
-                financingID = Financing.query.filter_by(VIN_carID=VIN_carID).first()
-                financingID = financingID.financingID
             
             
             db.session.add(new_purchase)
