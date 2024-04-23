@@ -22,6 +22,7 @@ DROP TABLE IF EXISTS Services;
 DROP TABLE IF EXISTS MemberAuditLog;
 DROP TABLE IF EXISTS EmployeeAuditLog;
 DROP TABLE IF EXISTS ServiceAppointmentEmployeeAssignments;
+DROP TABLE IF EXISTS checkoutcart;
 
 
 CREATE TABLE IF NOT EXISTS Member (
@@ -118,9 +119,11 @@ CREATE TABLE IF NOT EXISTS MemberSensitiveInfo (
 );
 
 CREATE TABLE IF NOT EXISTS Services (
-    serviceID INT AUTO_INCREMENT PRIMARY KEY,
-    service_name VARCHAR(255)
-);
+  `serviceID` int NOT NULL AUTO_INCREMENT,
+  `service_name` varchar(255) DEFAULT NULL,
+  `price` decimal(10,2) DEFAULT NULL,
+  PRIMARY KEY (`serviceID`)
+) ;
 
 CREATE TABLE IF NOT EXISTS ServiceAppointment (
     -- this table is meant to store information on the service appointments made
@@ -147,16 +150,21 @@ CREATE TABLE IF NOT EXISTS ServiceAppointmentEmployeeAssignments (
 
 CREATE TABLE IF NOT EXISTS Financing (
     -- this table is meant to keep information on financing if the customer buys and finances
-    financingID INT AUTO_INCREMENT PRIMARY KEY,
-    memberID INT,
-    income INT,
-    credit_score INT,
-    loan_total INT,
-    down_payment INT,
-    percentage INT,
-    monthly_payment_sum INT, # how much they have to pay for per month
-    remaining_months INT,
-    FOREIGN KEY (memberID) REFERENCES Member(memberID)
+  `financingID` int NOT NULL AUTO_INCREMENT,
+  `memberID` int DEFAULT NULL,
+  `VIN_carID` varchar(17) DEFAULT NULL,
+  `income` int DEFAULT NULL,
+  `credit_score` int DEFAULT NULL,
+  `loan_total` int DEFAULT NULL,
+  `down_payment` int DEFAULT NULL,
+  `percentage` int DEFAULT NULL,
+  `monthly_payment_sum` int DEFAULT NULL,
+  `remaining_months` int DEFAULT NULL,
+  PRIMARY KEY (`financingID`),
+  KEY `memberID` (`memberID`),
+  KEY `vin_carID_FK_idx` (`VIN_carID`),
+  CONSTRAINT `financing_ibfk_1` FOREIGN KEY (`memberID`) REFERENCES `member` (`memberID`),
+  CONSTRAINT `vin_carIDFK` FOREIGN KEY (`VIN_carID`) REFERENCES `carinfo` (`VIN_carID`)
 );
 
 CREATE TABLE IF NOT EXISTS Payments (
@@ -180,27 +188,41 @@ CREATE TABLE IF NOT EXISTS Payments (
 
 CREATE TABLE IF NOT EXISTS Bids (
     -- this table is meant to store all bids and their information
-    bidID INT AUTO_INCREMENT PRIMARY KEY,
-    memberID INT,
-    bidValue DECIMAL(10,2),
-    bidStatus ENUM ('Confirmed', 'Denied', 'Processing', 'None'),
-    bidTimestamp TIMESTAMP,
-    FOREIGN KEY (memberID) REFERENCES Member(memberID)
-);
+  `bidID` int NOT NULL AUTO_INCREMENT,
+  `memberID` int DEFAULT NULL,
+  `VIN_carID` varchar(17) DEFAULT NULL,
+  `bidValue` decimal(10,2) DEFAULT NULL,
+  `bidStatus` enum('Confirmed','Denied','Processing','None') DEFAULT NULL,
+  `bidTimestamp` timestamp NULL DEFAULT NULL,
+  `last_updated_by` int DEFAULT '1',
+  PRIMARY KEY (`bidID`),
+  KEY `memberID` (`memberID`),
+  KEY `bid_ibfk_2_idx` (`VIN_carID`),
+  KEY `bids_ibfk_3_idx` (`last_updated_by`),
+  CONSTRAINT `bids_ibfk_1` FOREIGN KEY (`memberID`) REFERENCES `member` (`memberID`),
+  CONSTRAINT `bids_ibfk_2` FOREIGN KEY (`VIN_carID`) REFERENCES `carinfo` (`VIN_carID`),
+  CONSTRAINT `bids_ibfk_3` FOREIGN KEY (`last_updated_by`) REFERENCES `employee` (`employeeID`)
+) ;
 
 CREATE TABLE IF NOT EXISTS Purchases (
     -- this table is meant to serve more as a crossroads to connect the bids, payments and financing table
-    purchaseID INT AUTO_INCREMENT PRIMARY KEY,
-    bidID INT,
-    VIN_carID VARCHAR(17),
-    memberID INT,
-    confirmationNumber VARCHAR(13) UNIQUE,
-    purchaseType ENUM ('Vehicle/Add-on Purchase', 'Vehicle/Add-on Continuing Payment', 'Service Payment'),
-    purchaseDate TIMESTAMP,
-    signature ENUM ('Yes', 'No'),
-    FOREIGN KEY (bidID) REFERENCES Bids(bidID),
-    FOREIGN KEY (VIN_carID) REFERENCES CarVINs(VIN_carID),
-    FOREIGN KEY (memberID) REFERENCES Member(memberID)
+  `purchaseID` int NOT NULL AUTO_INCREMENT,
+  `bidID` int DEFAULT NULL,
+  `memberID` int DEFAULT NULL,
+  `VIN_carID` varchar(17) DEFAULT NULL,
+  `addon_ID` int DEFAULT NULL,
+  `serviceID` int DEFAULT NULL,
+  `confirmationNumber` varchar(13) DEFAULT NULL,
+  `purchaseType` enum('Vehicle/Add-on Purchase','Vehicle/Add-on Continuing Payment','Service Payment') DEFAULT NULL,
+  `purchaseDate` timestamp NULL DEFAULT NULL,
+  `signature` enum('Yes','No') DEFAULT NULL,
+  PRIMARY KEY (`purchaseID`),
+  KEY `bidID` (`bidID`),
+  KEY `VIN_carID` (`VIN_carID`),
+  KEY `memberID` (`memberID`),
+  CONSTRAINT `purchases_ibfk_1` FOREIGN KEY (`bidID`) REFERENCES `bids` (`bidID`),
+  CONSTRAINT `purchases_ibfk_2` FOREIGN KEY (`VIN_carID`) REFERENCES `carvins` (`VIN_carID`),
+  CONSTRAINT `purchases_ibfk_3` FOREIGN KEY (`memberID`) REFERENCES `member` (`memberID`)
 );
 
 CREATE TABLE IF NOT EXISTS Addons (
@@ -209,3 +231,25 @@ CREATE TABLE IF NOT EXISTS Addons (
     itemName VARCHAR(100),
     totalCost DECIMAL(10, 2)
 );
+
+
+CREATE TABLE IF NOT EXISTS checkoutcart (
+  `cart_item_id` int NOT NULL AUTO_INCREMENT,
+  `memberID` int NOT NULL,
+  `VIN_carID` varchar(45) DEFAULT NULL,
+  `addon_ID` int DEFAULT NULL,
+  `serviceID` int DEFAULT NULL,
+  `item_name` varchar(120) NOT NULL,
+  `item_price` decimal(10,2) NOT NULL,
+  `financed_amount` decimal(10,2) unsigned NOT NULL DEFAULT '0.00',
+  `last_updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`cart_item_id`),
+  KEY `userID_FK_idx` (`memberID`),
+  KEY `VIN_carID_FK_idx` (`VIN_carID`),
+  KEY `addonID_FK_idx` (`addon_ID`),
+  KEY `serviceID_FK_idx` (`serviceID`),
+  CONSTRAINT `addonID_FK` FOREIGN KEY (`addon_ID`) REFERENCES `addons` (`itemID`),
+  CONSTRAINT `memberID_FK` FOREIGN KEY (`memberID`) REFERENCES `member` (`memberID`),
+  CONSTRAINT `serviceID_FK` FOREIGN KEY (`serviceID`) REFERENCES `services` (`serviceID`),
+  CONSTRAINT `VIN_carID_FK` FOREIGN KEY (`VIN_carID`) REFERENCES `carinfo` (`VIN_carID`)
+) ;

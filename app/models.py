@@ -65,6 +65,8 @@ class Services(db.Model):
     __tablename__ = 'Services'
     serviceID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     service_name = db.Column(db.String(255))
+    price = db.Column(db.DECIMAL(10, 2))
+
 
 
 class ServiceAppointment(db.Model):
@@ -135,6 +137,7 @@ class Financing(db.Model):
     __tablename__ = 'Financing'
     financingID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     memberID = db.Column(db.Integer, ForeignKey('Member.memberID'))
+    VIN_carID = db.Column(db.String(17), db.ForeignKey('CarInfo.VIN_carID'))
     income = db.Column(db.Integer)
     credit_score = db.Column(db.Integer)
     loan_total = db.Column(db.Integer)
@@ -153,10 +156,6 @@ class Payments(db.Model):
     valueToPay = db.Column(db.String(20))
     initialPurchase = db.Column(db.TIMESTAMP)
     lastPayment = db.Column(db.TIMESTAMP)
-    # paymentType = db.Column(Enum('Check/Bank Account', 'Card', 'None'))
-    # cardNumber = db.Column(db.TEXT)
-    # expirationDate = db.Column(db.TEXT)
-    # CVV = db.Column(db.TEXT)
     routingNumber = db.Column(db.TEXT)
     bankAcctNumber = db.Column(db.TEXT)
     memberID = db.Column(db.Integer, ForeignKey('Member.memberID'))
@@ -168,6 +167,7 @@ class Bids(db.Model):
     __tablename__ = 'Bids'
     bidID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     memberID = db.Column(db.Integer, ForeignKey('Member.memberID'))
+    VIN_carID = db.Column(db.String(17), db.ForeignKey('CarInfo.VIN_carID')) #Bids Should be attached to some vehicle
     bidValue = db.Column(db.DECIMAL(10, 2))
     bidStatus = db.Column(Enum('Confirmed', 'Denied', 'Processing', 'None'))
     bidTimestamp = db.Column(db.TIMESTAMP)
@@ -180,10 +180,13 @@ class Purchases(db.Model):
     bidID = db.Column(db.Integer, ForeignKey('Bids.bidID'))
     VIN_carID = db.Column(db.String(17), ForeignKey('CarVINs.VIN_carID'))
     memberID = db.Column(db.Integer, ForeignKey('Member.memberID'))
+    addon_ID = db.Column(db.Integer)
+    serviceID = db.Column(db.Integer)
     confirmationNumber = db.Column(db.String(13), unique=True)
     purchaseType = db.Column(Enum('Vehicle/Add-on Purchase', 'Vehicle/Add-on Continuing Payment', 'Service Payment'))
     purchaseDate = db.Column(db.TIMESTAMP)
     signature = db.Column(Enum('Yes', 'No'))
+
 
 
 class Addons(db.Model):
@@ -192,3 +195,20 @@ class Addons(db.Model):
     itemID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     itemName = db.Column(db.String(100))
     totalCost = db.Column(db.DECIMAL(10, 2))
+
+
+class CheckoutCart(db.Model):
+    # CheckoutCart table model
+    __tablename__ = 'Checkoutcart'
+    
+    cart_item_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    memberID = db.Column(db.Integer, db.ForeignKey('Member.memberID'), nullable=False)
+    VIN_carID = db.Column(db.String(45), db.ForeignKey('CarInfo.VIN_carID'))
+    addon_ID = db.Column(db.Integer, db.ForeignKey('Addons.itemID'))
+    serviceID = db.Column(db.Integer, db.ForeignKey('Services.serviceID'))
+    item_name = db.Column(db.String(120), nullable=False)
+    item_price = db.Column(db.DECIMAL(10, 2), nullable=False)
+    financed_amount = db.Column(db.DECIMAL(10, 2), nullable=False)
+    last_updated = db.Column(db.DateTime, nullable=False, server_default=db.func.current_timestamp(),
+                          onupdate=db.func.current_timestamp())
+

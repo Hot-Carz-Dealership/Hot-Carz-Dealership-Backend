@@ -3,13 +3,17 @@
 import re
 import bcrypt
 import random
+import hashlib
 import logging
+import string
 from . import app
 import sqlalchemy.sql
 from .models import *
 from sqlalchemy import text
 from datetime import datetime, timedelta
 from flask import jsonify, request, session
+from decimal import Decimal, ROUND_HALF_UP
+
 
 
 ''' all the NON FINANCIAL route API's here. All Passwords and sensitive information use Bcrypt hash'''
@@ -321,43 +325,6 @@ def update_confirmation():
         return jsonify({'error': str(e)}), 500
 
 
-# #Commented out for now since we have combined login for member and employee
-# # depricated | delete later when know for sure won't be used and have a viable solution
-# @app.route('/api/employees/login', methods=['GET', 'POST'])  # needs a test case
-# # This API LOGS in the employee and returns employee information based on their email address and password which is used for auth
-# def login_employee():
-#     # Retrieve employee based on email and password
-#     try:
-#         data = request.json
-
-#         # information needed to be passed by the frontend
-#         email = data.get('email')
-#         password = data.get('password')
-#         employee_data = db.session.query(Employee, EmployeeSensitiveInfo). \
-#             join(EmployeeSensitiveInfo, Employee.employeeID == EmployeeSensitiveInfo.employeeID). \
-#             filter(Employee.email == email, EmployeeSensitiveInfo.password == password).first()
-
-#         # Check if employee exists
-#         if employee_data:
-#             employee, sensitive_info = employee_data
-#             # ENABLES AND STORES THE SESSIONS FOR THE NEWLY LOGGED IN EMPLPOYEE
-#             session['employee_session_id'] = employee.employeeID
-#             # Construct response to return back to view on frontend regarding logged in employee and their information
-#             response = {
-#                 'employeeID': employee.employeeID,
-#                 'firstname': employee.firstname,
-#                 'lastname': employee.lastname,
-#                 'email': employee.email,
-#                 'phone': employee.phone,
-#                 'address': employee.address,
-#                 'employeeType': employee.employeeType,
-#             }
-#             return jsonify(response), 200
-#         else:
-#             return jsonify({'message': 'Employee not found'}), 404
-#     except Exception as e:
-#         return jsonify({'error': str(e)}), 500
-
 
 # This API creates an employee based on all the values passed from the front to the backend
 @app.route('/api/employees/create', methods=['POST'])  # test ready
@@ -456,26 +423,6 @@ def get_technicians():
     return jsonify(technicians_data), 200
 
 
-# depricated | delete later when know for sure won't be used and have a viable solution
-# @app.route("/@emp")
-# # Gets employee for active session
-# def get_current_employee():
-#     user_id = session.get("employee_session_id")
-#
-#     if not user_id:
-#         return jsonify({"error": "Unauthorized"}), 401
-#
-#     employee = Employee.query.filter_by(employeeID=user_id).first()
-#     return jsonify({
-#         'employeeID': employee.employeeID,
-#         'firstname': employee.firstname,
-#         'lastname': employee.lastname,
-#         'email': employee.email,
-#         'phone': employee.phone,
-#         'address': employee.address,
-#         'employeeType': employee.employeeType,
-#     }), 200
-
 
 @app.route('/api/members', methods=['GET'])  # test ready
 def get_all_members():
@@ -498,47 +445,6 @@ def get_all_members():
         return jsonify({'error': str(e)}), 500
 
 
-# Commented out for now since we have combined login for member and employee
-# depricated | delete later when know for sure won't be used and have a viable solution
-
-# @cross_origin
-# @app.route('/api/members/login', methods=['GET', 'POST'])
-# # This API is used as Authentication to login a member IF their ACCOUNT EXISTS and
-# # returns that members information. we need their username and password passed from the front end to the backend to login
-# # TESTCASE: DONE
-# def login_member():
-#     try:
-#         data = request.json
-
-#         # informaton needed to login being sent from front to backend
-#         username = data.get('username')
-#         password = data.get('password')
-
-#         # Joins to make it happen where the password matches with the MemberSensitiveInfo information for that member
-#         member_info = db.session.query(Member, MemberSensitiveInfo). \
-#             join(MemberSensitiveInfo, Member.memberID == MemberSensitiveInfo.memberID). \
-#             filter(MemberSensitiveInfo.username == username, MemberSensitiveInfo.password == password).first()
-
-#         if member_info:
-#             member, sensitive_info = member_info
-
-#             # start the session for the logged member
-#             session['member_session_id'] = member.memberID
-#             return jsonify({
-#                 'memberID': member.memberID,
-#                 'first_name': member.first_name,
-#                 'last_name': member.last_name,
-#                 'email': member.email,
-#                 'phone': member.phone,
-#                 'join_date': member.join_date,
-#                 'SSN': sensitive_info.SSN,
-#                 'driverID': sensitive_info.driverID,
-#                 'cardInfo': sensitive_info.cardInfo
-#             }), 200
-#         else:
-#             return jsonify({'error': 'Member not found or credentials invalid'}), 404
-#     except Exception as e:
-#         return jsonify({'error': str(e)}), 500
 
 
 # This API creates a member account based on the information passed from the front end to the backend (here)
@@ -847,7 +753,8 @@ def get_services():
             services = Services.query.all()
             services_info = [{
                 'serviceID': service.serviceID,
-                'service_name': service.service_name
+                'service_name': service.service_name,
+                'price': service.price
             } for service in services]
             return jsonify(services_info), 200
         except Exception as e:
@@ -1174,3 +1081,511 @@ def login():
         return jsonify({'error': 'Invalid credentials or user type'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+### Just Going to code everything into here for now and move it to the financial stub if needed
+
+
+@app.route('/api/member/add_to_cart', methods=['POST'])
+# Route to add either a service, a vehicle, and/or add ons.
+def add_to_cart():
+    
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+
+    # check if the member exists
+    member = Member.query.get(member_id)
+    if not member:
+        return jsonify({'message': 'Member not found'}), 404
+    
+    data = request.json
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    # Extract data from JSON request
+    item_name = data.get('item_name')
+    item_price = data.get('item_price')
+    VIN_carID = data.get('VIN_carID')
+    addon_ID = data.get('addon_ID')
+    serviceID = data.get('serviceID')
+    financed_amount = data.get('financed_amount')
+
+    if not member_id or not item_name or not item_price:
+        return jsonify({'error': 'Missing required fields'}), 400
+    
+    # Ensure only one of VIN_carID, addon_ID, or serviceID is provided
+    provided_ids = [VIN_carID, addon_ID, serviceID]
+    if sum(id is not None for id in provided_ids) != 1:
+        return jsonify({'error': 'Exactly one of VIN_carID, addon_ID, or serviceID must be provided'}), 400
+
+    if not financed_amount:
+        financed_amount = 0
+
+    try:
+        if VIN_carID:
+            # Check if the provided VIN exists in the carinfo table
+            car = CarInfo.query.filter_by(VIN_carID=VIN_carID).first()
+            if not car:
+                return jsonify({'error': 'Car with provided VIN not found'}), 404
+            
+        elif addon_ID:
+            # Check if the provided addon ID exists in the addons table
+            addon = Addons.query.filter_by(itemID=addon_ID).first()
+            if not addon:
+                return jsonify({'error': 'Addon with provided ID not found'}), 404
+        elif serviceID:
+            # Check if the provided service ID exists in the services table
+            service = Services.query.filter_by(serviceID=serviceID).first()
+            if not service:
+                return jsonify({'error': 'Service with provided ID not found'}), 404
+            
+            
+    # Create a new checkout cart item with the VIN
+        new_item = CheckoutCart(
+            memberID=member_id,
+            item_name=item_name,
+            item_price=item_price,
+            VIN_carID=VIN_carID,
+            addon_ID=addon_ID,
+            serviceID=serviceID,
+            financed_amount=financed_amount 
+
+            )
+        
+        # Add the new item to the database
+        db.session.add(new_item)
+        db.session.commit()
+        
+        return jsonify({'success': 'Item added successfully to cart'}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+
+@app.route('/api/member/delete_from_cart/<int:item_id>', methods=['DELETE'])
+# Route to Remove Stuff from the cart one by one
+def delete_from_cart(item_id):
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+
+    # Check if the member exists
+    member = Member.query.get(member_id)
+    if not member:
+        return jsonify({'message': 'Member not found'}), 404
+
+    # Check if the item exists in the cart
+    item = CheckoutCart.query.get(item_id)
+    if not item:
+        return jsonify({'error': 'Item not found in the cart'}), 404
+
+    # Check if the item belongs to the logged-in member
+    if item.memberID != member_id:
+        return jsonify({'error': 'Unauthorized to delete this item from the cart'}), 403
+
+    try:
+        # Delete the item from the database
+        db.session.delete(item)
+        db.session.commit()
+
+        return jsonify({'success': 'Item deleted successfully from the cart'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/members/update', methods=['POST'])  
+# Route to update logged in users account info
+def update_member():
+    try:
+        data = request.json
+
+        # Customer auth for making sure they are logged in and have an account
+        member_id = session.get('member_session_id')
+        if member_id is None:
+            return jsonify({'message': 'Invalid session'}), 400
+
+        # Retrieve the member based on the current session
+        existing_member = Member.query.get(member_id)
+        if existing_member is None:
+            return jsonify({'error': 'Member not found.'}), 404
+
+        # Update member information
+        existing_member.first_name = data.get('first_name', existing_member.first_name)
+        existing_member.last_name = data.get('last_name', existing_member.last_name)
+        existing_member.email = data.get('email', existing_member.email)
+        existing_member.phone = data.get('phone', existing_member.phone)
+        existing_member.address = data.get('address', existing_member.address)
+        existing_member.city = data.get('city', existing_member.city)
+        existing_member.state = data.get('state', existing_member.state) #Must be state code (NJ, NY, etc)
+        existing_member.zipcode = data.get('zipcode', existing_member.zipcode)
+
+        # Commit changes to the database
+        db.session.commit()
+        
+        # Update driverID if provided
+        driverID = data.get('driverID')
+        if driverID:
+            existing_sensitive_info = MemberSensitiveInfo.query.filter_by(memberID=member_id).first()
+            if existing_sensitive_info:
+                existing_sensitive_info.driverID = driverID
+                db.session.commit()
+
+        # Update SSN if provided
+        SSN = data.get('SSN')
+        if SSN:
+            # Hash the SSN before storing it
+            hashed_ssn = bcrypt.hashpw(SSN.encode('utf-8'), bcrypt.gensalt())
+
+            existing_sensitive_info = MemberSensitiveInfo.query.filter_by(memberID=member_id).first()
+            if existing_sensitive_info:
+                existing_sensitive_info.SSN = hashed_ssn
+                db.session.commit()
+
+        # Return updated member information
+        member_info = {
+            'memberID': existing_member.memberID,
+            'first_name': existing_member.first_name,
+            'last_name': existing_member.last_name,
+            'email': existing_member.email,
+            'phone': existing_member.phone,
+            'address': existing_member.address,
+            'state': existing_member.state, #Must be state code (NJ, NY, etc)
+            'zipcode': existing_member.zipcode,
+            'join_date': existing_member.join_date,
+        }
+        return jsonify({'message': 'Member account updated successfully', 'member_info': member_info}), 200
+
+    except Exception as e:
+        # Rollback the session in case of any exception
+        db.session.rollback()
+        logging.exception(e)  # Log the exception for debugging purposes
+        return jsonify({'error': 'An error occurred while updating the member account.'}), 500
+
+
+@app.route('/api/member/cart', methods=['GET'])
+# This route displays everything in a members cart and also totals everything 
+def get_cart():
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+
+    # Check if the member exists
+    member = Member.query.get(member_id)
+    if not member:
+        return jsonify({'message': 'Member not found'}), 404
+
+    try:
+        # Retrieve items in the cart for the member
+        cart_items = CheckoutCart.query.filter_by(memberID=member_id).all()
+        
+        # Initialize variables for calculating totals
+        subtotal = 0
+        financed_total = 0
+
+        # Serialize the cart items
+        serialized_cart = []
+        for item in cart_items:
+            serialized_item = {
+                'cart_item_id': item.cart_item_id,
+                'item_name': item.item_name,
+                'item_price': item.item_price,
+                'VIN_carID': item.VIN_carID,
+                'addon_ID': item.addon_ID,
+                'serviceID': item.serviceID,
+                'financed_amount': item.financed_amount
+            }
+            serialized_cart.append(serialized_item)
+            subtotal += item.item_price
+            financed_total += item.financed_amount
+
+        # Calculate other totals and taxes
+        taxes = (subtotal * Decimal('0.05')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)  # 5% taxes as per prof
+        grand_total = (subtotal + taxes).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        due_now_total = (grand_total - financed_total).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        ## quantize() is used to round the values to two decimal places, and ROUND_HALF_UP is used as the rounding mode to round halfway cases up.
+            
+
+        return jsonify({'cart': serialized_cart, 'Grand Total': grand_total, 'Subtotal': subtotal, 'Financed Amount':financed_total, 'Taxes': taxes, 'Amount Due Now': due_now_total }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+## Need to find a way to apply for financing first
+## Then if theyre approved Show the terms
+## If not ask them to put in more downpayemnt
+
+def creditScoreGenerator(member_id: int, monthly_income: float) -> int:
+    # Creates a random credit score based on id and income so that the same is always returned
+    # Create a unique seed based on member_id and monthly_income
+    seed = hashlib.sha256(f"{member_id}-{monthly_income}".encode()).hexdigest()
+    # Convert the seed to an integer for seeding the random number generator
+    seed_int = int(seed, 16) % (10 ** 8)  # Modulo to keep the number within an appropriate range
+    # Seed the random number generator
+    random.seed(seed_int)
+    # Generate a random credit score
+    return random.randint(500, 850)
+
+def interest_rate(creditScore: int) -> int:
+    # calculates the base interest rate
+    if creditScore >= 750:
+        return 5
+    elif creditScore >= 700:
+        return 10
+    elif creditScore >= 650:
+        return 15
+    else:
+        return 20
+    
+def adjust_loan_with_downpayment(vehicle_cost, down_payment):
+    # Recalculate the loan amount based on the new down_payment
+    loan_amount = vehicle_cost - down_payment
+    return loan_amount
+
+def calculateInterest(vehicleCost: int, monthlyIncome: int, creditscore: int) -> float:
+    # generates the total amount financed after interest 
+
+    base_loan_interest_rate = interest_rate(creditscore)
+    # Calculate financing value based on vehicle cost and monthly income
+    final_financing_percentage = base_loan_interest_rate + ((vehicleCost / monthlyIncome) * 100)
+    financing_loan_value = (final_financing_percentage / 100) * vehicleCost
+    return round(financing_loan_value, 2)
+
+def check_loan_eligibility(loan_amount: float, monthly_income: int) -> bool:
+    # Calculate yearly income from monthly income
+    yearly_income = monthly_income * 12
+
+    # Calculate the loan amount and check if it's less than 10% of the yearly income
+    if loan_amount <= (yearly_income * 0.1):
+        return True  # User is eligible for the loan
+    else:
+        return False  # User is not eligible for the loan
+
+@app.route('/api/vehicle-purchase/apply-for-financing', methods=['POST'])
+#Route just to apply for financing and returns terms if user is eligible
+#This wont add to any tables yet, 
+#we'll have the front end send back the same terms if users accepts in another route
+##The user will accept by typing in their name or initials(aka signing)
+def apply_for_financing():
+    
+    try:
+        # customer auth for making sure they are logged in and have an account
+        member_id = session.get('member_session_id')
+        if member_id is None:
+            return jsonify({'message': 'Invalid session'}), 400
+
+        # frontend needs to send these values to the backend
+        data = request.json
+        Vin_carID = data.get('Vin_carID')
+        down_payment = data.get('down_payment')
+        monthly_income = data.get('monthly_income')
+        vehicle_cost = data.get('vehicle_cost') #Front end can send this based on if the user won a bid or buying at MSRP
+        
+        
+        credit_score = creditScoreGenerator(member_id, monthly_income)
+        total_cost = adjust_loan_with_downpayment(vehicle_cost, down_payment)
+        finance_interest = calculateInterest(total_cost, monthly_income, credit_score)
+        
+        # Loan eligibility
+        loan_eligibility = check_loan_eligibility(total_cost, monthly_income)
+        if not loan_eligibility:
+            return jsonify({'message': 'Your yearly income is not sufficient to take on this loan. Reapply with more down payment'}), 400
+        
+        # downPayment_value = total_cost - financing_loan_amount
+        valueToPay_value = round(total_cost + finance_interest, 2)
+        paymentPerMonth_value = round(valueToPay_value / 48, 2)
+
+        
+        # Create a dictionary with financing terms
+        financing_terms = {
+            'member_id': member_id,
+            'income': int(monthly_income) * 12,
+            'credit_score': credit_score,
+            'loan_total': valueToPay_value,
+            'down_payment': down_payment,
+            'percentage': interest_rate(credit_score),
+            'monthly_payment_sum': paymentPerMonth_value,
+            'remaining_months': 48,
+            'Vin_carID': Vin_carID,
+            'financed_amount':total_cost,
+            'interest_total':finance_interest
+        }
+        
+        # Return the financing terms as JSON
+        # Front End should save this somewhere
+        # If the user accepts by signing then use the /insert-financing route
+    
+        return jsonify({'financing_terms': financing_terms}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'Error: {str(e)}'}), 500
+
+@app.route('/api/vehicle-purchase/insert-financing', methods=['POST'])
+#Use this route whenever the user accepts the loan to add it to the db
+def insert_financing():
+    try:
+        
+        # customer auth for making sure they are logged in and have an account
+        member_id = session.get('member_session_id')
+        if member_id is None:
+            return jsonify({'message': 'Invalid session'}), 400
+        
+        # Retrieve data from the request
+        data = request.json
+        VIN_carID = data.get('VIN_carID')
+        income = data.get('income')
+        credit_score = data.get('credit_score')
+        loan_total = data.get('loan_total')
+        down_payment = data.get('down_payment')
+        percentage = data.get('percentage')
+        monthly_payment_sum = data.get('monthly_payment_sum')
+        remaining_months = data.get('remaining_months')
+
+        if VIN_carID:
+            # Check if the provided VIN exists in the carinfo table
+            car = CarInfo.query.filter_by(VIN_carID=VIN_carID).first()
+            if not car:
+                return jsonify({'error': 'Car with provided VIN not found'}), 404
+            
+        # Insert data into the database
+        new_financing = Financing(
+            memberID=member_id,
+            VIN_carID=VIN_carID,
+            income=income,
+            credit_score=credit_score,
+            loan_total=loan_total,
+            down_payment=down_payment,
+            percentage=percentage,
+            monthly_payment_sum=monthly_payment_sum,
+            remaining_months=remaining_months
+        )
+        db.session.add(new_financing)
+        db.session.commit()
+
+        return jsonify({'message': 'Financing information inserted successfully.'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'Error: {str(e)}'}), 500
+    
+## User get sent to add ons page
+## Anything they add on that page gets added to the users cart
+
+#Finally they hit the final check out
+#Display all the items in the cart with /api/member/cart
+
+
+def confirmation_number_generation() -> str:
+    try:
+        total_chars = string.ascii_uppercase + string.digits
+        return ''.join(random.choice(total_chars) for i in range(13))
+    except Exception as e:
+        # Log the exception or handle it appropriately
+        print(f"Error generating confirmation number: {e}")
+        return None
+
+@app.route('/api/vehicle-purchase/make-purchase', methods=['POST'])
+#Didnt test this yet but we'll bug fix it later
+def make_purchase():
+    # here we deal with Purchases and Payments table    
+    try:
+        member_id = session.get('member_session_id')
+        if not member_id:
+            return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+        
+        data = request.json
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Extract data from JSON request
+        
+        # Needed for purchases table
+        VIN_carID = data.get('VIN_carID')
+        addon_ID = data.get('addon_ID')
+        serviceID = data.get('serviceID')
+        bidID = None
+        purchaseType = data.get('purchaseType') #maybe seperate routes if in service
+        
+        
+        # Needed for payments table
+        financed_amount = data.get('financed_amount')
+        valuePaid = data.get('Amount Due Now')
+        valueToPay = data.get ('Financed Amount')
+        routingNumber = data.get ('routingNumber')
+        bankAcctNumber = data.get('bankAcctNumber')
+        financingID = data.get('financingID')
+        
+        
+        # Ensure only one of VIN_carID, addon_ID, or serviceID is provided
+        provided_ids = [VIN_carID, addon_ID, serviceID]
+        if sum(id is not None for id in provided_ids) != 1:
+            return jsonify({'error': 'Exactly one of VIN_carID, addon_ID, or serviceID must be provided'}), 400
+
+        
+        if VIN_carID:
+            # Check if the provided VIN exists in the carinfo table
+            car = CarInfo.query.filter_by(VIN_carID=VIN_carID).first()
+            if not car:
+                return jsonify({'error': 'Car with provided VIN not found'}), 404
+                
+        elif addon_ID:
+            # Check if the provided addon ID exists in the addons table
+            addon = Addons.query.filter_by(itemID=addon_ID).first()
+            if not addon:
+                return jsonify({'error': 'Addon with provided ID not found'}), 404
+        elif serviceID:
+            # Check if the provided service ID exists in the services table
+            service = Services.query.filter_by(serviceID=serviceID).first()
+            if not service:
+                return jsonify({'error': 'Service with provided ID not found'}), 404
+                
+            
+        if not financed_amount:
+            financed_amount = 0
+        else:
+            # looks up the financing id of the car being financed
+            financingID = Financing.query.filter_by(VIN_carID=VIN_carID).first()
+            
+            
+        # Check if VIN_carID exists in the bids table and get bidID if it does
+        if VIN_carID:
+            bid = Bids.query.filter_by(VIN_carID=VIN_carID).first()
+            if bid:
+                bidID = bid.bidID
+        
+            # DB insert for new purchase with financing
+        new_payment = Payments(
+            paymentStatus='Completed',
+            valuePaid=valuePaid,
+            valueToPay=valueToPay,
+            initialPurchase=datetime.now(),
+            lastPayment=datetime.now(),
+            routingNumber=routingNumber,
+            bankAcctNumber=bankAcctNumber,
+            memberID=member_id,       
+            financingID=financingID
+            )
+        db.session.add(new_payment)
+        db.session.commit()
+
+        new_purchase = Purchases(
+            bidID=bidID,
+            member_id=member_id,
+            VIN_carID=VIN_carID,
+            addon_ID=addon_ID,
+            serviceID=serviceID,
+            confirmationNumber=confirmation_number_generation(),  # You may generate a confirmation number here
+            purchaseType='Vehicle/Add-on Purchase', #Hardcoded for now
+            purchaseDate=datetime.now(),
+            signature='YES' 
+            )
+        db.session.add(new_purchase)
+        db.session.commit()
+
+            # payment stub generation can occur through the means of functions above with endpoints
+            # /api/member
+            # /api/payments
+
+        return jsonify({'message': 'Vehicle purchase with financing processed successfully.'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'Error: {str(e)}'}), 500
