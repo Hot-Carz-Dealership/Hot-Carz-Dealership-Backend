@@ -337,7 +337,7 @@ def create_employee():
 
         # Check if authenticated employee is a super admin
         super_admin = Employee.query.get(employee_id)
-        if not super_admin or super_admin.employeeType != 'superAdmin':
+        if super_admin is None or super_admin.employeeType != 'superAdmin':
             return jsonify({'message': 'Only SuperAdmins can create employee accounts'}), 403
 
         data = request.json
@@ -783,10 +783,11 @@ def edit_service_menu():
             edit_or_add = data.get('edit_or_add')
             if edit_or_add == 1:  # add
                 service_name = data.get('service_name')
-                if service_name is None:
-                    return jsonify({'message': 'Service name is required'}), 400
+                price = data.get('price')
+                if service_name is None or price is None:
+                    return jsonify({'message': 'Service name and Price are required'}), 400
 
-                new_service = Services(service_name=service_name)
+                new_service = Services(service_name=service_name, price=price)
                 db.session.add(new_service)
                 db.session.commit()
                 return jsonify({'message': 'Service added successfully'}), 201
@@ -794,14 +795,14 @@ def edit_service_menu():
                 serviceID = data.get('serviceID')
                 service_name = data.get('service_name')
                 service_item = Services.query.filter_by(serviceID=serviceID).first()
-                service_item.serviceName = service_name
+                service_item.service_name = service_name
                 db.session.add(service_item)
                 db.session.commit()
                 return jsonify({'message': 'Service Successfully Edited'}), 201
         except Exception as e:
             db.session.rollback()
             return jsonify({'error': str(e)}), 500
-    elif request.method == 'DELETE':  # why doesnt delete protocol work???
+    elif request.method == 'DELETE':
         try:
             data = request.json
             service_id = data.get('service_id')

@@ -13,7 +13,7 @@ import sqlalchemy.sql
 
 from app import app, db
 from app.models import CarInfo, Member, MemberSensitiveInfo, Employee, EmployeeSensitiveInfo, ServiceAppointment, \
-    CarVINs
+    CarVINs, Services
 from config import Config
 
 
@@ -306,50 +306,49 @@ def test_login(client):
     assert response.status_code == 200
 
 
-# def test_create_employee(client): -- error prone --
-#     # TEST API: /api/employees/create
-#     # 401 error crashes randomely
-#
-#     # login as or superadmin
-#
-#     super_admin_login_data = {
-#         "username": "tsteger0@de.vu",
-#         "password": "on9vlvku"
-#     }
-#     login_response = client.post('/api/login', json=super_admin_login_data) # errors out ahhhhhhhh
-#     # time.sleep(1)
-#     assert login_response.status_code == 200
-#     employee_session_id = login_response.json.get('employee_session_id')
-#
-#     employee_data = {
-#         "first_name": "testEmployee",
-#         "last_name": "testEmployee",
-#         "email": generateEmail(),
-#         "phone": "1234567890",
-#         "address": "123 Example St",
-#         "city": "Test City",
-#         "state": "NJ",
-#         "zipcode": "99999",
-#         "employeeType": secrets.choice(['Technician', 'Employee']), # why tf we can choice here???
-#         "password": "a123",
-#         "driverID": generateDriverID(),
-#         "SSN": generateSSN()
-#     }
-#
-#     # Sending a POST request to create an employee
-#     response = client.post('/api/employees/create', json=employee_data, headers={'employee_session_id': employee_session_id})
-#     assert response.status_code == 201
-#
-#     # verifying that the employee is created in the database
-#     created_employee = Employee.query.filter_by(email=employee_data["email"]).first()
-#     assert created_employee is not None
-#
-#     # verifying that the employee's sensitive information is created
-#     created_sensitive_info = EmployeeSensitiveInfo.query.filter_by(employeeID=created_employee.employeeID).first()
-#     assert created_sensitive_info is not None
-#
-#     login_response = client.post('/api/logout')
-#     assert login_response.status_code == 200
+def test_create_employee(client):  # -- stay weary of this one, it may error out...--
+    # TEST API: /api/employees/create
+    # login as or superadmin
+    super_admin_login_data = {
+        "username": "tsteger0@de.vu",
+        "password": "on9vlvku"
+    }
+    login_response = client.post('/api/login', json=super_admin_login_data) # errors out ahhhhhhhh
+    # time.sleep(3)
+    assert login_response.status_code == 200
+    employee_session_id = login_response.json.get('employee_session_id')
+
+    employee_data = {
+        "first_name": "testEmployee",
+        "last_name": "testEmployee",
+        "email": generateEmail(),
+        "phone": "1234567890",
+        "address": "123 Example St",
+        "city": "Test City",
+        "state": "NJ",
+        "zipcode": "99999",
+        "employeeType": 'Technician',
+        "password": "a123",
+        "driverID": generateDriverID(),
+        "SSN": generateSSN()
+    }
+
+    # Sending a POST request to create an employee
+    response = client.post('/api/employees/create', json=employee_data, headers={'employee_session_id': employee_session_id})
+
+    # verifying that the employee is created in the database
+    created_employee = Employee.query.filter_by(email=employee_data["email"]).first()
+    assert created_employee is not None
+
+    # verifying that the employee's sensitive information is created
+    created_sensitive_info = EmployeeSensitiveInfo.query.filter_by(employeeID=created_employee.employeeID).first()
+    assert created_sensitive_info is not None
+
+    assert response.status_code == 201
+
+
+    # login_response = client.post('/api/logout')
+    # assert login_response.status_code == 200
 
 
 # def test_get_current_user(client):
@@ -483,3 +482,59 @@ def test_service_appointments_post(client):
 
     # changes the appointment back to "Scheduled" to continue testing correctly the functionality
     data_reset_service_appointment()
+
+
+def test_service_menu(client):
+    # TEST API: /api/service-menu
+    response = client.get('/api/service-menu')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert isinstance(data, list)
+
+    service_menu_columns = ['serviceID', 'service_name', 'price']
+    for service_item in data:
+        for key in service_menu_columns:
+            assert key in service_item
+            assert service_item[key] is not None
+
+
+def test_service_menu_edit(client):
+    # TEST API: /api/manager/edit-service-menu
+
+    manager_login_data = {
+        "username": "bprophet3@economist.com",
+        "password": "kg8b4mrc"
+    }
+    login_response = client.post('/api/login', json=manager_login_data)  # errors out ahhhhhhhh
+    # time.sleep(3)
+    assert login_response.status_code == 200
+    employee_session_id = login_response.json.get('employee_session_id')
+
+    # Test adding a new service
+    add_service_data = {
+        "edit_or_add": 1,
+        "service_name": "Test Service",
+        "price": 100.00
+    }
+    response = client.post('/api/manager/edit-service-menu', json=add_service_data, headers={'employee_session_id': employee_session_id})
+    assert response.status_code == 201
+    assert response.json == {'message': 'Service added successfully'}
+
+    # Test editing an existing service
+    edit_service_data = {
+        "edit_or_add": 2,
+        "serviceID": 4,
+        "service_name": "Edit the Service Name TEST"
+    }
+    response = client.post('/api/manager/edit-service-menu', json=edit_service_data, headers={'employee_session_id': employee_session_id})
+    assert response.status_code == 201
+    assert response.json == {'message': 'Service Successfully Edited'}
+
+    # Test deleting a service
+    last_service = Services.query.order_by(sqlalchemy.desc(Services.serviceID)).first()
+    delete_service_data = {
+        "service_id": last_service.serviceID
+    }
+    response = client.delete('/api/manager/edit-service-menu', json=delete_service_data, headers={'employee_session_id': employee_session_id})
+    assert response.status_code == 200
+    assert response.json == {'message': 'Service deleted successfully'}
