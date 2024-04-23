@@ -67,13 +67,8 @@ def delete_row(new_entry):
 
 def data_reset_service_appointment():
     # function used to reset the data we used back to how it was in the DB
-    insertData = ServiceAppointment(
-        appointment_id=1,
-        memberID=1,
-        appointment_date='2024-04-10 14:00:00',
-        service_name='Oil Change'
-    )
-    db.session.add(insertData)
+    changeStatus = ServiceAppointment.query.filter_by(appointment_id=1).first()
+    changeStatus.status = 'Scheduled'
     db.session.commit()
 
 
@@ -271,68 +266,92 @@ def test_update_confirmation(client):
         assert data_response['message'] == 'Confirmation updated successfully'
 
 
-# # test after the endpont works well on the frontend
-# # def test_login_employee(client):
-# #     # Test scenario when employee login is successful
-# #
-# #     login_data = {'email': 'tsteger0@de.vu', 'password': 'on9vlvku'}
-# #     response = client.post('/api/employees/login', json=login_data)
-# #     assert response.status_code == 200
-# #
-# #     data = response.get_json()
-# #     expected_fields = ['firstname', 'lastname', 'email', 'phone', 'address', 'employeeType']
-# #
-# #     assert data
-# #     for field in expected_fields:
-# #         assert field in data  # assert that the column is in the returned data
-# #         assert data[field]  # assert that the data in the column is indeed not empty
+# test after the endpont works well on the frontend
+def test_login(client):
+    # TEST API: /api/login
+    # Test scenario when employee login is successful
+
+    # employee login
+    employee_login_data = {'username': 'tsteger0@de.vu', 'password': 'on9vlvku'}
+    response = client.post('/api/login', json=employee_login_data)
+    assert response.status_code == 200
+
+    data = response.get_json()
+    expected_fields = ['employeeID', 'first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'zipcode', 'employeeType']
+
+    assert data is not None
+    for field in expected_fields:
+        assert field in data  # assert that the column is in the returned data
+        assert data[field] is not None  # assert that the data in the column is indeed not empty
+
+    # logout to test the employee login
+    response = client.post('/api/logout', json=employee_login_data)
+    assert response.status_code == 200
+
+    # member Login
+    member_login_data = {'username': 'kscinelli0', 'password': 'gi2z9nka'}
+    response = client.post('/api/login', json=member_login_data)
+    assert response.status_code == 200
+
+    data = response.get_json()
+    expected_fields = ['memberID', 'first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'zipcode', 'join_date', 'driverID']
+
+    assert data is not None
+    for field in expected_fields:
+        assert field in data  # assert that the column is in the returned data
+        assert data[field] is not None  # assert that the data in the column is indeed not empty
+
+    # logout
+    response = client.post('/api/logout', json=member_login_data)
+    assert response.status_code == 200
 
 
-def test_create_employee(client):
-    # TEST API: /api/employees/create
-    # 401 error crashes randomely
-
-    # login as or superadmin
-
-    super_admin_login_data = {
-        "username": "tsteger0@de.vu",
-        "password": "on9vlvku"
-    }
-    login_response = client.post('/api/login', json=super_admin_login_data) # errors out ahhhhhhhh
-    # time.sleep(1)
-    assert login_response.status_code == 200
-    employee_session_id = login_response.json.get('employee_session_id')
-
-    employee_data = {
-        "first_name": "testEmployee",
-        "last_name": "testEmployee",
-        "email": generateEmail(),
-        "phone": "1234567890",
-        "address": "123 Example St",
-        "city": "Test City",
-        "state": "NJ",
-        "zipcode": "99999",
-        "employeeType": secrets.choice(['Technician', 'Employee']), # why tf we can choice here???
-        "password": "a123",
-        "driverID": generateDriverID(),
-        "SSN": generateSSN()
-    }
-
-    # Sending a POST request to create an employee
-    response = client.post('/api/employees/create', json=employee_data, headers={'employee_session_id': employee_session_id})
-    assert response.status_code == 201
-
-    # verifying that the employee is created in the database
-    created_employee = Employee.query.filter_by(email=employee_data["email"]).first()
-    assert created_employee is not None
-
-    # verifying that the employee's sensitive information is created
-    created_sensitive_info = EmployeeSensitiveInfo.query.filter_by(employeeID=created_employee.employeeID).first()
-    assert created_sensitive_info is not None
-
-
+# def test_create_employee(client): -- error prone --
+#     # TEST API: /api/employees/create
+#     # 401 error crashes randomely
 #
+#     # login as or superadmin
 #
+#     super_admin_login_data = {
+#         "username": "tsteger0@de.vu",
+#         "password": "on9vlvku"
+#     }
+#     login_response = client.post('/api/login', json=super_admin_login_data) # errors out ahhhhhhhh
+#     # time.sleep(1)
+#     assert login_response.status_code == 200
+#     employee_session_id = login_response.json.get('employee_session_id')
+#
+#     employee_data = {
+#         "first_name": "testEmployee",
+#         "last_name": "testEmployee",
+#         "email": generateEmail(),
+#         "phone": "1234567890",
+#         "address": "123 Example St",
+#         "city": "Test City",
+#         "state": "NJ",
+#         "zipcode": "99999",
+#         "employeeType": secrets.choice(['Technician', 'Employee']), # why tf we can choice here???
+#         "password": "a123",
+#         "driverID": generateDriverID(),
+#         "SSN": generateSSN()
+#     }
+#
+#     # Sending a POST request to create an employee
+#     response = client.post('/api/employees/create', json=employee_data, headers={'employee_session_id': employee_session_id})
+#     assert response.status_code == 201
+#
+#     # verifying that the employee is created in the database
+#     created_employee = Employee.query.filter_by(email=employee_data["email"]).first()
+#     assert created_employee is not None
+#
+#     # verifying that the employee's sensitive information is created
+#     created_sensitive_info = EmployeeSensitiveInfo.query.filter_by(employeeID=created_employee.employeeID).first()
+#     assert created_sensitive_info is not None
+#
+#     login_response = client.post('/api/logout')
+#     assert login_response.status_code == 200
+
+
 # def test_get_current_user(client):
 #     # this unit test, tests login Auth to make sure the user can and does indeed login
 #
@@ -356,28 +375,25 @@ def test_create_employee(client):
 #         # print(data)
 #         for column_data in columns:
 #             assert column_data in data
-#
-#
-# # will finish another time, i got everything else kinda done tho so its ok lol
-# def test_get_all_members(client):
-#     response = client.get('/api/members')
-#     assert response.status_code == 200
-#
-#
-# def test_login_member(client):
-#     # test case for valid login
-#     data_valid = {'username': 'kscinelli0', 'password': 'gi2z9nka'}
-#     response_valid = client.post('/api/members/login', json=data_valid)
-#     assert response_valid.status_code == 200
-#     assert 'memberID' in response_valid.json
-#
-#     # test case for invalid credentials
-#     data_invalid = {'username': 'invalid_username', 'password': 'invalid_password'}
-#     response_invalid = client.post('/api/members/login', json=data_invalid)
-#     assert response_invalid.status_code == 404
-#     assert 'error' in response_invalid.json
-#
-#
+
+
+def test_get_all_members(client):
+    # TEST API: /api/members
+    response = client.get('/api/members')
+    assert response.status_code == 200
+    assert response.headers['Content-Type'] == 'application/json'
+
+    data = response.get_json()
+    assert data is not None
+    assert isinstance(data, list)
+
+    expected_fields = ['memberID', 'first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'zipcode', 'join_date']
+    for member_info in data:
+        for key in expected_fields:
+            assert key in member_info
+            assert member_info[key] is not None
+
+
 # def test_create_member(client):
 #     # Define member data for testing
 #     member_data = {
@@ -419,46 +435,51 @@ def test_create_employee(client):
 # #     data = response.get_json()
 # #     assert 'error' in data
 # #     assert data['error'] == 'Unauthorized'
-#
-#
-# def test_service_appointments_get(client):
-#     response = client.get('/api/service-appointments')
-#     assert response.status_code == 200
-#     assert response.headers['Content-Type'] == 'application/json'
-#
-#     data = response.get_json()
-#     assert data is not None
-#     assert isinstance(data, list)
-#     expected_keys = ['appointment_id', 'memberID', 'appointment_date', 'service_name']
-#
-#     for service_appt in data:
-#         for key in expected_keys:
-#             assert key in service_appt
-#
-#
-# def test_service_appointments_post(client):
-#     # general test case for when there is a successful cancel value for the session appointments
-#     data = {'appointment_id': 1, 'cancelValue': 1}
-#     response = client.post('/api/service-appointments', json=data)
-#     assert response.status_code == 200
-#     assert response.json == {'message': 'Appointment canceled successfully'}
-#
-#     # test case for when there are missing parameters
-#     data_missing_params = {'cancelValue': 1}
-#     response_missing_params = client.post('/api/service-appointments', json=data_missing_params)
-#     assert response_missing_params.status_code == 400
-#     assert response_missing_params.json == {'error': 'Both appointment_id and cancelValue parameters are required.'}
-#
-#     # test case for when there is an invalid cancellation value
-#     data_invalid_cancel_value = {'appointment_id': 1, 'cancelValue': 0}
-#     response_invalid_cancel_value = client.post('/api/service-appointments', json=data_invalid_cancel_value)
-#     assert response_invalid_cancel_value.status_code == 400
-#     assert response_invalid_cancel_value.json == {'error': 'Invalid cancellation value.'}
-#
-#     # test case for when a service appointment is not found
-#     data_appointment_not_found = {'appointment_id': 999, 'cancelValue': 1}
-#     response_appointment_not_found = client.post('/api/service-appointments', json=data_appointment_not_found)
-#     assert response_appointment_not_found.status_code == 404
-#     assert response_appointment_not_found.json == {'error': 'Appointment not found.'}
-#
-#     data_reset_service_appointment()
+
+
+def test_service_appointments_get(client):
+    response = client.get('/api/service-appointments')
+    assert response.status_code == 200
+    assert response.headers['Content-Type'] == 'application/json'
+
+    data = response.get_json()
+    assert data is not None
+    assert isinstance(data, list)
+    expected_keys = ['appointment_id', 'memberID', 'VIN_carID', 'serviceID', 'appointment_date', 'comments', 'status', 'last_modified', 'service_name', 'employeeID']
+
+    for service_appt in data:
+        for key in expected_keys:
+            assert key in service_appt
+
+
+def test_service_appointments_post(client):
+    # TEST API: /api/manager/cancel-service-appointments
+    # general test case for when there is a successful cancel value for the session appointments
+
+    manager_login_data = {
+        "username": "bprophet3@economist.com",
+        "password": "kg8b4mrc"
+    }
+    login_response = client.post('/api/login', json=manager_login_data)  # errors out ahhhhhhhh
+    # time.sleep(3)
+    assert login_response.status_code == 200
+    employee_session_id = login_response.json.get('employee_session_id')
+
+    data = {'appointment_id': 1}
+    response = client.post('/api/manager/cancel-service-appointments', json=data, headers={'employee_session_id': employee_session_id})
+    assert response.status_code == 200
+    assert response.json == {'message': 'Appointment canceled successfully'}
+
+    # test case for missing appointment_id
+    response = client.post('/api/manager/cancel-service-appointments', json={}, headers={'employee_session_id': employee_session_id})
+    assert response.status_code == 400
+    assert response.json == {'error': 'Appointment_id are required to delete.'}
+
+    # test case for non-existent appointment
+    data = {'appointment_id': 999}
+    response = client.post('/api/manager/cancel-service-appointments', json=data, headers={'employee_session_id': employee_session_id})
+    assert response.status_code == 404
+    assert response.json == {'error': 'Appointment not found.'}
+
+    # changes the appointment back to "Scheduled" to continue testing correctly the functionality
+    data_reset_service_appointment()

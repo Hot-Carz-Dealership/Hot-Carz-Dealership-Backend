@@ -438,6 +438,7 @@ def get_all_members():
                          'phone': member.phone,
                          'address': member.address,
                          'state': member.state,
+                         'city': member.city,
                          'zipcode': member.zipcode,
                          'join_date': member.join_date} for member in members]
         return jsonify(members_info), 200
