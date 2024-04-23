@@ -1376,6 +1376,9 @@ def apply_for_financing():
 
         # frontend needs to send these values to the backend
         data = request.json
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
         Vin_carID = data.get('Vin_carID')
         down_payment = data.get('down_payment')
         monthly_income = data.get('monthly_income')
@@ -1484,108 +1487,140 @@ def confirmation_number_generation() -> str:
         return None
 
 @app.route('/api/vehicle-purchase/make-purchase', methods=['POST'])
-#Didnt test this yet but we'll bug fix it later
+# Route Where all purchases will be made for car,addons, or service center
 def make_purchase():
     # here we deal with Purchases and Payments table    
     try:
         member_id = session.get('member_session_id')
         if not member_id:
-            return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+            return jsonify({'message': 'Unauthorized access. Please log in.'}), 403
         
         data = request.json
         if not data:
             return jsonify({'error': 'No data provided'}), 400
         
+        #Gen a single confirmation number for the purchase
+        confirmation_number =confirmation_number_generation()
+        
+        # Retrieve cart items
+        cart_items = CheckoutCart.query.filter_by(memberID=member_id).all()
+        
+
         # Extract data from JSON request
         
         # Needed for purchases table
-        VIN_carID = data.get('VIN_carID')
-        addon_ID = data.get('addon_ID')
-        serviceID = data.get('serviceID')
+        VIN_carID = None
+        addon_ID = None
+        serviceID = None
         bidID = None
-        purchaseType = data.get('purchaseType') #maybe seperate routes if in service
+        # purchaseType = None
         
         
         # Needed for payments table
-        financed_amount = data.get('financed_amount')
-        valuePaid = data.get('Amount Due Now')
-        valueToPay = data.get ('Financed Amount')
-        routingNumber = data.get ('routingNumber')
+        financed_amount = Decimal(data.get('Financed Amount', 0))
+        valuePaid = Decimal(data.get('Amount Due Now', 0))
+        routingNumber = data.get ('routingNumber') 
         bankAcctNumber = data.get('bankAcctNumber')
-        financingID = data.get('financingID')
+        financingID = None
+        # Add validation on front end for routing and acct numbers
         
         
-        # Ensure only one of VIN_carID, addon_ID, or serviceID is provided
-        provided_ids = [VIN_carID, addon_ID, serviceID]
-        if sum(id is not None for id in provided_ids) != 1:
-            return jsonify({'error': 'Exactly one of VIN_carID, addon_ID, or serviceID must be provided'}), 400
-
-        
-        if VIN_carID:
-            # Check if the provided VIN exists in the carinfo table
-            car = CarInfo.query.filter_by(VIN_carID=VIN_carID).first()
-            if not car:
+        # Add cart items to the Purchases table
+        for item in cart_items:
+            bidID = None
+            # Check if VIN_carID exists in the bids table and get bidID if it does
+            VIN_carID=item.VIN_carID
+            if VIN_carID:
+                bid = Bids.query.filter_by(VIN_carID=VIN_carID).first()
+                if bid:
+                    bidID = bid.bidID
+                if item.financed_amount:
+                    # looks up the financing id of the car being financed
+                    financing = Financing.query.filter_by(VIN_carID=VIN_carID).first()
+                    if financing:
+                        financingID = financing.financingID
+                    
+                    
+            new_purchase = Purchases(
+                bidID=bidID,
+                memberID=member_id,
+                VIN_carID=VIN_carID,
+                addon_ID=item.addon_ID,
+                serviceID=item.serviceID,
+                confirmationNumber=confirmation_number ,
+                purchaseType='Vehicle/Add-on Purchase' if not item.serviceID else 'Service Payment',
+                purchaseDate=datetime.now(),
+                signature='YES'
+            )
+            # Check if provided IDs exist
+            if VIN_carID and not CarInfo.query.filter_by(VIN_carID=VIN_carID).first():
                 return jsonify({'error': 'Car with provided VIN not found'}), 404
-                
-        elif addon_ID:
-            # Check if the provided addon ID exists in the addons table
-            addon = Addons.query.filter_by(itemID=addon_ID).first()
-            if not addon:
+            elif addon_ID and not Addons.query.filter_by(itemID=addon_ID).first():
                 return jsonify({'error': 'Addon with provided ID not found'}), 404
-        elif serviceID:
-            # Check if the provided service ID exists in the services table
-            service = Services.query.filter_by(serviceID=serviceID).first()
-            if not service:
+            elif serviceID and not Services.query.filter_by(serviceID=serviceID).first():
                 return jsonify({'error': 'Service with provided ID not found'}), 404
-                
-            
-        if not financed_amount:
-            financed_amount = 0
-        else:
-            # looks up the financing id of the car being financed
-            financingID = Financing.query.filter_by(VIN_carID=VIN_carID).first()
             
             
-        # Check if VIN_carID exists in the bids table and get bidID if it does
-        if VIN_carID:
-            bid = Bids.query.filter_by(VIN_carID=VIN_carID).first()
-            if bid:
-                bidID = bid.bidID
+            
+            db.session.add(new_purchase)
+            db.session.commit()
         
-            # DB insert for new purchase with financing
+        
+        # Hash the bank info
+        routingNumber = bcrypt.hashpw(routingNumber.encode('utf-8'), bcrypt.gensalt())
+        bankAcctNumber = bcrypt.hashpw(bankAcctNumber.encode('utf-8'), bcrypt.gensalt())
+        
         new_payment = Payments(
             paymentStatus='Completed',
-            valuePaid=valuePaid,
-            valueToPay=valueToPay,
+            valuePaid=valuePaid.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP),
+            valueToPay=financed_amount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP),
             initialPurchase=datetime.now(),
             lastPayment=datetime.now(),
             routingNumber=routingNumber,
             bankAcctNumber=bankAcctNumber,
-            memberID=member_id,       
+            memberID=member_id,
             financingID=financingID
             )
         db.session.add(new_payment)
         db.session.commit()
 
-        new_purchase = Purchases(
-            bidID=bidID,
-            member_id=member_id,
-            VIN_carID=VIN_carID,
-            addon_ID=addon_ID,
-            serviceID=serviceID,
-            confirmationNumber=confirmation_number_generation(),  # You may generate a confirmation number here
-            purchaseType='Vehicle/Add-on Purchase', #Hardcoded for now
-            purchaseDate=datetime.now(),
-            signature='YES' 
-            )
-        db.session.add(new_purchase)
-        db.session.commit()
 
             # payment stub generation can occur through the means of functions above with endpoints
             # /api/member
             # /api/payments
+            
+            #need to clear the cart after wards using delete cart route on front end
 
-        return jsonify({'message': 'Vehicle purchase with financing processed successfully.'}), 200
+        return jsonify({'message': 'Purchase made successfully.'}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'message': f'Error: {str(e)}'}), 500
+        return jsonify({'error': f'Error: {str(e)}'}), 500
+    
+@app.route('/api/member/delete_cart', methods=['DELETE'])
+# Route to Remove Entire Cart
+def delete_cart():
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+
+    # Check if the member exists
+    member = Member.query.get(member_id)
+    if not member:
+        return jsonify({'message': 'Member not found'}), 404
+
+    # Get all items in the cart of the logged-in member
+    cart_items = CheckoutCart.query.filter_by(memberID=member_id).all()
+
+    if not cart_items:
+        return jsonify({'error': 'Cart is already empty'}), 404
+
+    try:
+        # Delete all items from the cart
+        for item in cart_items:
+            db.session.delete(item)
+        db.session.commit()
+
+        return jsonify({'success': 'Cart deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
