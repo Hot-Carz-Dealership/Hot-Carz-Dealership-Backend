@@ -1565,6 +1565,11 @@ def make_purchase():
             db.session.add(new_purchase)
             db.session.commit()
         
+        
+        # Hash the bank info
+        routingNumber = bcrypt.hashpw(routingNumber.encode('utf-8'), bcrypt.gensalt())
+        bankAcctNumber = bcrypt.hashpw(bankAcctNumber.encode('utf-8'), bcrypt.gensalt())
+        
         new_payment = Payments(
             paymentStatus='Completed',
             valuePaid=valuePaid.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP),
@@ -1583,8 +1588,39 @@ def make_purchase():
             # payment stub generation can occur through the means of functions above with endpoints
             # /api/member
             # /api/payments
+            
+            #need to clear the cart after wards using delete cart route on front end
 
         return jsonify({'message': 'Purchase made successfully.'}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Error: {str(e)}'}), 500
+    
+@app.route('/api/member/delete_cart', methods=['DELETE'])
+# Route to Remove Entire Cart
+def delete_cart():
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+
+    # Check if the member exists
+    member = Member.query.get(member_id)
+    if not member:
+        return jsonify({'message': 'Member not found'}), 404
+
+    # Get all items in the cart of the logged-in member
+    cart_items = CheckoutCart.query.filter_by(memberID=member_id).all()
+
+    if not cart_items:
+        return jsonify({'error': 'Cart is already empty'}), 404
+
+    try:
+        # Delete all items from the cart
+        for item in cart_items:
+            db.session.delete(item)
+        db.session.commit()
+
+        return jsonify({'success': 'Cart deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
