@@ -179,7 +179,7 @@ class Purchases(db.Model):
     purchaseID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     bidID = db.Column(db.Integer, ForeignKey('Bids.bidID'))
     VIN_carID = db.Column(db.String(17), ForeignKey('CarVINs.VIN_carID'))
-    memberID = db.Column(db.Integer, ForeignKey)
+    memberID = db.Column(db.Integer, ForeignKey('Member.memberID'))
     addon_ID = db.Column(db.Integer)
     serviceID = db.Column(db.Integer)
     confirmationNumber = db.Column(db.String(13), unique=True)
