@@ -35,7 +35,7 @@ def testdb():
 ''' this API retrieves all of the add-on products'''
 
 
-@app.route('/api/vehicles/add-ons', methods=['GET'])  # test ready
+@app.route('/api/vehicles/add-ons', methods=['GET'])  # TEST DONE
 # this GET protocol API is used to return all Add-on products and their information
 # TESTCASE: DONE
 def addon_information():
@@ -52,7 +52,7 @@ def addon_information():
     return jsonify(addon_info), 200
 
 
-@app.route('/api/vehicles/search', methods=['GET'])  # test ready
+@app.route('/api/vehicles/search', methods=['GET'])  # TEST DONE
 # This API returns all information on all vehicles in the database based on a search function in search bar in the frontend
 # TESTCASE: DONE
 def vehicle_information():
@@ -82,7 +82,7 @@ def vehicle_information():
     return jsonify(cars_info_dicts), 200
 
 
-@app.route('/api/member/vehicles', methods=['GET'])  # test ready
+@app.route('/api/member/vehicles', methods=['GET'])  # TEST DONE
 def member_vehicles():
     # this API returns cars to specific members logged in. It returns both cars bought from the dealership and cars that
     # they inserted into the system for service appointments.
@@ -113,7 +113,7 @@ def member_vehicles():
     return jsonify(vehicles_info), 200
 
 
-@app.route('/api/vehicles', methods=['GET'])  # test ready
+@app.route('/api/vehicles', methods=['GET'])  # TEST DONE
 # This API returns all information on a specific vehicle based on their VIN number which is passed from the front end to the backend
 # Which have not been purchased ofc
 # was prev: /api/vehicles
@@ -143,7 +143,7 @@ def vehicle():
         return jsonify({'message': 'Vehicle not found'}), 404
 
 
-@app.route('/api/vehicles/add', methods=['POST'])  # test ready
+@app.route('/api/vehicles/add', methods=['POST'])  # TEST DONE
 # This API adds a new vehicle to the database based on the information passed from the frontend
 # TESTCASE: DONE
 def add_vehicle():
@@ -203,7 +203,7 @@ def add_vehicle():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/vehicles/random', methods=['GET'])  # test ready
+@app.route('/api/vehicles/random', methods=['GET'])  # TEST DONE
 # This API returns all info on 2 random vehicles in the database for the homepage
 # TESTCASE: DONE
 def random_vehicles():
@@ -246,7 +246,7 @@ def random_vehicles():
         return jsonify({'error': str(e)}), 5000
 
 
-@app.route('/api/employees', methods=['GET'])  # test ready
+@app.route('/api/employees', methods=['GET'])  # TEST DONE
 # This API returns all employees and their information
 # TESTCASE: DONE
 def get_all_employees():
@@ -269,7 +269,7 @@ def get_all_employees():
     return jsonify(employee_info), 200
 
 
-@app.route('/api/testdrives', methods=['GET'])  # test ready
+@app.route('/api/testdrives', methods=['GET'])  # TEST DONE
 # THIS ENDPOINT return all testdrive information and joins with the Member and Cars table for better information to view on the manager View
 # TESTCASE: DONE
 def get_test_drives():
@@ -289,7 +289,7 @@ def get_test_drives():
     return jsonify(test_drive_info), 200
 
 
-@app.route('/api/testdrives/update_confirmation', methods=['POST'])  # test ready
+@app.route('/api/testdrives/update_confirmation', methods=['POST'])  # TEST DONE
 # this API is POST request used by the manager to Confirm or Deny confirmations
 def update_confirmation():
     data = request.json
@@ -327,7 +327,7 @@ def update_confirmation():
 
 
 # This API creates an employee based on all the values passed from the front to the backend
-@app.route('/api/employees/create', methods=['POST'])  # test ready
+@app.route('/api/employees/create', methods=['POST'])  # TEST DONE
 def create_employee():
     try:
         # # Check if employee is authenticated
@@ -400,7 +400,7 @@ def create_employee():
         return jsonify({'error': 'An error occurred while creating the employee account.'}), 500
 
 
-@app.route('/api/employees/technicians', methods=['GET'])  # test ready
+@app.route('/api/employees/technicians', methods=['GET'])  # TEST DONE
 # this API is used to return all technicians in the DB from employees table
 def get_technicians():
     # retrieve all technicians from the database
@@ -424,7 +424,7 @@ def get_technicians():
 
 
 
-@app.route('/api/members', methods=['GET'])  # test ready
+@app.route('/api/members', methods=['GET'])  # TEST DONE
 def get_all_members():
     # Retrieves all the members and their information
     try:
@@ -438,6 +438,7 @@ def get_all_members():
                          'phone': member.phone,
                          'address': member.address,
                          'state': member.state,
+                         'city': member.city,
                          'zipcode': member.zipcode,
                          'join_date': member.join_date} for member in members]
         return jsonify(members_info), 200
@@ -448,7 +449,7 @@ def get_all_members():
 
 
 # This API creates a member account based on the information passed from the front end to the backend (here)
-@app.route('/api/members/create', methods=['POST'])  # test ready
+@app.route('/api/members/create', methods=['POST'])  # TEST DONE
 def create_member():
     try:
         data = request.json
@@ -512,7 +513,7 @@ def create_member():
             'join_date': new_member.join_date,
             'username': new_sensitive_info.username
         }
-        return jsonify({'message': 'Member account created successfully', 'member_info': member_info}), 201
+        return jsonify(member_info), 201
     except Exception as e:
         # Rollback the session in case of any exception
         db.session.rollback()
@@ -631,7 +632,7 @@ def get_current_user():
     }), 200
 
 
-@app.route('/api/service-appointments', methods=['GET'])  # test ready
+@app.route('/api/service-appointments', methods=['GET'])  # TEST DONE
 # GET protocol return all service appointment information
 # POST protocol is used for managers to cancel appointments on their views when they are logged in
 # TESTCASE: DONE FOR GET AND POST
@@ -661,7 +662,7 @@ def service_appointments():
     return jsonify(appointments_info), 200
 
 
-@app.route('/api/manager/cancel-service-appointments', methods=['POST'])  # test ready
+@app.route('/api/manager/cancel-service-appointments', methods=['POST'])  # TEST DONE
 # this api used to be a part of the /api/service-appointments but i moved it here for better separation
 # was delete, now is post. We shouldn't delete service appointments but instead just store them in case we need information on it
 # to view
@@ -785,7 +786,7 @@ def book_test_drive():
 
 
 
-@app.route('/api/service-menu', methods=['GET'])  # test ready
+@app.route('/api/service-menu', methods=['GET'])  # TEST DONE
 # this api i hate it, it made me make another table and have to refactor everything.
 # returns all values in the Services table for users to choose what services they want.
 def get_services():
@@ -802,7 +803,7 @@ def get_services():
             return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/manager/edit-service-menu', methods=['POST', 'DELETE'])  # test ready
+@app.route('/api/manager/edit-service-menu', methods=['POST', 'DELETE'])  # TEST DONE
 def edit_service_menu():
     # ensures that the manager or superAdmin is logged in
     employee_id = session.get('employee_session_id')
@@ -963,7 +964,7 @@ def technician_view_service_appointments():
     return jsonify(appointments_data), 200
 
 
-@app.route('/api/technician-view-service-appointments/technician-edit', methods=['POST'])  # test ready
+@app.route('/api/technician-view-service-appointments/technician-edit', methods=['POST'])  # TEST DONE
 def technician_edit():
     # checks if user is logged in
     employee_id = session.get('employee_session_id')
@@ -1014,7 +1015,7 @@ def technician_edit():
     return jsonify({'message': 'Appointment updated successfully'}), 200
 
 
-@app.route('/api/logout', methods=['POST'])  # test ready
+@app.route('/api/logout', methods=['POST'])  # TEST DONE
 def logout():
     # THE FRONTEND NEEDS TO REDIRECT WHEN U CALL THIS ENDPOINT BACK TO THE LOGIN SCREEN ON that END.
     # LMK if IT WORKS OR NOT
@@ -1023,7 +1024,7 @@ def logout():
 
 
 # Route for user authentication
-@app.route('/api/login', methods=['POST'])  # test ready
+@app.route('/api/login', methods=['POST'])  # TEST DONE
 def login():
     re_string = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     try:
