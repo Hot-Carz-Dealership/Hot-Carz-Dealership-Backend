@@ -662,6 +662,46 @@ def service_appointments():
     return jsonify(appointments_info), 200
 
 
+@app.route('/api/members/service-appointments', methods=['GET']) # test ready
+def view_service_appointments_per_member():
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+
+    # check if the member exists
+    member = Member.query.get(member_id)
+    if not member:
+        return jsonify({'message': 'Member not found'}), 404
+
+    # we view all ths stuff through the joins for members to view the service being done
+    service_appointments_query = db.session.query(
+        ServiceAppointment, Services.service_name
+    ).join(
+        Services, ServiceAppointment.serviceID == Services.serviceID
+    ).filter(
+        ServiceAppointment.memberID == member_id
+    ).order_by(
+        ServiceAppointment.appointment_date.desc()
+    )
+
+    # seperation on query execution for better readability for debugging this long join
+    service_appointments_result = service_appointments_query.all()
+
+    # get response data
+    appointments_data = []
+    for appointment, service_name in service_appointments_result:
+        appointment_info = {
+            'appointment_id': appointment.appointment_id,
+            'VIN_carID': appointment.VIN_carID,
+            'service_name': service_name,
+            'appointment_date': appointment.appointment_date,
+            'comments': appointment.comments,
+            'status': appointment.status
+        }
+        appointments_data.append(appointment_info)
+    return jsonify(appointments_data), 200
+
+
 @app.route('/api/manager/cancel-service-appointments', methods=['POST'])  # TEST DONE
 # this api used to be a part of the /api/service-appointments but i moved it here for better separation
 # was delete, now is post. We shouldn't delete service appointments but instead just store them in case we need information on it
