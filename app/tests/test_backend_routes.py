@@ -437,6 +437,7 @@ def test_get_all_members(client):
 
 
 def test_service_appointments_get(client):
+    # TEST API: /api/service-appointments
     response = client.get('/api/service-appointments')
     assert response.status_code == 200
     assert response.headers['Content-Type'] == 'application/json'
@@ -538,3 +539,104 @@ def test_service_menu_edit(client):
     response = client.delete('/api/manager/edit-service-menu', json=delete_service_data, headers={'employee_session_id': employee_session_id})
     assert response.status_code == 200
     assert response.json == {'message': 'Service deleted successfully'}
+
+
+def test_getting_technicians(client):
+    # TEST API: /api/employees/technicians
+    response = client.get('/api/employees/technicians')
+    assert response.status_code == 200
+    assert response.headers['Content-Type'] == 'application/json'
+
+    data = response.get_json()
+    assert data is not None
+    assert isinstance(data, list)
+    expected_keys = ['employeeID', 'first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'zipcode', 'employeeType']
+
+    for technician in data:
+        for key in expected_keys:
+            assert key in technician
+            assert technician[key] is not None
+
+def test_member_vehicles(client):
+    # TEST API: /api/member/vehicles
+
+    member_login_data = {'username': 'kscinelli0', 'password': 'gi2z9nka'}
+    login_response = client.post('/api/login', json=member_login_data)
+    assert login_response.status_code == 200
+    member_session_id = login_response.json.get('employee_session_id')
+
+    api_response = client.get('/api/member/vehicles', headers={'member_session_id': member_session_id})
+
+    data = api_response.get_json()
+    assert isinstance(data, list)
+    expected_keys = ['VIN_carID', 'make', 'model', 'year', 'color', 'mileage']
+
+    for vehicle in data:
+        for key in expected_keys:
+            assert key in vehicle
+            assert vehicle[key] is not None
+
+
+def test_add_members(client):
+    # TEST API: /api/members/create
+
+    create_employee_data = {
+        "first_name": "TEST MEMBER",
+        "last_name": "TEST MEMBER",
+        "email": generateEmail(),
+        "phone": "1234567890",
+        "driverID": generateDriverID(),
+        "username": generate_random_string(),
+        "password": generate_random_string(),
+        "address": "123 Main St",
+        "city": "Anytown",
+        "state": "CA",
+        "zipcode": "12345"
+    }
+
+    response = client.post('/api/members/create', json=create_employee_data)
+    assert response.status_code == 201
+    member_session_id = response.json.get('member_session_id')
+    data = response.get_json()
+    expected_keys = ['memberID', 'first_name', 'last_name', 'email', 'phone', 'address', 'state', 'zipcode', 'join_date', 'username']
+    for key in expected_keys:
+        assert key in data
+        assert data[key] is not None
+
+
+def test_logout(client):
+    # TEST API: /api/logout
+    manager_login_data = {
+        "username": "bprophet3@economist.com",
+        "password": "kg8b4mrc"
+    }
+    login_response = client.post('/api/login', json=manager_login_data)  # errors out ahhhhhhhh
+    assert login_response.status_code == 200
+
+    logout_response = client.post('/api/logout')
+    assert logout_response.status_code == 200
+
+
+def test_technician_service_appt_edit(client):
+    # TEST API: /api/technician-view-service-appointments/technician-edit
+    employee_login_data = {
+        "username": "aclavering1@desdev.cn",
+        "password": "ovkkysxn"
+    }
+    login_response = client.post('/api/login', json=employee_login_data)
+    employee_session_id = login_response.json.get('employee_session_id')
+    assert login_response.status_code == 200
+
+    status_values = ['Done', 'Cancelled', 'Scheduled']
+    for i in range(0, len(status_values)):
+        technician_input_data = {
+            "appointment_id": 1,
+            "comment": "Test Comment",
+            "status": status_values[i]
+        }
+        api_response = client.post('/api/technician-view-service-appointments/technician-edit', json=technician_input_data, headers={'employee_session_id': employee_session_id})
+        assert api_response.status_code == 200
+
+    logout_response = client.post('/api/logout')
+    assert logout_response.status_code == 200
+
