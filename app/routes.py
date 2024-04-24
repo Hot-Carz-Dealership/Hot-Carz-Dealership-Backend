@@ -743,6 +743,47 @@ def book_service_appointment():
 
     return jsonify({'message': 'Service appointment booked successfully'}), 201
 
+@app.route('/api/member/book-test-drive', methods=['POST'])  # test ready
+# NEW API: this API allows for customer to book a test drive
+def book_test_drive():
+    # check if the member is logged in, if not redirect them to log in
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+
+    # check if the member exists
+    member = Member.query.get(member_id)
+    if not member:
+        return jsonify({'message': 'Member not found'}), 404
+
+    data = request.json
+
+    # data that needs to be sent from the frontend to the backend here
+    appointment_date = data.get('appointment_date')
+    VIN_carID = data.get('VIN_carID')
+
+    appointment_date = datetime.strptime(appointment_date, '%Y-%m-%d %H:%M:%S')
+    if appointment_date <= datetime.now():
+        return jsonify({'message': 'Appointment date must be after today'}), 400
+
+    # Check if required data is provided
+    if not VIN_carID or not appointment_date:
+        return jsonify({'message': 'Car VIN ID and appointment date are required'}), 400
+
+    # Create a new service appointment
+    appointment = TestDrive(
+        memberID=member_id,
+        VIN_carID=VIN_carID,
+        appointment_date=appointment_date,
+        confirmation='Awaiting Confirmation',
+    )
+    db.session.add(appointment)
+    db.session.commit()
+
+    return jsonify({'message': 'Service appointment booked successfully'}), 201
+
+
+
 
 @app.route('/api/service-menu', methods=['GET'])  # test ready
 # this api i hate it, it made me make another table and have to refactor everything.
