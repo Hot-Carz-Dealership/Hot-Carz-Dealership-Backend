@@ -1640,7 +1640,7 @@ def make_purchase():
                 confirmationNumber=confirmation_number ,
                 purchaseType='Vehicle/Add-on Purchase' if not item.serviceID else 'Service Payment',
                 purchaseDate=datetime.now(),
-                signature='YES'
+                signature='ONLYCUSTOMER'
             )
             # Check if provided IDs exist
             if VIN_carID and not CarInfo.query.filter_by(VIN_carID=VIN_carID).first():
@@ -1711,6 +1711,74 @@ def delete_cart():
         db.session.commit()
 
         return jsonify({'success': 'Cart deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+
+@app.route('/api/manager/signature-waiting', methods=['GET'])
+#suppose to get the purchases where the customer is waiting for manager to sign
+def get_awaiting_signature():
+    try:
+        # this gets the purchases, where only the customer signed so far.
+        purchases_waiting_signature = Purchases.query.filter_by(signature='ONLYCUSTOMER').all()
+
+        # Check if there are any purchases awaiting signature
+        if not purchases_waiting_signature:
+            return jsonify({'message': 'No purchases awaiting manager signature'}), 404
+
+        # Serialize the purchases data
+        serialized_purchases = []
+        for purchase in purchases_waiting_signature:
+            serialized_purchase = {
+                'purchaseID': purchase.purchaseID,
+                'bidID': purchase.bidID,
+                'memberID': purchase.memberID,
+                'VIN_carID': purchase.VIN_carID,
+                'addon_ID': purchase.addon_ID,
+                'serviceID': purchase.serviceID,
+                'confirmationNumber': purchase.confirmationNumber,
+                'purchaseType': purchase.purchaseType,
+                'purchaseDate': purchase.purchaseDate,
+                'signature': purchase.signature
+            }
+            serialized_purchases.append(serialized_purchase)
+
+        return jsonify({'purchases_waiting_signature': serialized_purchases}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/manager/signature', methods=['POST'])
+#this is the manager's response to the signature
+def update_signature():
+    try:
+        data = request.json
+        purchase_id = data.get('purchaseID')
+        signature_status = data.get('signature')
+
+        # Check if both parameters purchaseid and the signature status are provided
+        if purchase_id is None or signature_status is None:
+            return jsonify({'error': 'Both purchaseID and signature parameters are required.'}), 400
+
+        # check if the provided signature status is valid
+        if signature_status not in ['Yes', 'No']:
+            return jsonify({'error': 'Invalid signature status. Must be either "Yes" or "No"'}), 400
+
+
+        purchase = Purchases.query.get(purchase_id)
+        # Check if the purchase exists
+        if not purchase:
+            return jsonify({'error': 'Purchase not found'}), 404
+
+        # Update the signature status
+        purchase.signature = signature_status
+        db.session.commit()
+
+        return jsonify({'message': 'Signature updated successfully'}), 200
+
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
