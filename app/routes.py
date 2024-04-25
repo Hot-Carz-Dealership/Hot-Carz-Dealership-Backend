@@ -1470,9 +1470,9 @@ def apply_for_financing():
             return jsonify({'error': 'No data provided'}), 400
         
         Vin_carID = data.get('Vin_carID')
-        down_payment = data.get('down_payment')
-        monthly_income = data.get('monthly_income')
-        vehicle_cost = data.get('vehicle_cost') #Front end can send this based on if the user won a bid or buying at MSRP
+        down_payment = float(data.get('down_payment'))
+        monthly_income = float(data.get('monthly_income'))
+        vehicle_cost = float(data.get('vehicle_cost'))  #Front end can send this based on if the user won a bid or buying at MSRP
         
         
         credit_score = creditScoreGenerator(member_id, monthly_income)
