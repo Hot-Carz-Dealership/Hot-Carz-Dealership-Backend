@@ -841,9 +841,8 @@ def get_services():
             return jsonify(services_info), 200
         except Exception as e:
             return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/manager/edit-service-menu', methods=['POST', 'DELETE'])  # TEST DONE
+       
+@app.route('/api/manager/edit-service-menu', methods=['POST', 'DELETE'])  # test ready
 def edit_service_menu():
     # ensures that the manager or superAdmin is logged in
     employee_id = session.get('employee_session_id')
@@ -864,21 +863,29 @@ def edit_service_menu():
             edit_or_add = data.get('edit_or_add')
             if edit_or_add == 1:  # add
                 service_name = data.get('service_name')
-                if service_name is None:
-                    return jsonify({'message': 'Service name is required'}), 400
-
-                new_service = Services(service_name=service_name)
+                price = data.get('price')
+                if service_name is None or price is None:
+                    return jsonify({'message': 'Service name and price are required'}), 400
+                
+                new_service = Services(service_name=service_name, price=price)
                 db.session.add(new_service)
                 db.session.commit()
                 return jsonify({'message': 'Service added successfully'}), 201
             elif edit_or_add == 2:  # edit
                 serviceID = data.get('serviceID')
                 service_name = data.get('service_name')
+                price = data.get('price')
+                if serviceID is None or service_name is None or price is None:
+                    return jsonify({'message': 'Service ID, name, and price are required for editing'}), 400
+                
                 service_item = Services.query.filter_by(serviceID=serviceID).first()
-                service_item.serviceName = service_name
-                db.session.add(service_item)
-                db.session.commit()
-                return jsonify({'message': 'Service Successfully Edited'}), 201
+                if service_item:
+                    service_item.service_name = service_name
+                    service_item.price = price  # Update the price as well
+                    db.session.commit()
+                    return jsonify({'message': 'Service Successfully Edited'}), 200
+                else:
+                    return jsonify({'message': 'Service not found'}), 404
         except Exception as e:
             db.session.rollback()
             return jsonify({'error': str(e)}), 500
@@ -911,6 +918,7 @@ def edit_service_menu():
         except Exception as e:
             db.session.rollback()
             return jsonify({'error': str(e)}), 500
+
 
 
 @app.route('/api/manager/assign-service-appointments', methods=['POST'])  # test ready
