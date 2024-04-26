@@ -16,10 +16,16 @@ app = Flask(__name__)
 
 if os.getenv('FLASK_ENV') == 'testing':
     db_name = 'dealership_testing'
+    password = os.getenv('SECRET_KEY_2')
+    host = "roundhouse.proxy.rlwy.net"
+    port = "59865"
 else:
     db_name = 'dealership_backend'
+    password = os.getenv('SECRET_KEY_1')
+    host = "viaduct.proxy.rlwy.net"
+    port = "20836"
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:password@localhost/' + db_name
+app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+mysqlconnector://root:{password}@{host}:{port}/{db_name}'
 
 # Load the configuration
 app.config.from_object(Config)
