@@ -15,7 +15,7 @@ API_URL = '/static/docs.yml'  # Our API url (can of course be a local resource)
 app = Flask(__name__)
 
 if os.getenv('FLASK_ENV') == 'testing':
-    app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+mysqlconnector://root:DHUvhsiNUNQMwrfUIqNCsVKWPebQBevT@roundhouse.proxy.rlwy.net:59865/dealership_testing"
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+mysqlconnector://root:UUNaDUpaHzvdMkfieWerXOpyTTyHaxlI@viaduct.proxy.rlwy.net:39073/dealership_testing"
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+mysqlconnector://root:aGGeAzhlGdyhqpkesCDkjgcyKXHYXEuK@viaduct.proxy.rlwy.net:20836/dealership_backend"
 
