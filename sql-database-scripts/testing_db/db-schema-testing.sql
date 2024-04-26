@@ -163,8 +163,8 @@ CREATE TABLE IF NOT EXISTS Financing (
   PRIMARY KEY (`financingID`),
   KEY `memberID` (`memberID`),
   KEY `vin_carID_FK_idx` (`VIN_carID`),
-  CONSTRAINT `financing_ibfk_1` FOREIGN KEY (`memberID`) REFERENCES `member` (`memberID`),
-  CONSTRAINT `vin_carIDFK` FOREIGN KEY (`VIN_carID`) REFERENCES `carinfo` (`VIN_carID`)
+  CONSTRAINT `financing_ibfk_1` FOREIGN KEY (`memberID`) REFERENCES Member(`memberID`),
+  CONSTRAINT `vin_carIDFK` FOREIGN KEY (`VIN_carID`) REFERENCES CarInfo(`VIN_carID`)
 );
 
 CREATE TABLE IF NOT EXISTS Payments (
@@ -199,9 +199,9 @@ CREATE TABLE IF NOT EXISTS Bids (
   KEY `memberID` (`memberID`),
   KEY `bid_ibfk_2_idx` (`VIN_carID`),
   KEY `bids_ibfk_3_idx` (`last_updated_by`),
-  CONSTRAINT `bids_ibfk_1` FOREIGN KEY (`memberID`) REFERENCES `member` (`memberID`),
-  CONSTRAINT `bids_ibfk_2` FOREIGN KEY (`VIN_carID`) REFERENCES `carinfo` (`VIN_carID`),
-  CONSTRAINT `bids_ibfk_3` FOREIGN KEY (`last_updated_by`) REFERENCES `employee` (`employeeID`)
+  CONSTRAINT `bids_ibfk_1` FOREIGN KEY (`memberID`) REFERENCES Member(`memberID`),
+  CONSTRAINT `bids_ibfk_2` FOREIGN KEY (`VIN_carID`) REFERENCES CarInfo(`VIN_carID`),
+  CONSTRAINT `bids_ibfk_3` FOREIGN KEY (`last_updated_by`) REFERENCES Employee(`employeeID`)
 ) ;
 
 CREATE TABLE IF NOT EXISTS Purchases (
@@ -220,9 +220,9 @@ CREATE TABLE IF NOT EXISTS Purchases (
   KEY `bidID` (`bidID`),
   KEY `VIN_carID` (`VIN_carID`),
   KEY `memberID` (`memberID`),
-  CONSTRAINT `purchases_ibfk_1` FOREIGN KEY (`bidID`) REFERENCES `bids` (`bidID`),
-  CONSTRAINT `purchases_ibfk_2` FOREIGN KEY (`VIN_carID`) REFERENCES `carvins` (`VIN_carID`),
-  CONSTRAINT `purchases_ibfk_3` FOREIGN KEY (`memberID`) REFERENCES `member` (`memberID`)
+  CONSTRAINT `purchases_ibfk_1` FOREIGN KEY (`bidID`) REFERENCES Bids(`bidID`),
+  CONSTRAINT `purchases_ibfk_2` FOREIGN KEY (`VIN_carID`) REFERENCES CarVINs(`VIN_carID`),
+  CONSTRAINT `purchases_ibfk_3` FOREIGN KEY (`memberID`) REFERENCES Member(`memberID`)
 );
 
 CREATE TABLE IF NOT EXISTS Addons (
@@ -248,8 +248,8 @@ CREATE TABLE IF NOT EXISTS checkoutcart (
   KEY `VIN_carID_FK_idx` (`VIN_carID`),
   KEY `addonID_FK_idx` (`addon_ID`),
   KEY `serviceID_FK_idx` (`serviceID`),
-  CONSTRAINT `addonID_FK` FOREIGN KEY (`addon_ID`) REFERENCES `addons` (`itemID`),
-  CONSTRAINT `memberID_FK` FOREIGN KEY (`memberID`) REFERENCES `member` (`memberID`),
-  CONSTRAINT `serviceID_FK` FOREIGN KEY (`serviceID`) REFERENCES `services` (`serviceID`),
-  CONSTRAINT `VIN_carID_FK` FOREIGN KEY (`VIN_carID`) REFERENCES `carinfo` (`VIN_carID`)
+  CONSTRAINT `addonID_FK` FOREIGN KEY (`addon_ID`) REFERENCES Addons(`itemID`),
+  CONSTRAINT `memberID_FK` FOREIGN KEY (`memberID`) REFERENCES Member(`memberID`),
+  CONSTRAINT `serviceID_FK` FOREIGN KEY (`serviceID`) REFERENCES Services(`serviceID`),
+  CONSTRAINT `VIN_carID_FK` FOREIGN KEY (`VIN_carID`) REFERENCES CarInfo(`VIN_carID`)
 ) ;
