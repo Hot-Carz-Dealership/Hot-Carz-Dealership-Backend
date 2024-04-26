@@ -525,10 +525,11 @@ def test_service_menu_edit(client):
     edit_service_data = {
         "edit_or_add": 2,
         "serviceID": 4,
+        "price": 100.00,
         "service_name": "Edit the Service Name TEST"
     }
     response = client.post('/api/manager/edit-service-menu', json=edit_service_data, headers={'employee_session_id': employee_session_id})
-    assert response.status_code == 201
+    assert response.status_code == 200
     assert response.json == {'message': 'Service Successfully Edited'}
 
     # Test deleting a service

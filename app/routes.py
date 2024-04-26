@@ -29,7 +29,7 @@ def testdb():
         # e holds description of the error
         error_text = "<p>The error:<br>" + str(e) + "</p>"
         hed = '<h1>Something is broken.</h1>'
-        return hed + error_text
+        return hed + error_text + str(logging.log(e))
 
 
 ''' this API retrieves all of the add-on products'''
