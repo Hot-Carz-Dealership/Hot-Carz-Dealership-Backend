@@ -18,7 +18,7 @@ class Config:
         # SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://root:{os.getenv('SECRET_KEY')}@localhost/dealership_testing"
 
         # comment for local dev
-        SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://root:DHUvhsiNUNQMwrfUIqNCsVKWPebQBevT@roundhouse.proxy.rlwy.net:59865/dealership_testing"
+        SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://root:UUNaDUpaHzvdMkfieWerXOpyTTyHaxlI@viaduct.proxy.rlwy.net:39073/dealership_testing"
     else:
         # uncomment for local dev | comment for hosting
         # SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://root:{os.getenv('SECRET_KEY')}@localhost/dealership_backend"
