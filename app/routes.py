@@ -1588,6 +1588,13 @@ def make_purchase():
         if not data:
             return jsonify({'error': 'No data provided'}), 400
         
+                
+        required_fields = ['routingNumber', 'bankAcctNumber', 'Amount Due Now', 'Financed Amount']
+        missing_fields = [field for field in required_fields if field not in data]
+        if missing_fields:
+            error_message = f'Missing required field(s): {", ".join(missing_fields)}'
+            return jsonify({'error': error_message}), 400
+        
         #Gen a single confirmation number for the purchase
         confirmation_number =confirmation_number_generation()
         
@@ -1649,7 +1656,12 @@ def make_purchase():
             elif serviceID and not Services.query.filter_by(serviceID=serviceID).first():
                 return jsonify({'error': 'Service with provided ID not found'}), 404
             
-            
+            # Update CarInfo status to 'sold'
+            db.session.query(CarInfo).filter_by(VIN_carID=VIN_carID).update({'status': 'sold'})
+            # Update CarVINs purchase_status to 'Dealership - Purchased' and memberID to current memberID
+            db.session.query(CarVINs).filter_by(VIN_carID=VIN_carID).update({'purchase_status': 'Dealership - Purchased','memberID': member_id})
+                    
+            db.session.commit()
             
             db.session.add(new_purchase)
             db.session.commit()
