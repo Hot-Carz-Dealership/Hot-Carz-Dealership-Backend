@@ -1,7 +1,7 @@
 swagger: "2.0"
 info:
   title: "Hot Carz API Endpoint Documentation"
-  description: "Documentation for all of the Main NON-Financial Flask API endpoints"
+  description: "Documentation for all of the Main Flask API endpoints"
   version: "1.0"
 paths:
   /:
@@ -14,14 +14,14 @@ paths:
   /api/vehicles/add-ons:
     get:
       summary: "Get Add-on Products"
-      description: "Returns all add-on products and their information."
+      description: "Returns all add-on products and their associated information."
       responses:
         200:
           description: "Success"
   /api/vehicles/search:
     get:
       summary: "Search Vehicles"
-      description: "Returns information on vehicles based on a search query."
+      description: "Returns information on vehicles based on a search query as well as without a search query input as well."
       parameters:
         - name: "search_query"
           in: "query"
@@ -34,7 +34,7 @@ paths:
   /api/vehicles:
     get:
       summary: "Get Vehicle Information"
-      description: "Returns information on a specific vehicle based on VIN."
+      description: "Returns information on a specific vehicle based on VIN Input passed into the API."
       parameters:
         - name: "vin"
           in: "query"
@@ -44,16 +44,6 @@ paths:
       responses:
         200:
           description: "Success"
-        404:
-          description: "Vehicle not found"
-    post:
-      summary: "Add Vehicle"
-      description: "Adds a new vehicle to the database."
-      responses:
-        201:
-          description: "Vehicle added successfully"
-        500:
-          description: "Internal Server Error"
   /api/vehicles/random:
     get:
       summary: "Get Random Vehicles"
@@ -63,6 +53,8 @@ paths:
           description: "Success"
         404:
           description: "Insufficient vehicles in the database"
+        500:
+          description: "Error with Database Connection"
   /api/employees:
     get:
       summary: "Get All Employees"
@@ -79,42 +71,122 @@ paths:
           description: "Success"
   /api/testdrives/update_confirmation:
     post:
-      summary: "Update Confirmation"
-      description: "Updates confirmation status of a test drive."
+      summary: "Update confirmation status of a test drive"
+      description: "Allows updating confirmation status of a test drive"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Test drive details"
+          required: true
+          schema:
+            type: "object"
+            properties:
+              testdrive_id:
+                type: "integer"
+                format: "int32"
+              confirmation:
+                type: "integer"
+                format: "int32"
       responses:
         200:
-          description: "Success"
-        500:
-          description: "Internal Server Error"
-  /api/employees/login:
-    post:
-      summary: "Login Employee"
-      description: "Logs in an employee and returns employee information."
-      responses:
-        200:
-          description: "Success"
+          description: "Confirmation updated successfully"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        400:
+          description: "Bad request - Both testdrive_id and confirmation parameters are required"
+          schema:
+            type: "object"
+            properties:
+              error:
+                type: "string"
         404:
-          description: "Employee not found"
+          description: "Test drive not found"
+          schema:
+            type: "object"
+            properties:
+              error:
+                type: "string"
         500:
           description: "Internal Server Error"
+          schema:
+            type: "object"
+            properties:
+              error:
+                type: "string"
   /api/employees/create:
     post:
       summary: "Create Employee"
       description: "Creates a new employee account."
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Employee details"
+          required: true
+          schema:
+            type: "object"
+            properties:
+              first_name:
+                type: "string"
+              last_name:
+                type: "string"
+              email:
+                type: "string"
+              phone:
+                type: "string"
+              address:
+                type: "string"
+              city:
+                type: "string"
+              zipcode:
+                type: "string"
+              employeeType:
+                type: "string"
+              password:
+                type: "string"
+              driverID:
+                type: "string"
+              SSN:
+                type: "string"
       responses:
         201:
           description: "Employee account created successfully"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        400:
+          description: "Bad request - Email already exists or invalid employee type"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        401:
+          description: "Unauthorized access"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
         500:
           description: "Internal Server Error"
-  /@emp:
-    get:
-      summary: "Get Current Employee"
-      description: "Returns information on the current logged-in employee."
-      responses:
-        200:
-          description: "Success"
-        401:
-          description: "Unauthorized"
+          schema:
+            type: "object"
+            properties:
+              error:
+                type: "string"
   /api/members:
     get:
       summary: "Get All Members"
@@ -122,17 +194,6 @@ paths:
       responses:
         200:
           description: "Success"
-  /api/members/login:
-    post:
-      summary: "Login Member"
-      description: "Logs in a member and returns member information."
-      responses:
-        200:
-          description: "Success"
-        404:
-          description: "Member not found or credentials invalid"
-        500:
-          description: "Internal Server Error"
   /api/members/create:
     post:
       summary: "Create Member"
@@ -145,35 +206,746 @@ paths:
   /@me:
     get:
       summary: "Get Current User"
-      description: "Returns information on the current logged-in member."
+      description: "Returns information on the current logged-in member or employee."
       responses:
         200:
           description: "Success"
+          schema:
+            type: "object"
+            properties:
+              memberID:
+                type: "integer"
+              first_name:
+                type: "string"
+              last_name:
+                type: "string"
+              email:
+                type: "string"
+              phone:
+                type: "string"
+              address:
+                type: "string"
+              city:
+                type: "string"
+              state:
+                type: "string"
+              zipcode:
+                type: "string"
+              driverID:
+                type: "string"
+              join_date:
+                type: "string"
         401:
           description: "Unauthorized"
   /api/service-appointments:
     get:
-      summary: "Get Service Appointments"
-      description: "Returns information on all service appointments."
+      summary: Retrieve all service appointment information
+      description: This endpoint returns all service appointment information including service details and assigned employees.
+      produces:
+          - application/json
       responses:
-        200:
-          description: "Success"
+        '200':
+          description: A list of service appointments
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                appointment_id:
+                  type: integer
+                  description: The ID of the appointment
+                memberID:
+                  type: integer
+                  description: The ID of the member
+                VIN_carID:
+                  type: string
+                  description: The VIN or car ID
+                serviceID:
+                  type: integer
+                  description: The ID of the service
+                appointment_date:
+                  type: string
+                  format: date-time
+                  description: The date of the appointment
+                comments:
+                  type: string
+                  description: Any comments related to the appointment
+                status:
+                  type: string
+                  description: The status of the appointment
+                last_modified:
+                  type: string
+                  format: date-time
+                  description: The last modified date of the appointment
+                service_name:
+                  type: string
+                  description: The name of the service
+                employeeID:
+                  type: integer
+                  description: The ID of the assigned employee
+  /api/vehicles/add:
     post:
-      summary: "Cancel Service Appointment"
-      description: "Cancels a service appointment."
+      summary: "Add a new vehicle"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Vehicle details"
+          required: true
+          schema:
+            type: "object"
+            properties:
+              VIN_carID:
+                type: "string"
+              make:
+                type: "string"
+              model:
+                type: "string"
+              body:
+                type: "string"
+              year:
+                type: "integer"
+                format: "int32"
+              color:
+                type: "string"
+              mileage:
+                type: "number"
+                format: "double"
+              details:
+                type: "string"
+              description:
+                type: "string"
+              viewsOnPage:
+                type: "integer"
+                format: "int32"
+              pictureLibraryLink:
+                type: "string"
+              price:
+                type: "number"
+                format: "double"
       responses:
-        200:
-          description: "Success"
+        201:
+          description: "Vehicle added successfully"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
         400:
-          description: "Bad Request"
-        404:
-          description: "Appointment not found"
+          description: "Bad request - Vehicle with VIN already exists"
+          schema:
+            type: "object"
+            properties:
+              error:
+                type: "string"
         500:
           description: "Internal Server Error"
-  /api/logout:
-    post:
-      summary: "Logout"
-      description: "Logs out the current user."
+          schema:
+            type: "object"
+            properties:
+              error:
+                type: "string"
+  /api/employees/technicians:
+    get:
+      summary: "Get all technicians"
+      produces:
+        - "application/json"
       responses:
         200:
-          description: "Success"
+          description: "Successful operation"
+          schema:
+            type: "array"
+            items:
+              type: "object"
+              properties:
+                employeeID:
+                  type: "integer"
+                  format: "int32"
+                first_name:
+                  type: "string"
+                last_name:
+                  type: "string"
+                email:
+                  type: "string"
+                phone:
+                  type: "string"
+                address:
+                  type: "string"
+                city:
+                  type: "string"
+                state:
+                  type: "string"
+                zipcode:
+                  type: "string"
+                employeeType:
+                  type: "string"
+        500:
+          description: "Internal Server Error"
+          schema:
+            type: "object"
+            properties:
+              error:
+                type: "string"
+  /api/member/add-own-car:
+    post:
+      summary: "Add member's own car"
+      description: "Allows members to add their own cars into the database for service center actions"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Car details"
+          required: true
+          schema:
+            type: "object"
+            properties:
+              VIN_carID:
+                type: "string"
+              make:
+                type: "string"
+              model:
+                type: "string"
+              body:
+                type: "string"
+              year:
+                type: "integer"
+                format: "int32"
+              color:
+                type: "string"
+              mileage:
+                type: "number"
+                format: "double"
+      responses:
+        201:
+          description: "Car added successfully"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        400:
+          description: "Bad request - VIN/Car already exists in the database"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        401:
+          description: "Unauthorized access"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        500:
+          description: "Internal Server Error"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+  /api/manager/cancel-service-appointments:
+    post:
+      summary: "Cancel service appointment"
+      description: "Allows managers to cancel service appointments"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Service appointment details"
+          required: true
+          schema:
+            type: "object"
+            properties:
+              appointment_id:
+                type: "integer"
+                format: "int32"
+      responses:
+        200:
+          description: "Appointment canceled successfully"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        400:
+          description: "Bad request - Appointment ID is required or not found"
+          schema:
+            type: "object"
+            properties:
+              error:
+                type: "string"
+        401:
+          description: "Unauthorized access"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        500:
+          description: "Internal Server Error"
+          schema:
+            type: "object"
+            properties:
+              error:
+                type: "string"
+  /api/member/book-service-appointment:
+    post:
+      summary: "Book service appointment"
+      description: "Allows members to book service appointments for their cars"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Service appointment details"
+          required: true
+          schema:
+            type: "object"
+            properties:
+              appointment_date:
+                type: "string"
+                format: "date-time"
+              serviceID:
+                type: "integer"
+                format: "int32"
+              VIN_carID:
+                type: "string"
+      responses:
+        201:
+          description: "Service appointment booked successfully"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        400:
+          description: "Bad request - Required data is missing or invalid"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        401:
+          description: "Unauthorized access"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        404:
+          description: "Member not found"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        500:
+          description: "Internal Server Error"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+  /api/member/book-test-drive:
+    post:
+      summary: "Book test drive"
+      description: "Allows members to book test drives for cars"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Test drive details"
+          required: true
+          schema:
+            type: "object"
+            properties:
+              appointment_date:
+                type: "string"
+                format: "date-time"
+              VIN_carID:
+                type: "string"
+      responses:
+        201:
+          description: "Test drive booked successfully"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        400:
+          description: "Bad request - Required data is missing or invalid"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        401:
+          description: "Unauthorized access"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        404:
+          description: "Member not found"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        500:
+          description: "Internal Server Error"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+  /api/service-menu:
+    get:
+      summary: "Get all services"
+      description: "Returns all services available for users to choose"
+      produces:
+        - "application/json"
+      responses:
+        200:
+          description: "Successful operation"
+          schema:
+            type: "array"
+            items:
+              type: "object"
+              properties:
+                serviceID:
+                  type: "integer"
+                  format: "int32"
+                service_name:
+                  type: "string"
+                price:
+                  type: "number"
+                  format: "double"
+        500:
+          description: "Internal Server Error"
+          schema:
+            type: "object"
+            properties:
+              error:
+                type: "string"
+  /api/manager/edit-service-menu:
+    post:
+      summary: "Add or edit service"
+      description: "Allows managers to add or edit services in the menu"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Service details"
+          required: true
+          schema:
+            type: "object"
+            properties:
+              edit_or_add:
+                type: "integer"
+                format: "int32"
+              serviceID:
+                type: "integer"
+                format: "int32"
+              service_name:
+                type: "string"
+              price:
+                type: "number"
+                format: "double"
+      responses:
+        201:
+          description: "Service added successfully"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        200:
+          description: "Service successfully edited"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        400:
+          description: "Bad request - Required data is missing or invalid"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        401:
+          description: "Unauthorized access"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        404:
+          description: "Service not found"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        500:
+          description: "Internal Server Error"
+          schema:
+            type: "object"
+            properties:
+              error:
+                type: "string"
+    delete:
+      summary: "Delete service"
+      description: "Allows managers to delete services from the menu"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Service ID"
+          required: true
+          schema:
+            type: "object"
+            properties:
+              service_id:
+                type: "integer"
+                format: "int32"
+      responses:
+        200:
+          description: "Service deleted successfully"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        404:
+          description: "Service not found"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        500:
+          description: "Internal Server Error"
+          schema:
+            type: "object"
+            properties:
+              error:
+                type: "string"
+  /api/manager/assign-service-appointments:
+    post:
+      summary: "Assign service appointment"
+      description: "Allows managers to assign service appointments to technicians"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Appointment details"
+          required: true
+          schema:
+            type: "object"
+            properties:
+              appointment_id:
+                type: "integer"
+                format: "int32"
+              employee_id:
+                type: "integer"
+                format: "int32"
+      responses:
+        200:
+          description: "Appointment assigned successfully"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        400:
+          description: "Bad request - Appointment ID and technician ID are required"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        401:
+          description: "Unauthorized access"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        403:
+          description: "Forbidden - Only managers/superAdmins are allowed"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        404:
+          description: "Appointment or technician not found"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        500:
+          description: "Internal Server Error"
+          schema:
+            type: "object"
+            properties:
+              error:
+                type: "string"
+  /api/technician-view-service-appointments/technician-edit:
+    post:
+      summary: "Edit service appointment"
+      description: "Allows technicians to edit service appointments"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Appointment details"
+          required: true
+          schema:
+            type: "object"
+            properties:
+              appointment_id:
+                type: "integer"
+                format: "int32"
+              comment:
+                type: "string"
+              status:
+                type: "string"
+      responses:
+        200:
+          description: "Appointment updated successfully"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        400:
+          description: "Bad request - Appointment ID is required"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        401:
+          description: "Unauthorized access"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        403:
+          description: "Forbidden - Technician is not assigned to the appointment"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        404:
+          description: "Appointment not found"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+        500:
+          description: "Internal Server Error"
+          schema:
+            type: "object"
+            properties:
+              error:
+                type: "string"
+  /api/logout:
+    post:
+      summary: "Logout user"
+      description: "Allows users to logout from the system"
+      produces:
+        - "application/json"
+      responses:
+        200:
+          description: "Logged out successfully"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+  /api/login:
+    post:
+      summary: "User Login"
+      description: "API for user authentication"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "User credentials"
+          required: true
+          schema:
+            type: "object"
+            properties:
+              username:
+                type: "string"
+              password:
+                type: "string"
+      responses:
+        200:
+          description: "Login successful"
+          schema:
+            type: "object"
+            properties:
+              type:
+                type: "string"
+              # Add more properties based on response type (member/employee)
+        401:
+          description: "Unauthorized - Invalid username or password"
+          schema:
+            type: "object"
+            properties:
+              error:
+                type: "string"
+        404:
+          description: "User not found"
+          schema:
+            type: "object"
+            properties:
+              error:
+                type: "string"
+        500:
+          description: "Internal Server Error"
+          schema:
+            type: "object"
+            properties:
+              error:
+                type: "string"

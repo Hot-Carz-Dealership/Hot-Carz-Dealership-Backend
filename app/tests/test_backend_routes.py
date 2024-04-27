@@ -93,8 +93,7 @@ def test_addon_information(client):
         assert 'totalCost' in addon_data
         assert isinstance(addon_data['itemID'], int)
         assert isinstance(addon_data['itemName'], str)
-        # assert isinstance(addon_data['totalCost'], int)
-    # add 500 error code here for when DB is not able to be accessed
+        assert isinstance(addon_data['totalCost'], int)
 
 
 def test_vehicle_search(client):
