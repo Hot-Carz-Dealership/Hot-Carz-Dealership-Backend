@@ -46,7 +46,7 @@ def addon_information():
         addon_data = {
             'itemID': addon.itemID,
             'itemName': addon.itemName,
-            'totalCost': str(addon.totalCost)  # Converting Decimal to string for JSON serialization
+            'totalCost': int(addon.totalCost)
         }
         addon_info.append(addon_data)
     return jsonify(addon_info), 200
@@ -243,7 +243,7 @@ def random_vehicles():
             random_vehicles_info.append(random_vehicle_info)
         return jsonify(random_vehicles_info), 200
     except Exception as e:
-        return jsonify({'error': str(e)}), 5000
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/employees', methods=['GET'])  # TEST DONE
@@ -634,7 +634,6 @@ def get_current_user():
 
 @app.route('/api/service-appointments', methods=['GET'])  # TEST DONE
 # GET protocol return all service appointment information
-# POST protocol is used for managers to cancel appointments on their views when they are logged in
 # TESTCASE: DONE FOR GET AND POST
 def service_appointments():
     # get request, we return all data form service appointments
