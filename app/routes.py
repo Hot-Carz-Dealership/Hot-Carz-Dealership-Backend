@@ -238,7 +238,7 @@ def random_vehicles():
                 'viewsOnPage': random_vehicle.viewsOnPage,
                 'pictureLibraryLink': random_vehicle.pictureLibraryLink,
                 'status': random_vehicle.status,
-                'price': str(random_vehicle.price)
+                'price': int(random_vehicle.price)  # if something messes up with the car price, bruh it was this line
             }
             random_vehicles_info.append(random_vehicle_info)
         return jsonify(random_vehicles_info), 200
