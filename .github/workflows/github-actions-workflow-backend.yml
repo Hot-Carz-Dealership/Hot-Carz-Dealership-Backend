@@ -1,6 +1,7 @@
 name: CI/CD - Backend Repo
 
 on:
+  # basically the CI runs the unit test everytime we are merging to dev at every PR to dev
   pull_request:
     branches:
       - dev
@@ -13,13 +14,15 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v2
 
+      # sets up python with dependencies
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.11'  # Specify the Python version you're using
+          python-version: '3.11'
 
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # runs unit tests for flask endpoints using pytest
       - name: Run Unit Tests
         run: FLASK_ENV=testing pytest
