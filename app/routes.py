@@ -1522,6 +1522,12 @@ def insert_financing():
         if member_id is None:
             return jsonify({'message': 'Invalid session'}), 400
         
+        # Validate required fields
+        data = request.json
+        required_fields = ['VIN_carID', 'income', 'credit_score', 'loan_total', 'down_payment', 'percentage', 'monthly_payment_sum', 'remaining_months']
+        if not all(field in data for field in required_fields):
+            return jsonify({'message': 'Missing required fields'}), 400
+        
         # Retrieve data from the request
         data = request.json
         VIN_carID = data.get('VIN_carID')
