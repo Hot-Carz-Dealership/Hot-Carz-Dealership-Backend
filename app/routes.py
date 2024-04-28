@@ -594,14 +594,16 @@ def add_car():
 def get_current_user():
     user_id = session.get("member_session_id")
 
-    # if it is none, basically we then begin the login for employees and NOT members here.
-    # all in one endpoint, thx patrick. This data belongs to him but it's under my commit because I fucked up.
     if not user_id:
         user_id = session.get("employee_session_id")
 
         if not user_id:
             return jsonify({"error": "Unauthorized"}), 401
+
         employee = Employee.query.filter_by(employeeID=user_id).first()
+        if not employee:
+            return jsonify({"error": "Employee not found"}), 404
+
         return jsonify({
             'employeeID': employee.employeeID,
             'first_name': employee.first_name,
@@ -616,7 +618,13 @@ def get_current_user():
         }), 200
 
     member = Member.query.filter_by(memberID=user_id).first()
-    sensitive_info = MemberSensitiveInfo.query.filter_by(memberID=user_id).first()  # for returning their Driver ID
+    if not member:
+        return jsonify({"error": "Member not found"}), 404
+
+    sensitive_info = MemberSensitiveInfo.query.filter_by(memberID=user_id).first()
+    if not sensitive_info:
+        return jsonify({"error": "Sensitive info not found"}), 404
+
     return jsonify({
         'memberID': member.memberID,
         'first_name': member.first_name,
@@ -630,6 +638,7 @@ def get_current_user():
         'driverID': sensitive_info.driverID,
         'join_date': member.join_date
     }), 200
+
 
 
 @app.route('/api/service-appointments', methods=['GET'])  # TEST DONE
