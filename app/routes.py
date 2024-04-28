@@ -1568,6 +1568,42 @@ def insert_financing():
 ## User get sent to add ons page
 ## Anything they add on that page gets added to the users cart
 
+@app.route('/api/vehicle-purchase/get-financing', methods=['GET'])
+# Returns the currently all of the currently logged in members loan
+def get_financing():
+    try:
+        # Validate session
+        member_id = session.get('member_session_id')
+        if not member_id:
+            return jsonify({'message': 'Invalid session'}), 401
+
+        # Query financing information for the current member
+        financing_info = Financing.query.filter_by(memberID=member_id).all()
+
+        # Check if any financing information is found
+        if not financing_info:
+            return jsonify({'message': 'No financing information found'}), 404
+
+        # Serialize the financing information
+        serialized_data = []
+        for financing in financing_info:
+            serialized_data.append({
+                'VIN_carID': financing.VIN_carID,
+                'income': financing.income,
+                'credit_score': financing.credit_score,
+                'loan_total': financing.loan_total,
+                'down_payment': financing.down_payment,
+                'percentage': financing.percentage,
+                'monthly_payment_sum': financing.monthly_payment_sum,
+                'remaining_months': financing.remaining_months
+            })
+
+        return jsonify(serialized_data), 200
+    except Exception as e:
+        return jsonify({'message': f'Error: {str(e)}'}), 500
+
+
+
 #Finally they hit the final check out
 #Display all the items in the cart with /api/member/cart
 
