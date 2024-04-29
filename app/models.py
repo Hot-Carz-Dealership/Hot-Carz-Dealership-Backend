@@ -217,7 +217,7 @@ class Warranty(db.Model):
     __tablename__ = 'Warranty'
     
     Warranty_ID = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    VIN_carID = db.Column(db.String(45), db.ForeignKey('CarVins.VIN_carID'))
+    VIN_carID = db.Column(db.String(17))# there should be fk here but idk why it didnt work
     addon_ID = db.Column(db.Integer, db.ForeignKey('Addons.itemID'))
     # memberID = db.Column(db.Integer, db.ForeignKey('Member.memberID'), nullable=False)
 

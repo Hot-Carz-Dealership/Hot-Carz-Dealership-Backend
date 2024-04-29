@@ -1707,13 +1707,19 @@ def make_purchase():
         financingID = None
         # Add validation on front end for routing and acct numbers
         
+        # Lists to accumulate VINs and addon IDs
+        vin_with_addons = None
+        addons = []
+        
         
         # Add cart items to the Purchases table
         for item in cart_items:
             bidID = None
+            addon_ID = item.addon_ID
             # Check if VIN_carID exists in the bids table and get bidID if it does
             VIN_carID=item.VIN_carID
             if VIN_carID:
+                vin_with_addons = VIN_carID
                 bid = Bids.query.filter_by(VIN_carID=VIN_carID).first()
                 if bid:
                     bidID = bid.bidID
@@ -1722,8 +1728,10 @@ def make_purchase():
                     financing = Financing.query.filter_by(VIN_carID=VIN_carID).first()
                     if financing:
                         financingID = financing.financingID
-                    
-                    
+            # If the item is an addon, add addon to the lists
+            if addon_ID:
+                addons.append(addon_ID)
+                                   
             new_purchase = Purchases(
                 bidID=bidID,
                 memberID=member_id,
@@ -1752,6 +1760,14 @@ def make_purchase():
             
             db.session.add(new_purchase)
             db.session.commit()
+            
+        # Create Warranty instances for each addon associated with the VIN
+        for addon in addons:
+            new_warranty = Warranty(
+                VIN_carID=vin_with_addons,
+                addon_ID=addon
+            )
+            db.session.add(new_warranty)
         
         
         # Hash the bank info
