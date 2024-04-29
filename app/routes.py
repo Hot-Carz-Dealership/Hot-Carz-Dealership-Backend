@@ -204,7 +204,7 @@ def add_vehicle():
 
 
 @app.route('/api/vehicles/random', methods=['GET'])  # TEST DONE
-# This API returns all info on 3 random vehicles in the database for the homepage
+# This API returns all info on 2 random vehicles in the database for the homepage
 # TESTCASE: DONE
 def random_vehicles():
     try:
@@ -213,11 +213,11 @@ def random_vehicles():
             CarVINs.purchase_status == 'Dealership - Not Purchased').count()
 
         # If there are less than 2 vehicles in the database from 'Dealership', return an error
-        if total_vehicles < 3:
+        if total_vehicles < 2:
             return jsonify({'error': 'Insufficient vehicles in the dealership to select random ones.'}), 404
 
         # Generate two random indices within the range of total vehicles
-        random_indices = random.sample(range(total_vehicles), 3)
+        random_indices = random.sample(range(total_vehicles), 2)
 
         # Retrieve information about the two random vehicles
         random_vehicles_info = []
