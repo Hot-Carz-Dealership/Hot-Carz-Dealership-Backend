@@ -55,4 +55,4 @@ app.config['SECRET_KEY'] = 'secret_key'  # sets the secret key for the Flask app
 
 app.debug = True  # enables debugging in the flask app
 
-from app import routes, models  # Import routes and models
+from app import routes, models, fin_routes  # Import routes and models

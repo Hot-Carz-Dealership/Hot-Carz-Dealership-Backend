@@ -204,7 +204,7 @@ def add_vehicle():
 
 
 @app.route('/api/vehicles/random', methods=['GET'])  # TEST DONE
-# This API returns all info on 3 random vehicles in the database for the homepage
+# This API returns all info on 2 random vehicles in the database for the homepage
 # TESTCASE: DONE
 def random_vehicles():
     try:
@@ -213,11 +213,11 @@ def random_vehicles():
             CarVINs.purchase_status == 'Dealership - Not Purchased').count()
 
         # If there are less than 2 vehicles in the database from 'Dealership', return an error
-        if total_vehicles < 3:
+        if total_vehicles < 2:
             return jsonify({'error': 'Insufficient vehicles in the dealership to select random ones.'}), 404
 
         # Generate two random indices within the range of total vehicles
-        random_indices = random.sample(range(total_vehicles), 3)
+        random_indices = random.sample(range(total_vehicles), 2)
 
         # Retrieve information about the two random vehicles
         random_vehicles_info = []
@@ -1776,3 +1776,40 @@ def delete_cart():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+    
+
+@app.route('/api/member/test_drive_data', methods=['GET'])
+# Gets the 
+def get_test_drive_data():
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+    
+    # Query the TestDrive table to get test drive data for the current user
+    test_drives = TestDrive.query.filter_by(memberID=member_id).all()
+    
+    # Initialize a list to store the results
+    result = []
+    
+    # Iterate through each test drive record and gather the required data
+    for test_drive in test_drives:
+        # Query the CarInfo table to get additional information about the car
+        car_info = CarInfo.query.filter_by(VIN_carID=test_drive.VIN_carID).first()
+        
+        # Create a dictionary containing the required data
+        test_drive_data = {
+            'testdrive_id': test_drive.testdrive_id,
+            'VIN_carID': test_drive.VIN_carID,
+            'appointment_date': test_drive.appointment_date.strftime("%Y-%m-%d %H:%M:%S"),
+            'confirmation': test_drive.confirmation,
+            'make': car_info.make,
+            'model': car_info.model,
+            'year': car_info.year
+        }
+        
+        # Append the dictionary to the result list
+        result.append(test_drive_data)
+    
+    # Return the result as JSON
+    return jsonify(result)
+
