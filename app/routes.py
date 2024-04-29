@@ -284,7 +284,9 @@ def get_test_drives():
             'phone': member.phone,
             'car_id': test_drive.VIN_carID,
             'car_make_model': f"{car.make} {car.model}",
-            'appointment_date': test_drive.appointment_date
+            'appointment_date': test_drive.appointment_date,
+            'confirmation': test_drive.confirmation,
+            'id': test_drive.testdrive_id
         })
     return jsonify(test_drive_info), 200
 
