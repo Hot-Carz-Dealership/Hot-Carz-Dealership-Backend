@@ -15,11 +15,10 @@ API_URL = '/static/docs.yml'  # Our API url (can of course be a local resource)
 app = Flask(__name__)
 
 if os.getenv('FLASK_ENV') == 'testing':
-    db_name = 'dealership_testing'
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+mysqlconnector://root:UUNaDUpaHzvdMkfieWerXOpyTTyHaxlI@viaduct.proxy.rlwy.net:39073/dealership_testing"
 else:
-    db_name = 'dealership_backend'
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+mysqlconnector://root:aGGeAzhlGdyhqpkesCDkjgcyKXHYXEuK@viaduct.proxy.rlwy.net:20836/dealership_backend"
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:password@localhost/' + db_name
 
 # Load the configuration
 app.config.from_object(Config)
@@ -56,4 +55,4 @@ app.config['SECRET_KEY'] = 'secret_key'  # sets the secret key for the Flask app
 
 app.debug = True  # enables debugging in the flask app
 
-from app import routes, models  # Import routes and models
+from app import routes, models, fin_routes  # Import routes and models

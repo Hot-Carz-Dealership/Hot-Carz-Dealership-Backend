@@ -29,7 +29,7 @@ def testdb():
         # e holds description of the error
         error_text = "<p>The error:<br>" + str(e) + "</p>"
         hed = '<h1>Something is broken.</h1>'
-        return hed + error_text
+        return hed + error_text + str(logging.log(e))
 
 
 ''' this API retrieves all of the add-on products'''
@@ -46,7 +46,7 @@ def addon_information():
         addon_data = {
             'itemID': addon.itemID,
             'itemName': addon.itemName,
-            'totalCost': str(addon.totalCost)  # Converting Decimal to string for JSON serialization
+            'totalCost': int(addon.totalCost)
         }
         addon_info.append(addon_data)
     return jsonify(addon_info), 200
@@ -238,12 +238,12 @@ def random_vehicles():
                 'viewsOnPage': random_vehicle.viewsOnPage,
                 'pictureLibraryLink': random_vehicle.pictureLibraryLink,
                 'status': random_vehicle.status,
-                'price': str(random_vehicle.price)
+                'price': int(random_vehicle.price)  # if something messes up with the car price, bruh it was this line
             }
             random_vehicles_info.append(random_vehicle_info)
         return jsonify(random_vehicles_info), 200
     except Exception as e:
-        return jsonify({'error': str(e)}), 5000
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/employees', methods=['GET'])  # TEST DONE
@@ -594,14 +594,16 @@ def add_car():
 def get_current_user():
     user_id = session.get("member_session_id")
 
-    # if it is none, basically we then begin the login for employees and NOT members here.
-    # all in one endpoint, thx patrick. This data belongs to him but it's under my commit because I fucked up.
     if not user_id:
         user_id = session.get("employee_session_id")
 
         if not user_id:
             return jsonify({"error": "Unauthorized"}), 401
+
         employee = Employee.query.filter_by(employeeID=user_id).first()
+        if not employee:
+            return jsonify({"error": "Employee not found"}), 404
+
         return jsonify({
             'employeeID': employee.employeeID,
             'first_name': employee.first_name,
@@ -616,7 +618,13 @@ def get_current_user():
         }), 200
 
     member = Member.query.filter_by(memberID=user_id).first()
-    sensitive_info = MemberSensitiveInfo.query.filter_by(memberID=user_id).first()  # for returning their Driver ID
+    if not member:
+        return jsonify({"error": "Member not found"}), 404
+
+    sensitive_info = MemberSensitiveInfo.query.filter_by(memberID=user_id).first()
+    if not sensitive_info:
+        return jsonify({"error": "Sensitive info not found"}), 404
+
     return jsonify({
         'memberID': member.memberID,
         'first_name': member.first_name,
@@ -632,9 +640,9 @@ def get_current_user():
     }), 200
 
 
+
 @app.route('/api/service-appointments', methods=['GET'])  # TEST DONE
 # GET protocol return all service appointment information
-# POST protocol is used for managers to cancel appointments on their views when they are logged in
 # TESTCASE: DONE FOR GET AND POST
 def service_appointments():
     # get request, we return all data form service appointments
@@ -1523,6 +1531,12 @@ def insert_financing():
         if member_id is None:
             return jsonify({'message': 'Invalid session'}), 400
         
+        # Validate required fields
+        data = request.json
+        required_fields = ['VIN_carID', 'income', 'credit_score', 'loan_total', 'down_payment', 'percentage', 'monthly_payment_sum', 'remaining_months']
+        if not all(field in data for field in required_fields):
+            return jsonify({'message': 'Missing required fields'}), 400
+        
         # Retrieve data from the request
         data = request.json
         VIN_carID = data.get('VIN_carID')
@@ -1563,6 +1577,42 @@ def insert_financing():
 ## User get sent to add ons page
 ## Anything they add on that page gets added to the users cart
 
+@app.route('/api/vehicle-purchase/get-financing', methods=['GET'])
+# Returns the currently all of the currently logged in members loan
+def get_financing():
+    try:
+        # Validate session
+        member_id = session.get('member_session_id')
+        if not member_id:
+            return jsonify({'message': 'Invalid session'}), 401
+
+        # Query financing information for the current member
+        financing_info = Financing.query.filter_by(memberID=member_id).all()
+
+        # Check if any financing information is found
+        if not financing_info:
+            return jsonify({'message': 'No financing information found'}), 404
+
+        # Serialize the financing information
+        serialized_data = []
+        for financing in financing_info:
+            serialized_data.append({
+                'VIN_carID': financing.VIN_carID,
+                'income': financing.income,
+                'credit_score': financing.credit_score,
+                'loan_total': financing.loan_total,
+                'down_payment': financing.down_payment,
+                'percentage': financing.percentage,
+                'monthly_payment_sum': financing.monthly_payment_sum,
+                'remaining_months': financing.remaining_months
+            })
+
+        return jsonify(serialized_data), 200
+    except Exception as e:
+        return jsonify({'message': f'Error: {str(e)}'}), 500
+
+
+
 #Finally they hit the final check out
 #Display all the items in the cart with /api/member/cart
 
@@ -1588,6 +1638,13 @@ def make_purchase():
         data = request.json
         if not data:
             return jsonify({'error': 'No data provided'}), 400
+        
+                
+        required_fields = ['routingNumber', 'bankAcctNumber', 'Amount Due Now', 'Financed Amount']
+        missing_fields = [field for field in required_fields if field not in data]
+        if missing_fields:
+            error_message = f'Missing required field(s): {", ".join(missing_fields)}'
+            return jsonify({'error': error_message}), 400
         
         #Gen a single confirmation number for the purchase
         confirmation_number =confirmation_number_generation()
@@ -1650,7 +1707,12 @@ def make_purchase():
             elif serviceID and not Services.query.filter_by(serviceID=serviceID).first():
                 return jsonify({'error': 'Service with provided ID not found'}), 404
             
-            
+            # Update CarInfo status to 'sold'
+            db.session.query(CarInfo).filter_by(VIN_carID=VIN_carID).update({'status': 'sold'})
+            # Update CarVINs purchase_status to 'Dealership - Purchased' and memberID to current memberID
+            db.session.query(CarVINs).filter_by(VIN_carID=VIN_carID).update({'purchase_status': 'Dealership - Purchased','memberID': member_id})
+                    
+            db.session.commit()
             
             db.session.add(new_purchase)
             db.session.commit()
@@ -1714,6 +1776,43 @@ def delete_cart():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+    
+
+@app.route('/api/member/test_drive_data', methods=['GET'])
+# Gets the 
+def get_test_drive_data():
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+    
+    # Query the TestDrive table to get test drive data for the current user
+    test_drives = TestDrive.query.filter_by(memberID=member_id).all()
+    
+    # Initialize a list to store the results
+    result = []
+    
+    # Iterate through each test drive record and gather the required data
+    for test_drive in test_drives:
+        # Query the CarInfo table to get additional information about the car
+        car_info = CarInfo.query.filter_by(VIN_carID=test_drive.VIN_carID).first()
+        
+        # Create a dictionary containing the required data
+        test_drive_data = {
+            'testdrive_id': test_drive.testdrive_id,
+            'VIN_carID': test_drive.VIN_carID,
+            'appointment_date': test_drive.appointment_date.strftime("%Y-%m-%d %H:%M:%S"),
+            'confirmation': test_drive.confirmation,
+            'make': car_info.make,
+            'model': car_info.model,
+            'year': car_info.year
+        }
+        
+        # Append the dictionary to the result list
+        result.append(test_drive_data)
+    
+    # Return the result as JSON
+    return jsonify(result)
+
 
 
 
