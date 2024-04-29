@@ -212,3 +212,19 @@ class CheckoutCart(db.Model):
     last_updated = db.Column(db.DateTime, nullable=False, server_default=db.func.current_timestamp(),
                           onupdate=db.func.current_timestamp())
 
+class Warranty(db.Model):
+    # CheckoutCart table model
+    __tablename__ = 'Warranty'
+    
+    Warranty_ID = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    VIN_carID = db.Column(db.String(17))# there should be fk here but idk why it didnt work
+    addon_ID = db.Column(db.Integer, db.ForeignKey('Addons.itemID'))
+    # memberID = db.Column(db.Integer, db.ForeignKey('Member.memberID'), nullable=False)
+
+
+class WarrantyService(db.Model):
+    # CheckoutCart table model
+    __tablename__ = 'WarrantyService'
+    
+    addon_ID = db.Column(db.Integer, db.ForeignKey('Addons.itemID'),primary_key=True)
+    serviceID = db.Column(db.Integer, db.ForeignKey('Services.serviceID'))

@@ -505,3 +505,7 @@ INSERT INTO Addons (itemName, totalCost) VALUES
 ('Navigation Systems', 1000.00),
 ('Towing Packages', 1000.00),
 ('Entertainment Systems', 800.00);
+
+INSERT INTO warrantyservice (addon_ID, serviceID) VALUES
+(2,1),
+(5,5);

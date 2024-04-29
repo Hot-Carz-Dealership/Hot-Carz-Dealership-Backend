@@ -835,20 +835,56 @@ def book_test_drive():
 
 
 @app.route('/api/service-menu', methods=['GET'])  # TEST DONE
-# this api i hate it, it made me make another table and have to refactor everything.
-# returns all values in the Services table for users to choose what services they want.
+# Returns all values in the Services table for users to choose what services they want if not vin passed
+# If Vin provided queries the warranties associated with that VIN. If warranties exist, it finds the associated services and marks them as free
 def get_services():
-    if request.method == 'GET':
-        try:
-            services = Services.query.all()
+    try:
+        # Check if VIN is provided in the query parameters
+        vin = request.args.get('vin')   ## /api/service-menu?vin=ABC123
+        
+        if vin:
+            # Query warranties for the provided VIN
+            warranties = Warranty.query.filter_by(VIN_carID=vin).all()
+            if warranties:
+                # If warranties exist, find associated services
+                free_services = set()
+                for warranty in warranties:
+                    warranty_services = WarrantyService.query.filter_by(addon_ID=warranty.addon_ID).all()
+                    for warranty_service in warranty_services:
+                        free_services.add(warranty_service.serviceID)
+                
+                # Query all services
+                services = Services.query.all()
+                
+                # Prepare service info, mark free services
+                services_info = []
+                for service in services:
+                    service_info = {
+                        'serviceID': service.serviceID,
+                        'service_name': service.service_name,
+                        'price': "0.00" if service.serviceID in free_services else service.price
+                    }
+                    services_info.append(service_info)
+            else:
+                # If no warranties found, return all services with regular prices
+                services_info = [{
+                    'serviceID': service.serviceID,
+                    'service_name': service.service_name,
+                    'price': service.price
+                } for service in Services.query.all()]
+        else:
+            # If VIN is not provided, return all services with regular prices
             services_info = [{
                 'serviceID': service.serviceID,
                 'service_name': service.service_name,
                 'price': service.price
-            } for service in services]
-            return jsonify(services_info), 200
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            } for service in Services.query.all()]
+        
+        return jsonify(services_info), 200
+        
+    except Exception as e:
+        # Return error if an exception occurs
+        return jsonify({'error': str(e)}), 500
        
 @app.route('/api/manager/edit-service-menu', methods=['POST', 'DELETE'])  # test ready
 def edit_service_menu():
@@ -1671,13 +1707,19 @@ def make_purchase():
         financingID = None
         # Add validation on front end for routing and acct numbers
         
+        # Lists to accumulate VINs and addon IDs
+        vin_with_addons = None
+        addons = []
+        
         
         # Add cart items to the Purchases table
         for item in cart_items:
             bidID = None
+            addon_ID = item.addon_ID
             # Check if VIN_carID exists in the bids table and get bidID if it does
             VIN_carID=item.VIN_carID
             if VIN_carID:
+                vin_with_addons = VIN_carID
                 bid = Bids.query.filter_by(VIN_carID=VIN_carID).first()
                 if bid:
                     bidID = bid.bidID
@@ -1686,8 +1728,10 @@ def make_purchase():
                     financing = Financing.query.filter_by(VIN_carID=VIN_carID).first()
                     if financing:
                         financingID = financing.financingID
-                    
-                    
+            # If the item is an addon, add addon to the lists
+            if addon_ID:
+                addons.append(addon_ID)
+                                   
             new_purchase = Purchases(
                 bidID=bidID,
                 memberID=member_id,
@@ -1716,6 +1760,14 @@ def make_purchase():
             
             db.session.add(new_purchase)
             db.session.commit()
+            
+        # Create Warranty instances for each addon associated with the VIN
+        for addon in addons:
+            new_warranty = Warranty(
+                VIN_carID=vin_with_addons,
+                addon_ID=addon
+            )
+            db.session.add(new_warranty)
         
         
         # Hash the bank info
