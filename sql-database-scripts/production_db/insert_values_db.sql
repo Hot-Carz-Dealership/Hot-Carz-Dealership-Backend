@@ -506,11 +506,11 @@ INSERT INTO Addons (itemName, totalCost) VALUES
 ('Towing Packages', 1000.00),
 ('Entertainment Systems', 800.00);
 
-INSERT INTO warrantyservice (addon_ID, serviceID) VALUES
+INSERT INTO WarrantyService (addon_ID, serviceID) VALUES
 (2,1),
 (5,5);
 
-INSERT INTO orderhistory ( memberID, item_name, item_price, financed_amount, confirmationNumber, purchaseDate)
+INSERT INTO OrderHistory ( memberID, item_name, item_price, financed_amount, confirmationNumber, purchaseDate)
 VALUES
 ( 2, '2024 Ford Mustang', 55000, 0, 'ZLOXCTK9P8J8I', '2024-04-30 00:48'),
 ( 2, 'Extended Warranty', 1500, 0, 'ZLOXCTK9P8J8I', '2024-04-30 00:48'),
