@@ -2115,3 +2115,157 @@ def order_history():
         order_data['Total Financed'] = '{:.2f}'.format(float(order_data['Total Financed']))
 
     return jsonify(order_history_list), 200
+
+
+
+
+
+
+
+#Everything below is temporary in case I push this to dev
+#Used for account page
+#Feel free to delete if I am dumb
+#\\\\\
+
+
+@app.route('/api/member/payment-purchases-finance-bid-data', methods=['GET'])
+# this endpoint is used to return all data of members regarding payment, purchases, finance and bids informations of
+# the member who is authorized into the dealership and logged in and has a history here in the dealership
+def member_purchases():
+    member_session_id = session.get('member_session_id')
+    if not member_session_id:
+        return jsonify({'message': 'No session id provided'}), 400
+
+    # return payments, financing, bids, and purchase history for the member
+    payments = Payments.query.filter_by(memberID=member_session_id).all()
+    financing = Financing.query.filter_by(memberID=member_session_id).all()
+    bids = Bids.query.filter_by(memberID=member_session_id).all()
+    purchases = Purchases.query.filter_by(memberID=member_session_id).all()
+
+    # for testing purposes
+    # payments = Payments.query.all()
+    # financing = Financing.query.all()
+    # bids = Bids.query.all()
+    # purchases = Purchases.query.all()
+
+    # Payment information
+    payment_info = []
+    for payment in payments:
+        payment_data = {
+            'paymentID': payment.paymentID,
+            'paymentStatus': payment.paymentStatus,
+            'valuePaid': payment.valuePaid,
+            'valueToPay': payment.valueToPay,
+            'initialPurchase': str(payment.initialPurchase),  # Convert to string
+            'lastPayment': str(payment.lastPayment),  # Convert to string
+            #'paymentType': payment.paymentType,
+            #'cardNumber': payment.cardNumber,
+            #'expirationDate': payment.expirationDate,
+            #'CVV': payment.CVV,
+            'routingNumber': payment.routingNumber,
+            'bankAcctNumber': payment.bankAcctNumber,
+            'memberID': payment.memberID,
+            'financingID': payment.financingID
+        }
+        payment_info.append(payment_data)
+
+    # Financing information
+    financing_data = []
+    for finance in financing:
+        financing_info = {
+            'financingID': finance.financingID,
+            'income': finance.income,
+            'credit_score': finance.credit_score,
+            'loan_total': finance.loan_total,
+            'down_payment': finance.down_payment,
+            'percentage': finance.percentage,
+            'monthly_sum': finance.monthly_payment_sum,
+            'remaining_months': finance.remaining_months
+        }
+        financing_data.append(financing_info)
+
+    # Bid information
+    bid_info = []
+    for bid in bids:
+        bid_data = {
+            'bidID': bid.bidID,
+            'bidValue': bid.bidValue,
+            'Vin_carID': bid.VIN_carID,
+            'bidStatus': bid.bidStatus,
+            'bidTimestamp': str(bid.bidTimestamp)  # Convert to string
+        }
+        bid_info.append(bid_data)
+
+    # Purchase history
+    purchase_history = []
+    for purchase in purchases:
+        purchase_data = {
+            'purchaseID': purchase.purchaseID,
+            'bidID': purchase.bidID,
+            'VIN_carID': purchase.VIN_carID,
+            'memberID': purchase.memberID,
+            'confirmationNumber': purchase.confirmationNumber,
+            'purchaseType': purchase.purchaseType,
+            'purchaseDate': str(purchase.purchaseDate)  # Convert to string
+        }
+        purchase_history.append(purchase_data)
+
+    # Construct the response
+    response_data = {
+        'payments': payment_info,
+        'financing': financing_data,
+        'bids': bid_info,
+        'purchase_history': purchase_history
+    }
+
+    return jsonify(response_data), 200
+
+
+
+
+@app.route('/api/member/current-bids', methods=['GET', 'POST'])
+def current_member_bids():
+    # check if the member is logged in, if not redirect them to log in
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+
+    # check if the member exists
+    member = Member.query.get(member_id)
+    if not member:
+        return jsonify({'message': 'Member not found'}), 404
+
+    # GET Request: returns all bid information based on the logged in member and their memberID
+    if request.method == 'GET':
+        bids = Bids.query.filter_by(memberID=member_id).all()
+        if not bids:
+            return jsonify({'message': 'No bids found for this member'}), 404
+        bid_info = [{'bidID': bid.bidID,
+                     'memberID': bid.memberID,
+                     'VIN_carID': bid.VIN_carID,
+                     'bidValue': bid.bidValue,
+                     'bidStatus': bid.bidStatus,
+                     'bidTimestamp': bid.bidTimestamp
+                     }
+                    for bid in bids]
+        return jsonify(bid_info), 200
+    elif request.method == 'POST':
+        # frontend needs to pass these values in for it to work
+        data = request.json
+        bid_id = data.get('bid_id') # these should work as a button accociated with the bid value/row
+        new_bid_value = data.get('new_bid_value')
+
+        if bid_id is None or new_bid_value is None:
+            return jsonify({'message': 'Bid ID and new Bid Value is required in the request'}), 400
+
+        # finds the denied bid and then copies all other relevant meta data in a nice manner to avoid stupid overworking things
+        denied_bid = Bids.query.filter_by(memberID=member_id, bidID=bid_id, bidStatus='Denied').first()
+        if denied_bid:
+            new_bid = Bids(memberID=member_id, VIN_carID=denied_bid.VIN_carID, bidValue=new_bid_value,
+                           bidStatus='Processing', bidTimestamp=datetime.now())
+            db.session.add(new_bid)
+            db.session.commit()
+            return jsonify({'message': 'New bid placed successfully'}), 201
+        else:
+            return jsonify({'message': 'Denied bid not found for this member with the provided bid ID'}), 404
+            
