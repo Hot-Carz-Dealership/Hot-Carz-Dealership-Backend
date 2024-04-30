@@ -117,8 +117,7 @@ def member_vehicles():
 # was prev: /api/vehicles
 # TESTCASE: DONE
 def vehicle():
-    # this line was messing up. it was being passed as a url arg instead of json with the VIN.
-    VIN_carID = request.json.get('vin')  # get query parameter id
+    VIN_carID = request.args.get('vin')  # get query parameter id
     vehicle_info = CarInfo.query.join(CarVINs).filter(CarVINs.VIN_carID == VIN_carID,
                                                       CarVINs.purchase_status == 'Dealership - Not Purchased').first()  # used to ensure that the cars shown are from the Dealership only and now customer private owned
     if vehicle_info:
