@@ -1778,7 +1778,40 @@ def delete_cart():
         return jsonify({'error': str(e)}), 500
         return jsonify({'error': str(e)}), 500
 
-
+@app.route('/api/member/test_drive_data', methods=['GET'])
+# Gets the 
+def get_test_drive_data():
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+    
+    # Query the TestDrive table to get test drive data for the current user
+    test_drives = TestDrive.query.filter_by(memberID=member_id).all()
+    
+    # Initialize a list to store the results
+    result = []
+    
+    # Iterate through each test drive record and gather the required data
+    for test_drive in test_drives:
+        # Query the CarInfo table to get additional information about the car
+        car_info = CarInfo.query.filter_by(VIN_carID=test_drive.VIN_carID).first()
+        
+        # Create a dictionary containing the required data
+        test_drive_data = {
+            'testdrive_id': test_drive.testdrive_id,
+            'VIN_carID': test_drive.VIN_carID,
+            'appointment_date': test_drive.appointment_date.strftime("%Y-%m-%d %H:%M:%S"),
+            'confirmation': test_drive.confirmation,
+            'make': car_info.make,
+            'model': car_info.model,
+            'year': car_info.year
+        }
+        
+        # Append the dictionary to the result list
+        result.append(test_drive_data)
+    
+    # Return the result as JSON
+    return jsonify(result)
 
 
 
@@ -1788,7 +1821,6 @@ def delete_cart():
 #Feel free to delete if I am dumb
 #\\\\\
 
-"""
 
 @app.route('/api/member/payment-purchases-finance-bid-data', methods=['GET'])
 # this endpoint is used to return all data of members regarding payment, purchases, finance and bids informations of
@@ -1931,4 +1963,3 @@ def current_member_bids():
         else:
             return jsonify({'message': 'Denied bid not found for this member with the provided bid ID'}), 404
             
-"""
