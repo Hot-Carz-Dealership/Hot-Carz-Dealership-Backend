@@ -1329,21 +1329,81 @@ def delete_from_cart(item_id):
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/members/update', methods=['POST'])  
+@app.route('/api/manager/member-delete', methods=['DELETE'])  # new one for deleting customer in manager view
+# try it out, not tested.
+def delete_member():
+    try:
+        employee_id = session.get('employee_session_id')
+        if not employee_id:
+            return jsonify({'message': 'Unauthorized access'}), 401
+
+        # Ensure that the employee exists
+        employee = Employee.query.filter_by(employeeID=employee_id).first()
+        if employee is None:
+            return jsonify({'message': 'Employee is not in the System'}), 401
+
+        data = request.json
+        member_id = data.get('memberID')
+        member = Member.query.get(member_id)
+
+        if member is None:
+            return jsonify({'message': 'Member not found'}), 404
+
+        # deletes the bought car information, first warrenty, CarInfo, CarVin Information
+        car_vin_info = CarVINs.query.filter_by(memberID=member_id).all()
+        if car_vin_info:
+            for car in car_vin_info:
+                Warranty.query.filter_by(VIN_carID=car_vin_info.VIN_carID).delete()
+                CarInfo.query.filter_by(VIN_carID=car_vin_info.VIN_carID).delete()
+                db.session.delete(car)
+
+        # Deleting related data
+
+        # test drives
+        TestDrive.query.filter_by(memberID=member_id).delete()
+
+        # all service appointments
+        service_appointments = ServiceAppointment.query.filter_by(memberID=member_id).all()
+        for appointment in service_appointments:
+            ServiceAppointmentEmployeeAssignments.query.filter_by(appointment_id=appointment.appointment_id).delete()
+        ServiceAppointment.query.filter_by(memberID=member_id).delete()
+
+        CheckoutCart.query.filter_by(memberID=member_id).delete()
+
+        # delete the sensitive info on the member
+        MemberSensitiveInfo.query.filter_by(memberID=member_id).delete()
+
+        # delete the stupid member that gets deleted
+        db.session.delete(member)
+        db.session.commit()
+        return jsonify({'message': 'Member account deleted successfully'}), 200
+    except Exception as e:
+        # Rollback the session in case of any exception
+        db.session.rollback()
+        logging.exception(e)  # Log the exception for debugging purposes
+        return jsonify({'error': 'An error occurred while updating the member account.'}), 500
+
+
+@app.route('/api/members/update', methods=['POST'])  # test with editing members from the manager page
 # Route to update logged in users account info
 def update_member():
     try:
+        employee_id = session.get('employee_session_id')
+        if employee_id is None:
+            # Customer auth for making sure they are logged in and have an account
+            member_id = session.get('member_session_id')
+            if member_id is None:
+                return jsonify({'message': 'Invalid session'}), 400
+
+            # Retrieve the member based on the current session
+            existing_member = Member.query.get(member_id)
+            if existing_member is None:
+                return jsonify({'error': 'Member not found.'}), 404
+
         data = request.json
-
-        # Customer auth for making sure they are logged in and have an account
-        member_id = session.get('member_session_id')
-        if member_id is None:
-            return jsonify({'message': 'Invalid session'}), 400
-
-        # Retrieve the member based on the current session
-        existing_member = Member.query.get(member_id)
-        if existing_member is None:
-            return jsonify({'error': 'Member not found.'}), 404
+        if employee_id:
+            member_id = data.get('memberID')
+            existing_member = Member.query.get(member_id)
 
         # Update member information
         existing_member.first_name = data.get('first_name', existing_member.first_name)
