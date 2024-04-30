@@ -835,20 +835,56 @@ def book_test_drive():
 
 
 @app.route('/api/service-menu', methods=['GET'])  # TEST DONE
-# this api i hate it, it made me make another table and have to refactor everything.
-# returns all values in the Services table for users to choose what services they want.
+# Returns all values in the Services table for users to choose what services they want if not vin passed
+# If Vin provided queries the warranties associated with that VIN. If warranties exist, it finds the associated services and marks them as free
 def get_services():
-    if request.method == 'GET':
-        try:
-            services = Services.query.all()
+    try:
+        # Check if VIN is provided in the query parameters
+        vin = request.args.get('vin')   ## /api/service-menu?vin=ABC123
+        
+        if vin:
+            # Query warranties for the provided VIN
+            warranties = Warranty.query.filter_by(VIN_carID=vin).all()
+            if warranties:
+                # If warranties exist, find associated services
+                free_services = set()
+                for warranty in warranties:
+                    warranty_services = WarrantyService.query.filter_by(addon_ID=warranty.addon_ID).all()
+                    for warranty_service in warranty_services:
+                        free_services.add(warranty_service.serviceID)
+                
+                # Query all services
+                services = Services.query.all()
+                
+                # Prepare service info, mark free services
+                services_info = []
+                for service in services:
+                    service_info = {
+                        'serviceID': service.serviceID,
+                        'service_name': service.service_name,
+                        'price': "0.00" if service.serviceID in free_services else service.price
+                    }
+                    services_info.append(service_info)
+            else:
+                # If no warranties found, return all services with regular prices
+                services_info = [{
+                    'serviceID': service.serviceID,
+                    'service_name': service.service_name,
+                    'price': service.price
+                } for service in Services.query.all()]
+        else:
+            # If VIN is not provided, return all services with regular prices
             services_info = [{
                 'serviceID': service.serviceID,
                 'service_name': service.service_name,
                 'price': service.price
-            } for service in services]
-            return jsonify(services_info), 200
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            } for service in Services.query.all()]
+        
+        return jsonify(services_info), 200
+        
+    except Exception as e:
+        # Return error if an exception occurs
+        return jsonify({'error': str(e)}), 500
        
 @app.route('/api/manager/edit-service-menu', methods=['POST', 'DELETE'])  # test ready
 def edit_service_menu():
@@ -1293,21 +1329,81 @@ def delete_from_cart(item_id):
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/members/update', methods=['POST'])  
+@app.route('/api/manager/member-delete', methods=['DELETE'])  # new one for deleting customer in manager view
+# try it out, not tested.
+def delete_member():
+    try:
+        employee_id = session.get('employee_session_id')
+        if not employee_id:
+            return jsonify({'message': 'Unauthorized access'}), 401
+
+        # Ensure that the employee exists
+        employee = Employee.query.filter_by(employeeID=employee_id).first()
+        if employee is None:
+            return jsonify({'message': 'Employee is not in the System'}), 401
+
+        data = request.json
+        member_id = data.get('memberID')
+        member = Member.query.get(member_id)
+
+        if member is None:
+            return jsonify({'message': 'Member not found'}), 404
+
+        # deletes the bought car information, first warrenty, CarInfo, CarVin Information
+        car_vin_info = CarVINs.query.filter_by(memberID=member_id).all()
+        if car_vin_info:
+            for car in car_vin_info:
+                Warranty.query.filter_by(VIN_carID=car_vin_info.VIN_carID).delete()
+                CarInfo.query.filter_by(VIN_carID=car_vin_info.VIN_carID).delete()
+                db.session.delete(car)
+
+        # Deleting related data
+
+        # test drives
+        TestDrive.query.filter_by(memberID=member_id).delete()
+
+        # all service appointments
+        service_appointments = ServiceAppointment.query.filter_by(memberID=member_id).all()
+        for appointment in service_appointments:
+            ServiceAppointmentEmployeeAssignments.query.filter_by(appointment_id=appointment.appointment_id).delete()
+        ServiceAppointment.query.filter_by(memberID=member_id).delete()
+
+        CheckoutCart.query.filter_by(memberID=member_id).delete()
+
+        # delete the sensitive info on the member
+        MemberSensitiveInfo.query.filter_by(memberID=member_id).delete()
+
+        # delete the stupid member that gets deleted
+        db.session.delete(member)
+        db.session.commit()
+        return jsonify({'message': 'Member account deleted successfully'}), 200
+    except Exception as e:
+        # Rollback the session in case of any exception
+        db.session.rollback()
+        logging.exception(e)  # Log the exception for debugging purposes
+        return jsonify({'error': 'An error occurred while updating the member account.'}), 500
+
+
+@app.route('/api/members/update', methods=['POST'])  # test with editing members from the manager page
 # Route to update logged in users account info
 def update_member():
     try:
+        employee_id = session.get('employee_session_id')
+        if employee_id is None:
+            # Customer auth for making sure they are logged in and have an account
+            member_id = session.get('member_session_id')
+            if member_id is None:
+                return jsonify({'message': 'Invalid session'}), 400
+
+            # Retrieve the member based on the current session
+            existing_member = Member.query.get(member_id)
+            if existing_member is None:
+                return jsonify({'error': 'Member not found.'}), 404
+
         data = request.json
-
-        # Customer auth for making sure they are logged in and have an account
-        member_id = session.get('member_session_id')
-        if member_id is None:
-            return jsonify({'message': 'Invalid session'}), 400
-
-        # Retrieve the member based on the current session
-        existing_member = Member.query.get(member_id)
-        if existing_member is None:
-            return jsonify({'error': 'Member not found.'}), 404
+        if employee_id:
+            member_id = data.get('memberID')
+            existing_member = Member.query.get(member_id)
 
         # Update member information
         existing_member.first_name = data.get('first_name', existing_member.first_name)
@@ -1671,13 +1767,19 @@ def make_purchase():
         financingID = None
         # Add validation on front end for routing and acct numbers
         
+        # Lists to accumulate VINs and addon IDs
+        vin_with_addons = None
+        addons = []
+        
         
         # Add cart items to the Purchases table
         for item in cart_items:
             bidID = None
+            addon_ID = item.addon_ID
             # Check if VIN_carID exists in the bids table and get bidID if it does
             VIN_carID=item.VIN_carID
             if VIN_carID:
+                vin_with_addons = VIN_carID
                 bid = Bids.query.filter_by(VIN_carID=VIN_carID).first()
                 if bid:
                     bidID = bid.bidID
@@ -1686,8 +1788,10 @@ def make_purchase():
                     financing = Financing.query.filter_by(VIN_carID=VIN_carID).first()
                     if financing:
                         financingID = financing.financingID
-                    
-                    
+            # If the item is an addon, add addon to the lists
+            if addon_ID:
+                addons.append(addon_ID)
+                                   
             new_purchase = Purchases(
                 bidID=bidID,
                 memberID=member_id,
@@ -1716,8 +1820,28 @@ def make_purchase():
             
             db.session.add(new_purchase)
             db.session.commit()
+            
+        # Create Warranty instances for each addon associated with the VIN
+        for addon in addons:
+            new_warranty = Warranty(
+                VIN_carID=vin_with_addons,
+                addon_ID=addon
+            )
+            db.session.add(new_warranty)
         
-        
+        # Add cart items to the OrderHistory table
+        for item in cart_items:
+            new_order_history = OrderHistory(
+                memberID=member_id,
+                item_name=item.item_name,
+                item_price=item.item_price,
+                financed_amount=item.financed_amount,
+                confirmationNumber=confirmation_number,
+                purchaseDate=datetime.now()
+            )
+            db.session.add(new_order_history)
+            db.session.commit()
+
         # Hash the bank info
         routingNumber = bcrypt.hashpw(routingNumber.encode('utf-8'), bcrypt.gensalt())
         bankAcctNumber = bcrypt.hashpw(bankAcctNumber.encode('utf-8'), bcrypt.gensalt())
@@ -1812,6 +1936,79 @@ def get_test_drive_data():
     
     # Return the result as JSON
     return jsonify(result)
+
+
+@app.route('/api/member/order_history', methods=['GET'])
+# Route retrieves order history for a logged-in member, calculates subtotal, taxes, amount paid, and total amount financed for each order, and returns the formatted data as JSON.
+def order_history():
+    # Get the logged-in member ID
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 403
+    
+    # Query to get all orders for the logged-in member
+    orders = OrderHistory.query.filter_by(memberID=member_id).all()
+    
+    if not orders:
+        return jsonify({'message': 'No orders found for the logged-in member.'}), 404
+    
+    # Prepare dictionary to store order history data per confirmationNumber
+    order_history_data = {}
+    
+    for order in orders:
+        confirmation_number = order.confirmationNumber
+        # If the confirmation number already exists in the dictionary, update the order details
+        if confirmation_number in order_history_data:
+            order_data = order_history_data[confirmation_number]
+            # Add item to the existing items list
+            order_data['items'].append({
+                'Item Name': order.item_name,
+                'Item Price': '{:.2f}'.format(float(order.item_price)),  
+                'Financed Amount': '{:.2f}'.format(float(order.financed_amount)) 
+            })
+            # Update subtotal, taxes, amount paid, and total amount financed
+            order_data['Subtotal'] += float(order.item_price)
+            order_data['Taxes'] = round(order_data['Subtotal'] * 0.05, 2)
+            order_data['Amount Paid'] = round(order_data['Subtotal'] + order_data['Taxes'], 2)
+            order_data['Total Financed'] += float(order.financed_amount)
+        # If the confirmation number does not exist in the dictionary, create a new entry
+        else:
+            # Initialize order details
+            subtotal = float(order.item_price)  # Convert to float
+            taxes = round(subtotal * 0.05, 2)
+            amount_paid = round(subtotal + taxes, 2)
+            total_financed = float(order.financed_amount)
+            order_history_data[confirmation_number] = {
+                'Confirmation Number': confirmation_number,
+                'Subtotal': subtotal, 
+                'Taxes': taxes,
+                'Amount Paid': amount_paid,
+                'Total Financed': total_financed,
+                'items': [
+                    {
+                        'Item Name': order.item_name,
+                        'Item Price': '{:.2f}'.format(float(order.item_price)),  
+                        'Financed Amount': '{:.2f}'.format(float(order.financed_amount))  
+                    }
+                ]
+            }
+
+
+    # Convert dictionary values to list for JSON serialization
+    order_history_list = list(order_history_data.values())
+
+    # Format Subtotal, Taxes, and Amount Paid for each order
+    for order_data in order_history_list:
+        order_data['Subtotal'] = '{:.2f}'.format(float(order_data['Subtotal']))
+        order_data['Taxes'] = '{:.2f}'.format(float(order_data['Taxes']))
+        order_data['Amount Paid'] = '{:.2f}'.format(float(order_data['Amount Paid']))
+        order_data['Total Financed'] = '{:.2f}'.format(float(order_data['Total Financed']))
+
+
+    return jsonify(order_history_list), 200
+
+
+
 
 
 
