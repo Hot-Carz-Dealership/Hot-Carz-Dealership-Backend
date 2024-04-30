@@ -22,7 +22,10 @@ DROP TABLE IF EXISTS Services;
 DROP TABLE IF EXISTS MemberAuditLog;
 DROP TABLE IF EXISTS EmployeeAuditLog;
 DROP TABLE IF EXISTS ServiceAppointmentEmployeeAssignments;
-DROP TABLE IF EXISTS checkoutcart;
+DROP TABLE IF EXISTS CheckoutCart;
+DROP TABLE IF EXISTS Warranty;
+DROP TABLE IF EXISTS WarrantyService;
+DROP TABLE IF EXISTS OrderHistory;
 
 
 CREATE TABLE IF NOT EXISTS Member (
