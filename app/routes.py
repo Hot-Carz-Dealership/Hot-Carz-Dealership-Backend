@@ -1829,7 +1829,19 @@ def make_purchase():
             )
             db.session.add(new_warranty)
         
-        
+        # Add cart items to the OrderHistory table
+        for item in cart_items:
+            new_order_history = OrderHistory(
+                memberID=member_id,
+                item_name=item.item_name,
+                item_price=item.item_price,
+                financed_amount=item.financed_amount,
+                confirmationNumber=confirmation_number,
+                purchaseDate=datetime.now()
+            )
+            db.session.add(new_order_history)
+            db.session.commit()
+
         # Hash the bank info
         routingNumber = bcrypt.hashpw(routingNumber.encode('utf-8'), bcrypt.gensalt())
         bankAcctNumber = bcrypt.hashpw(bankAcctNumber.encode('utf-8'), bcrypt.gensalt())

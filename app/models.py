@@ -213,7 +213,7 @@ class CheckoutCart(db.Model):
                           onupdate=db.func.current_timestamp())
 
 class Warranty(db.Model):
-    # CheckoutCart table model
+    # Warranty table model
     __tablename__ = 'Warranty'
     
     Warranty_ID = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -223,8 +223,20 @@ class Warranty(db.Model):
 
 
 class WarrantyService(db.Model):
-    # CheckoutCart table model
+    # WarrantyService table model
     __tablename__ = 'WarrantyService'
     
     addon_ID = db.Column(db.Integer, db.ForeignKey('Addons.itemID'),primary_key=True)
     serviceID = db.Column(db.Integer, db.ForeignKey('Services.serviceID'))
+    
+class OrderHistory(db.Model):
+    # OrderHistory table model
+    __tablename__ = 'OrderHistory'
+    
+    order_item_ID =  db.Column(db.Integer, primary_key=True, autoincrement=True)
+    memberID = db.Column(db.Integer, db.ForeignKey('Member.memberID') )
+    item_name = db.Column(db.String(120))
+    item_price = db.Column(db.DECIMAL(10, 2))
+    financed_amount = db.Column(db.DECIMAL(10, 2))
+    confirmationNumber = db.Column(db.String(13))
+    purchaseDate = db.Column(db.TIMESTAMP)
