@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS ServiceAppointment (
     serviceID INT,
     appointment_date TIMESTAMP,
     comments TEXT,
-    status ENUM ('Scheduled', 'Done', 'Cancelled'),
+    status ENUM ('Scheduled', 'Done', 'Cancelled', 'Pending Confirmation'),
     last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (memberID) REFERENCES Member(memberID),
     FOREIGN KEY (VIN_carID) REFERENCES CarVINs(VIN_carID),
@@ -253,3 +253,24 @@ CREATE TABLE IF NOT EXISTS checkoutcart (
   CONSTRAINT `serviceID_FK` FOREIGN KEY (`serviceID`) REFERENCES Services(`serviceID`),
   CONSTRAINT `VIN_carID_FK` FOREIGN KEY (`VIN_carID`) REFERENCES CarInfo(`VIN_carID`)
 ) ;
+
+
+CREATE TABLE IF NOT EXISTS warranty (
+  `Warranty_ID` int NOT NULL AUTO_INCREMENT,
+  `VIN_carID` varchar(17) DEFAULT NULL,
+  `addon_ID` int DEFAULT NULL,
+  PRIMARY KEY (`Warranty_ID`),
+  KEY `warranty_vinFK_idx` (`VIN_carID`),
+  KEY `warranty_addonFK_idx` (`addon_ID`),
+  CONSTRAINT `warranty_addonFK` FOREIGN KEY (`addon_ID`) REFERENCES Addons(`itemID`),
+  CONSTRAINT `warranty_vinFK` FOREIGN KEY (`VIN_carID`) REFERENCES CarVINs(`VIN_carID`)
+) ;
+
+CREATE TABLE IF NOT EXISTS warrantyservice (
+  `addon_ID` int NOT NULL,
+  `serviceID` int DEFAULT NULL,
+  PRIMARY KEY (`addon_ID`),
+  KEY `serviceFK_idx` (`serviceID`),
+  CONSTRAINT `addonFK` FOREIGN KEY (`addon_ID`) REFERENCES Addons(`itemID`),
+  CONSTRAINT `serviceFK` FOREIGN KEY (`serviceID`) REFERENCES Services(`serviceID`)
+);
