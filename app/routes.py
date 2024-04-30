@@ -1829,7 +1829,19 @@ def make_purchase():
             )
             db.session.add(new_warranty)
         
-        
+        # Add cart items to the OrderHistory table
+        for item in cart_items:
+            new_order_history = OrderHistory(
+                memberID=member_id,
+                item_name=item.item_name,
+                item_price=item.item_price,
+                financed_amount=item.financed_amount,
+                confirmationNumber=confirmation_number,
+                purchaseDate=datetime.now()
+            )
+            db.session.add(new_order_history)
+            db.session.commit()
+
         # Hash the bank info
         routingNumber = bcrypt.hashpw(routingNumber.encode('utf-8'), bcrypt.gensalt())
         bankAcctNumber = bcrypt.hashpw(bankAcctNumber.encode('utf-8'), bcrypt.gensalt())
@@ -1924,4 +1936,77 @@ def get_test_drive_data():
     
     # Return the result as JSON
     return jsonify(result)
+
+
+@app.route('/api/member/order_history', methods=['GET'])
+# Route retrieves order history for a logged-in member, calculates subtotal, taxes, amount paid, and total amount financed for each order, and returns the formatted data as JSON.
+def order_history():
+    # Get the logged-in member ID
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 403
+    
+    # Query to get all orders for the logged-in member
+    orders = OrderHistory.query.filter_by(memberID=member_id).all()
+    
+    if not orders:
+        return jsonify({'message': 'No orders found for the logged-in member.'}), 404
+    
+    # Prepare dictionary to store order history data per confirmationNumber
+    order_history_data = {}
+    
+    for order in orders:
+        confirmation_number = order.confirmationNumber
+        # If the confirmation number already exists in the dictionary, update the order details
+        if confirmation_number in order_history_data:
+            order_data = order_history_data[confirmation_number]
+            # Add item to the existing items list
+            order_data['items'].append({
+                'Item Name': order.item_name,
+                'Item Price': '{:.2f}'.format(float(order.item_price)),  
+                'Financed Amount': '{:.2f}'.format(float(order.financed_amount)) 
+            })
+            # Update subtotal, taxes, amount paid, and total amount financed
+            order_data['Subtotal'] += float(order.item_price)
+            order_data['Taxes'] = round(order_data['Subtotal'] * 0.05, 2)
+            order_data['Amount Paid'] = round(order_data['Subtotal'] + order_data['Taxes'], 2)
+            order_data['Total Financed'] += float(order.financed_amount)
+        # If the confirmation number does not exist in the dictionary, create a new entry
+        else:
+            # Initialize order details
+            subtotal = float(order.item_price)  # Convert to float
+            taxes = round(subtotal * 0.05, 2)
+            amount_paid = round(subtotal + taxes, 2)
+            total_financed = float(order.financed_amount)
+            order_history_data[confirmation_number] = {
+                'Confirmation Number': confirmation_number,
+                'Subtotal': subtotal, 
+                'Taxes': taxes,
+                'Amount Paid': amount_paid,
+                'Total Financed': total_financed,
+                'items': [
+                    {
+                        'Item Name': order.item_name,
+                        'Item Price': '{:.2f}'.format(float(order.item_price)),  
+                        'Financed Amount': '{:.2f}'.format(float(order.financed_amount))  
+                    }
+                ]
+            }
+
+
+    # Convert dictionary values to list for JSON serialization
+    order_history_list = list(order_history_data.values())
+
+    # Format Subtotal, Taxes, and Amount Paid for each order
+    for order_data in order_history_list:
+        order_data['Subtotal'] = '{:.2f}'.format(float(order_data['Subtotal']))
+        order_data['Taxes'] = '{:.2f}'.format(float(order_data['Taxes']))
+        order_data['Amount Paid'] = '{:.2f}'.format(float(order_data['Amount Paid']))
+        order_data['Total Financed'] = '{:.2f}'.format(float(order_data['Total Financed']))
+
+
+    return jsonify(order_history_list), 200
+
+
+
 
