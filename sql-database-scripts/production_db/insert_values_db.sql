@@ -509,3 +509,18 @@ INSERT INTO Addons (itemName, totalCost) VALUES
 INSERT INTO warrantyservice (addon_ID, serviceID) VALUES
 (2,1),
 (5,5);
+
+INSERT INTO orderhistory ( memberID, item_name, item_price, financed_amount, confirmationNumber, purchaseDate)
+VALUES
+( 2, '2024 Ford Mustang', 55000, 0, 'ZLOXCTK9P8J8I', '2024-04-30 00:48'),
+( 2, 'Extended Warranty', 1500, 0, 'ZLOXCTK9P8J8I', '2024-04-30 00:48'),
+( 2, 'Maintenance Plans', 800, 0, 'ZLOXCTK9P8J8I', '2024-04-30 00:48'),
+( 2, 'Interior Protection Packages', 500, 0, 'ZLOXCTK9P8J8I', '2024-04-30 00:48'),
+( 2, 'Paint Protection Film/Ceramic Coating', 1200, 0, 'ZLOXCTK9P8J8I', '2024-04-30 00:48'),
+( 2, 'Towing Packages', 1000, 0, 'ZLOXCTK9P8J8I', '2024-04-30 00:48'),
+( 2, '2024 Ford Mustang', 55000, 0, 'B1R3VA8OPI45L', '2024-04-30 00:51'),
+( 2, 'Extended Warranty', 1500, 0, 'B1R3VA8OPI45L', '2024-04-30 00:51'),
+( 2, 'Maintenance Plans', 800, 0, 'B1R3VA8OPI45L', '2024-04-30 00:51'),
+( 2, 'Interior Protection Packages', 500, 0, 'B1R3VA8OPI45L', '2024-04-30 00:51'),
+( 2, 'Paint Protection Film/Ceramic Coating', 1200, 0, 'B1R3VA8OPI45L', '2024-04-30 00:51'),
+( 2, 'Towing Packages', 1000, 0, 'B1R3VA8OPI45L', '2024-04-30 00:51');

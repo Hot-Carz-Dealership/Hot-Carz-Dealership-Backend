@@ -233,7 +233,7 @@ CREATE TABLE IF NOT EXISTS Addons (
 );
 
 
-CREATE TABLE IF NOT EXISTS checkoutcart (
+CREATE TABLE IF NOT EXISTS CheckoutCart (
   `cart_item_id` int NOT NULL AUTO_INCREMENT,
   `memberID` int NOT NULL,
   `VIN_carID` varchar(45) DEFAULT NULL,
@@ -255,7 +255,7 @@ CREATE TABLE IF NOT EXISTS checkoutcart (
 ) ;
 
 
-CREATE TABLE IF NOT EXISTS warranty (
+CREATE TABLE IF NOT EXISTS Warranty (
   `Warranty_ID` int NOT NULL AUTO_INCREMENT,
   `VIN_carID` varchar(17) DEFAULT NULL,
   `addon_ID` int DEFAULT NULL,
@@ -266,7 +266,7 @@ CREATE TABLE IF NOT EXISTS warranty (
   CONSTRAINT `warranty_vinFK` FOREIGN KEY (`VIN_carID`) REFERENCES CarVINs(`VIN_carID`)
 ) ;
 
-CREATE TABLE IF NOT EXISTS warrantyservice (
+CREATE TABLE IF NOT EXISTS WarrantyService (
   `addon_ID` int NOT NULL,
   `serviceID` int DEFAULT NULL,
   PRIMARY KEY (`addon_ID`),
@@ -274,3 +274,16 @@ CREATE TABLE IF NOT EXISTS warrantyservice (
   CONSTRAINT `addonFK` FOREIGN KEY (`addon_ID`) REFERENCES Addons(`itemID`),
   CONSTRAINT `serviceFK` FOREIGN KEY (`serviceID`) REFERENCES Services(`serviceID`)
 );
+
+CREATE TABLE IF NOT EXISTS OrderHistory (
+  `order_item_ID` int NOT NULL AUTO_INCREMENT,
+  `memberID` int DEFAULT NULL,
+  `item_name` varchar(120) DEFAULT NULL,
+  `item_price` decimal(10,2) DEFAULT NULL,
+  `financed_amount` decimal(10,2) DEFAULT NULL,
+  `confirmationNumber` varchar(45) DEFAULT NULL,
+  `purchaseDate` datetime DEFAULT NULL,
+  PRIMARY KEY (`order_item_ID`),
+  KEY `order_memberFK_idx` (`memberID`),
+  CONSTRAINT `order_memberFK` FOREIGN KEY (`memberID`) REFERENCES `member` (`memberID`)
+) 
