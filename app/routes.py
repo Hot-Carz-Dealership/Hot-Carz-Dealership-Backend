@@ -1977,7 +1977,8 @@ def make_purchase():
 
         # need to clear the cart after wards using delete cart route on front end
 
-        return jsonify({'message': 'Purchase made successfully.'}), 200
+        return jsonify({'message': 'Purchase made successfully.',
+                        'confirmation_number':confirmation_number}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Error: {str(e)}'}), 500
