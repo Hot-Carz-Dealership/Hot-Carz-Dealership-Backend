@@ -78,7 +78,7 @@ class ServiceAppointment(db.Model):
     serviceID = db.Column(db.Integer, ForeignKey('Services.serviceID'))
     appointment_date = db.Column(db.DATE)
     comments = db.Column(db.TEXT)
-    status = db.Column(Enum('Scheduled', 'Done', 'Cancelled'))
+    status = db.Column(Enum('Scheduled', 'Done', 'Cancelled', 'Pending Confirmation'))
     last_modified = db.Column(db.TIMESTAMP, server_default=db.func.current_timestamp(),
                               onupdate=db.func.current_timestamp())
 
