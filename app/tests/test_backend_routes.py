@@ -16,7 +16,6 @@ from app.models import CarInfo, Member, MemberSensitiveInfo, Employee, EmployeeS
     CarVINs, Services
 from config import Config
 
-
 '''
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -26,6 +25,7 @@ from config import Config
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 '''
+
 
 @pytest.fixture
 def client():
@@ -70,6 +70,14 @@ def data_reset_service_appointment():
     changeStatus = ServiceAppointment.query.filter_by(appointment_id=1).first()
     changeStatus.status = 'Scheduled'
     db.session.commit()
+
+
+def test_entire_connection(client):
+    # TEST API: /
+    # ensures that the new push to dev does indeed connect to our hosting DB
+    response = client.get('/')
+    assert response.status_code == 200
+    assert b"It works." in response.data
 
 
 def test_addon_information(client):
@@ -225,7 +233,8 @@ def test_get_all_employees(client):
     assert isinstance(data, list)
 
     # Check if each dictionary in the response contains the expected keys
-    expected_keys = ['employeeID', 'first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'zipcode', 'employeeType']
+    expected_keys = ['employeeID', 'first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'zipcode',
+                     'employeeType']
     for employee_data in data:
         for key in expected_keys:
             assert key in employee_data
@@ -276,7 +285,8 @@ def test_login(client):
     assert response.status_code == 200
 
     data = response.get_json()
-    expected_fields = ['employeeID', 'first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'zipcode', 'employeeType']
+    expected_fields = ['employeeID', 'first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'zipcode',
+                       'employeeType']
 
     assert data is not None
     for field in expected_fields:
@@ -293,7 +303,8 @@ def test_login(client):
     assert response.status_code == 200
 
     data = response.get_json()
-    expected_fields = ['memberID', 'first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'zipcode', 'join_date', 'driverID']
+    expected_fields = ['memberID', 'first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'zipcode',
+                       'join_date', 'driverID']
 
     assert data is not None
     for field in expected_fields:
@@ -312,7 +323,7 @@ def test_create_employee(client):  # -- stay weary of this one, it may error out
         "username": "tsteger0@de.vu",
         "password": "on9vlvku"
     }
-    login_response = client.post('/api/login', json=super_admin_login_data) # errors out ahhhhhhhh
+    login_response = client.post('/api/login', json=super_admin_login_data)  # errors out ahhhhhhhh
     # time.sleep(3)
     assert login_response.status_code == 200
     employee_session_id = login_response.json.get('employee_session_id')
@@ -333,7 +344,8 @@ def test_create_employee(client):  # -- stay weary of this one, it may error out
     }
 
     # Sending a POST request to create an employee
-    response = client.post('/api/employees/create', json=employee_data, headers={'employee_session_id': employee_session_id})
+    response = client.post('/api/employees/create', json=employee_data,
+                           headers={'employee_session_id': employee_session_id})
 
     # verifying that the employee is created in the database
     created_employee = Employee.query.filter_by(email=employee_data["email"]).first()
@@ -344,7 +356,6 @@ def test_create_employee(client):  # -- stay weary of this one, it may error out
     assert created_sensitive_info is not None
 
     assert response.status_code == 201
-
 
     # login_response = client.post('/api/logout')
     # assert login_response.status_code == 200
@@ -385,7 +396,8 @@ def test_get_all_members(client):
     assert data is not None
     assert isinstance(data, list)
 
-    expected_fields = ['memberID', 'first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'zipcode', 'join_date']
+    expected_fields = ['memberID', 'first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'zipcode',
+                       'join_date']
     for member_info in data:
         for key in expected_fields:
             assert key in member_info
@@ -444,7 +456,8 @@ def test_service_appointments_get(client):
     data = response.get_json()
     assert data is not None
     assert isinstance(data, list)
-    expected_keys = ['appointment_id', 'memberID', 'VIN_carID', 'serviceID', 'appointment_date', 'comments', 'status', 'last_modified', 'service_name', 'employeeID']
+    expected_keys = ['appointment_id', 'memberID', 'VIN_carID', 'serviceID', 'appointment_date', 'comments', 'status',
+                     'last_modified', 'service_name', 'employeeID']
 
     for service_appt in data:
         for key in expected_keys:
@@ -465,18 +478,21 @@ def test_service_appointments_post(client):
     employee_session_id = login_response.json.get('employee_session_id')
 
     data = {'appointment_id': 1}
-    response = client.post('/api/manager/cancel-service-appointments', json=data, headers={'employee_session_id': employee_session_id})
+    response = client.post('/api/manager/cancel-service-appointments', json=data,
+                           headers={'employee_session_id': employee_session_id})
     assert response.status_code == 200
     assert response.json == {'message': 'Appointment canceled successfully'}
 
     # test case for missing appointment_id
-    response = client.post('/api/manager/cancel-service-appointments', json={}, headers={'employee_session_id': employee_session_id})
+    response = client.post('/api/manager/cancel-service-appointments', json={},
+                           headers={'employee_session_id': employee_session_id})
     assert response.status_code == 400
     assert response.json == {'error': 'Appointment_id are required to delete.'}
 
     # test case for non-existent appointment
     data = {'appointment_id': 999}
-    response = client.post('/api/manager/cancel-service-appointments', json=data, headers={'employee_session_id': employee_session_id})
+    response = client.post('/api/manager/cancel-service-appointments', json=data,
+                           headers={'employee_session_id': employee_session_id})
     assert response.status_code == 404
     assert response.json == {'error': 'Appointment not found.'}
 
@@ -516,7 +532,8 @@ def test_service_menu_edit(client):
         "service_name": "Test Service",
         "price": 100.00
     }
-    response = client.post('/api/manager/edit-service-menu', json=add_service_data, headers={'employee_session_id': employee_session_id})
+    response = client.post('/api/manager/edit-service-menu', json=add_service_data,
+                           headers={'employee_session_id': employee_session_id})
     assert response.status_code == 201
     assert response.json == {'message': 'Service added successfully'}
 
@@ -527,7 +544,8 @@ def test_service_menu_edit(client):
         "price": 100.00,
         "service_name": "Edit the Service Name TEST"
     }
-    response = client.post('/api/manager/edit-service-menu', json=edit_service_data, headers={'employee_session_id': employee_session_id})
+    response = client.post('/api/manager/edit-service-menu', json=edit_service_data,
+                           headers={'employee_session_id': employee_session_id})
     assert response.status_code == 200
     assert response.json == {'message': 'Service Successfully Edited'}
 
@@ -536,7 +554,8 @@ def test_service_menu_edit(client):
     delete_service_data = {
         "service_id": last_service.serviceID
     }
-    response = client.delete('/api/manager/edit-service-menu', json=delete_service_data, headers={'employee_session_id': employee_session_id})
+    response = client.delete('/api/manager/edit-service-menu', json=delete_service_data,
+                             headers={'employee_session_id': employee_session_id})
     assert response.status_code == 200
     assert response.json == {'message': 'Service deleted successfully'}
 
@@ -550,12 +569,14 @@ def test_getting_technicians(client):
     data = response.get_json()
     assert data is not None
     assert isinstance(data, list)
-    expected_keys = ['employeeID', 'first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'zipcode', 'employeeType']
+    expected_keys = ['employeeID', 'first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'zipcode',
+                     'employeeType']
 
     for technician in data:
         for key in expected_keys:
             assert key in technician
             assert technician[key] is not None
+
 
 def test_member_vehicles(client):
     # TEST API: /api/member/vehicles
@@ -563,7 +584,7 @@ def test_member_vehicles(client):
     member_login_data = {'username': 'kscinelli0', 'password': 'gi2z9nka'}
     login_response = client.post('/api/login', json=member_login_data)
     assert login_response.status_code == 200
-    member_session_id = login_response.json.get('employee_session_id')
+    member_session_id = login_response.json.get('member_session_id')
 
     api_response = client.get('/api/member/vehicles', headers={'member_session_id': member_session_id})
 
@@ -598,7 +619,8 @@ def test_add_members(client):
     assert response.status_code == 201
     member_session_id = response.json.get('member_session_id')
     data = response.get_json()
-    expected_keys = ['memberID', 'first_name', 'last_name', 'email', 'phone', 'address', 'state', 'zipcode', 'join_date', 'username']
+    expected_keys = ['memberID', 'first_name', 'last_name', 'email', 'phone', 'address', 'state', 'zipcode',
+                     'join_date', 'username']
     for key in expected_keys:
         assert key in data
         assert data[key] is not None
@@ -634,9 +656,118 @@ def test_technician_service_appt_edit(client):
             "comment": "Test Comment",
             "status": status_values[i]
         }
-        api_response = client.post('/api/technician-view-service-appointments/technician-edit', json=technician_input_data, headers={'employee_session_id': employee_session_id})
+        api_response = client.post('/api/technician-view-service-appointments/technician-edit',
+                                   json=technician_input_data, headers={'employee_session_id': employee_session_id})
         assert api_response.status_code == 200
 
     logout_response = client.post('/api/logout')
     assert logout_response.status_code == 200
 
+
+# def test_manager_current_bids(client): # wacky
+#     # TEST API: /api/manager/current-bids
+#     response = client.get('/api/manager/current-bids')
+#     # assert response.status_code == 200
+#     data = response.get_json()
+#     assert isinstance(data, list)
+#
+#     current_bid_columns = ["MSRP", "VIN", "bidID", "bidStatus", "bidValue", "make", "model"]
+#     for current_bid in data:
+#         for key in current_bid_columns:
+#             assert key in current_bid
+#             assert current_bid[key] is not None
+
+def test__pending_service_appointments(client):
+    # TEST API: /api/pending-service-appointments
+    response = client.get('/api/pending-service-appointments')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert isinstance(data, list)
+
+    pending_service_appt_columns = ['appointment_id', 'memberID', 'VIN_carID', 'serviceID', 'appointment_date',
+                                    'comments', 'status', 'last_modified', 'service_name']
+    for pending in data:
+        for key in pending_service_appt_columns:
+            assert key in pending
+            assert pending[key] is not None
+
+
+def test__pending_test_drives(client):
+    # TEST API: /api/pending_testdrives
+    response = client.get('/api/pending_testdrives')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert isinstance(data, list)
+
+    pending_test_drive_columns = ['fullname', 'phone', 'car_id', 'car_make_model', 'appointment_date', 'confirmation',
+                                  'id']
+    for pending in data:
+        for key in pending_test_drive_columns:
+            assert key in pending
+            assert pending[key] is not None
+
+
+def test_signature(client):
+    # TEST API: /api/manager/signature
+    signature_data = {
+        "purchaseID": 12,
+        "signature": "Yes"
+    }
+    response = client.post('/api/manager/signature', json=signature_data)
+    assert response.status_code == 200
+
+    signature_data = {
+        "purchaseID": 1000000,
+        "signature": "Yes"
+    }
+    response = client.post('/api/manager/signature', json=signature_data)
+    assert response.status_code == 404
+    assert response.json == {'error': 'Purchase not found'}
+
+    signature_data = {
+        "purchaseID": 1000000,
+        "signature": "NAHH TESTING"
+    }
+    response = client.post('/api/manager/signature', json=signature_data)
+    assert response.status_code == 400
+    assert response.json == {'error': 'Invalid signature status. Must be either "Yes" or "No"'}
+
+    response = client.post('/api/manager/signature', json={})
+    assert response.status_code == 400
+    assert response.json == {'error': 'Both purchaseID and signature parameters are required.'}
+
+
+def test__pending_signatures(client):
+    # TEST API: /api/manager/signature-waiting
+    response = client.get('/api/manager/signature-waiting')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert isinstance(data['purchases_waiting_signature'], list)
+
+    if len(data) != 0:
+        pending_signature_columns = ['purchaseID', 'bidID', 'memberID', 'VIN_carID', 'addon_ID', 'serviceID',
+                                     'confirmationNumber', 'purchaseType', 'purchaseDate', 'signature']
+        for pending in data['purchases_waiting_signature']:
+            for key in pending_signature_columns:
+                assert key in pending
+                # assert pending[key] is not None | dont use, NULL values in DB which will give false positive here
+
+
+def test_get_financing(client):
+    # TEST API: /api/vehicle-purchase/get-financing
+    member_login_data = {'username': 'kscinelli0', 'password': 'gi2z9nka'}
+    login_response = client.post('/api/login', json=member_login_data)
+    assert login_response.status_code == 200
+    member_session_id = login_response.json.get('member_session_id')
+
+    api_response = client.get('/api/vehicle-purchase/get-financing', headers={'member_session_id': member_session_id})
+
+    data = api_response.get_json()
+    assert isinstance(data, list)
+    expected_keys = ['VIN_carID', 'income', 'credit_score', 'loan_total', 'down_payment', 'percentage',
+                     'monthly_payment_sum', 'remaining_months']
+
+    for finance in data:
+        for key in expected_keys:
+            assert key in finance
+            # assert finance[key] is not None  # fill in the DB data for VIN so its not null for Finance Table !!!!!!!!!
