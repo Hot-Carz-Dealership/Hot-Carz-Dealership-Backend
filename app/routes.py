@@ -280,23 +280,25 @@ def add_vehicle():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/vehicles/random', methods=['GET'])  # TEST DONE
-# This API returns all info on 2 random vehicles in the database for the homepage
-# TESTCASE: DONE
+
+@app.route('/api/vehicles/random', methods=['GET'])
 def random_vehicles():
     try:
+        # Get the requested number of random vehicles from the query parameters, default to 2 if not provided
+        num_vehicles = int(request.args.get('num', 2))
+
         # Get the total number of vehicles in the database from 'Dealership'
         total_vehicles = CarInfo.query.join(CarVINs).filter(
             CarVINs.purchase_status == 'Dealership - Not Purchased').count()
 
-        # If there are less than 2 vehicles in the database from 'Dealership', return an error
-        if total_vehicles < 2:
+        # If there are not enough vehicles in the database, return an error
+        if total_vehicles < num_vehicles:
             return jsonify({'error': 'Insufficient vehicles in the dealership to select random ones.'}), 404
 
-        # Generate two random indices within the range of total vehicles
-        random_indices = random.sample(range(total_vehicles), 2)
+        # Generate random indices within the range of total vehicles
+        random_indices = random.sample(range(total_vehicles), min(num_vehicles, total_vehicles))
 
-        # Retrieve information about the two random vehicles
+        # Retrieve information about the random vehicles
         random_vehicles_info = []
         for index in random_indices:
             random_vehicle = CarInfo.query.join(CarVINs).filter(
@@ -321,6 +323,7 @@ def random_vehicles():
         return jsonify(random_vehicles_info), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 
 @app.route('/api/employees', methods=['GET'])  # TEST DONE
