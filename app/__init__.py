@@ -24,7 +24,7 @@ else:
 app.config.from_object(Config)
 
 # Enable Cross-Origin Resource Sharing (CORS)
-CORS(app, supports_credentials=True)
+CORS(app, supports_credentials=True, allow_headers='*')
 
 # Call factory function to create our blueprint
 swaggerui_blueprint = get_swaggerui_blueprint(
