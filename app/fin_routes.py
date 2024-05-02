@@ -8,7 +8,8 @@ import requests
 ## We can name all the api the exact same so that way its easy for frontend to swap once this is completed
 
 # Define the base URL of your financial stub
-FIN_URL = 'http://localhost:5001'
+# FIN_URL = 'http://localhost:5001' local use only
+FIN_URL = 'https://hot-carz-financial-service-stub-production.up.railway.app'
 
 
 
@@ -26,6 +27,7 @@ def proxy_current_bids():
         if response.status_code == 200:
             # Parse the JSON response
             bid_data = response.json()
+            print(bid_data)
             # Return the bid data as a response from your backend API
             return jsonify(bid_data)
         else:

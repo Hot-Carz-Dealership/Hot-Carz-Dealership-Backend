@@ -2066,9 +2066,7 @@ def get_test_drive_data():
     return jsonify(result)
 
 
-
-
-@app.route('/api/manager/signature-waiting', methods=['GET'])
+@app.route('/api/manager/signature-waiting', methods=['GET']) # TEST DONE
 def get_awaiting_signature():
     try:
         # this gets the purchases, where only the customer signed so far.
@@ -2101,8 +2099,7 @@ def get_awaiting_signature():
         return jsonify({'error': str(e)}), 500
 
 
-
-@app.route('/api/manager/signature', methods=['POST'])
+@app.route('/api/manager/signature', methods=['POST']) # TEST DONE
 #this is the manager's response to the signature
 def update_signature():
     try:
@@ -2202,7 +2199,7 @@ def order_history():
     return jsonify(order_history_list), 200
 
 #THIS ENDPOINT IS FOR THE MANAGER TO GET TEST DRIVES THAT ARE WAITING FOR CONFIRMATION AND ARE THE DAY AFTER TODAY AND LATER.
-@app.route('/api/pending_testdrives', methods=['GET'])
+@app.route('/api/pending_testdrives', methods=['GET']) # TEST DONE
 def get_pending_test_drives():
     test_drive_info = []
     tomorrow = datetime.now().date() + timedelta(days=1)
@@ -2227,7 +2224,7 @@ def get_pending_test_drives():
     return jsonify(test_drive_info), 200
 
 # FOR MANAGER TO GET SERVICE APPOINTMENTS TO CONFIRM AND ASSIGN A TECHNICIAN TO.
-@app.route('/api/pending-service-appointments', methods=['GET'])
+@app.route('/api/pending-service-appointments', methods=['GET']) # TEST DONE
 def pending_service_appointments():
     try:
         # Subquery to check for existence of appointment_id in ServiceAppointmentEmployeeAssignments
