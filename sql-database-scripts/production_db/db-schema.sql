@@ -218,7 +218,7 @@ CREATE TABLE IF NOT EXISTS Purchases (
   `confirmationNumber` varchar(13) DEFAULT NULL,
   `purchaseType` enum('Vehicle/Add-on Purchase','Vehicle/Add-on Continuing Payment','Service Payment') DEFAULT NULL,
   `purchaseDate` timestamp NULL DEFAULT NULL,
-  `signature` enum('Yes','No') DEFAULT NULL,
+  `signature` enum('Yes','No', 'ONLYCUSTOMER') DEFAULT NULL,
   PRIMARY KEY (`purchaseID`),
   KEY `bidID` (`bidID`),
   KEY `VIN_carID` (`VIN_carID`),
