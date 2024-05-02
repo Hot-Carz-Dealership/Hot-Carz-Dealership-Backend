@@ -54,7 +54,7 @@ def addon_information():
 # This API returns all information on all vehicles in the database based on a search function in search bar in the frontend
 # TESTCASE: DONE
 def vehicle_information():
-    search_query = request.args.get('search_query')
+    search_query = request.args.get('search_query') ##this is args
     if search_query:
         # match only with cars that are from only the dealership and return them
         cars_info = db.session.query(CarInfo).join(CarVINs).filter(
@@ -1342,7 +1342,7 @@ def login():
 
 
 ### Just Going to code everything into here for now and move it to the financial stub if needed
-
+## aaaaaaaa
 
 @app.route('/api/member/add_to_cart', methods=['POST'])
 # Route to add either a service, a vehicle, and/or add ons.
@@ -1993,7 +1993,8 @@ def make_purchase():
 
         # need to clear the cart after wards using delete cart route on front end
 
-        return jsonify({'message': 'Purchase made successfully.'}), 200
+        return jsonify({'message': 'Purchase made successfully.',
+                        'confirmation_number':confirmation_number}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Error: {str(e)}'}), 500
