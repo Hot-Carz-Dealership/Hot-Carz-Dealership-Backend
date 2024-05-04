@@ -2419,3 +2419,41 @@ def current_member_bids():
             return jsonify({'message': 'New bid placed successfully'}), 201
         else:
             return jsonify({'message': 'Denied bid not found for this member with the provided bid ID'}), 404
+        
+        
+
+# this should be on the finacial end point 
+@app.route('/api/vehicle-purchase/new-bid-insert', methods=['POST'])
+def bid_insert_no_financing():
+    try:
+        # Extract data from the request
+        data = request.get_json()
+        required_fields = ['member_id', 'vin', 'bid_value', 'bid_status']
+        
+        # Check if all required fields are present
+        missing_fields = [field for field in required_fields if field not in data]
+        if missing_fields:
+            return jsonify({'message': f'Error: Missing fields - {", ".join(missing_fields)}'}), 400
+        
+        # Extract data
+        member_id = data['member_id']
+        vin = data['vin']
+        bid_value = data['bid_value']
+        bid_status = data['bid_status']
+        
+        # Create a new bid entry
+        new_bid = Bids(
+            memberID=member_id,
+            VIN_carID=vin,
+            bidValue=bid_value,
+            bidStatus=bid_status,
+            bidTimestamp=datetime.now()
+        )
+
+        db.session.add(new_bid)
+        db.session.commit()
+        return jsonify({'message': 'Bid successfully inserted.'}), 201
+    except Exception as e:
+        # Rollback the transaction in case of an error
+        db.session.rollback()
+        return jsonify({'message': f'Error: {str(e)}'}), 500
