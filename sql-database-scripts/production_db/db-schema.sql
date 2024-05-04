@@ -288,5 +288,5 @@ CREATE TABLE IF NOT EXISTS OrderHistory (
   `purchaseDate` datetime DEFAULT NULL,
   PRIMARY KEY (`order_item_ID`),
   KEY `order_memberFK_idx` (`memberID`),
-  CONSTRAINT `order_memberFK` FOREIGN KEY (`memberID`) REFERENCES `member` (`memberID`)
-) 
+  CONSTRAINT `order_memberFK` FOREIGN KEY (`memberID`) REFERENCES Member(`memberID`)
+)

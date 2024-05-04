@@ -280,23 +280,25 @@ def add_vehicle():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/vehicles/random', methods=['GET'])  # TEST DONE
-# This API returns all info on 2 random vehicles in the database for the homepage
-# TESTCASE: DONE
+
+@app.route('/api/vehicles/random', methods=['GET'])
 def random_vehicles():
     try:
+        # Get the requested number of random vehicles from the query parameters, default to 2 if not provided
+        num_vehicles = int(request.args.get('num', 2))
+
         # Get the total number of vehicles in the database from 'Dealership'
         total_vehicles = CarInfo.query.join(CarVINs).filter(
             CarVINs.purchase_status == 'Dealership - Not Purchased').count()
 
-        # If there are less than 2 vehicles in the database from 'Dealership', return an error
-        if total_vehicles < 2:
+        # If there are not enough vehicles in the database, return an error
+        if total_vehicles < num_vehicles:
             return jsonify({'error': 'Insufficient vehicles in the dealership to select random ones.'}), 404
 
-        # Generate two random indices within the range of total vehicles
-        random_indices = random.sample(range(total_vehicles), 2)
+        # Generate random indices within the range of total vehicles
+        random_indices = random.sample(range(total_vehicles), min(num_vehicles, total_vehicles))
 
-        # Retrieve information about the two random vehicles
+        # Retrieve information about the random vehicles
         random_vehicles_info = []
         for index in random_indices:
             random_vehicle = CarInfo.query.join(CarVINs).filter(
@@ -321,6 +323,7 @@ def random_vehicles():
         return jsonify(random_vehicles_info), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 
 @app.route('/api/employees', methods=['GET'])  # TEST DONE
@@ -2066,9 +2069,7 @@ def get_test_drive_data():
     return jsonify(result)
 
 
-
-
-@app.route('/api/manager/signature-waiting', methods=['GET'])
+@app.route('/api/manager/signature-waiting', methods=['GET']) # TEST DONE
 def get_awaiting_signature():
     try:
         # this gets the purchases, where only the customer signed so far.
@@ -2101,8 +2102,7 @@ def get_awaiting_signature():
         return jsonify({'error': str(e)}), 500
 
 
-
-@app.route('/api/manager/signature', methods=['POST'])
+@app.route('/api/manager/signature', methods=['POST']) # TEST DONE
 #this is the manager's response to the signature
 def update_signature():
     try:
@@ -2202,7 +2202,7 @@ def order_history():
     return jsonify(order_history_list), 200
 
 #THIS ENDPOINT IS FOR THE MANAGER TO GET TEST DRIVES THAT ARE WAITING FOR CONFIRMATION AND ARE THE DAY AFTER TODAY AND LATER.
-@app.route('/api/pending_testdrives', methods=['GET'])
+@app.route('/api/pending_testdrives', methods=['GET']) # TEST DONE
 def get_pending_test_drives():
     test_drive_info = []
     tomorrow = datetime.now().date() + timedelta(days=1)
@@ -2227,7 +2227,7 @@ def get_pending_test_drives():
     return jsonify(test_drive_info), 200
 
 # FOR MANAGER TO GET SERVICE APPOINTMENTS TO CONFIRM AND ASSIGN A TECHNICIAN TO.
-@app.route('/api/pending-service-appointments', methods=['GET'])
+@app.route('/api/pending-service-appointments', methods=['GET']) # TEST DONE
 def pending_service_appointments():
     try:
         # Subquery to check for existence of appointment_id in ServiceAppointmentEmployeeAssignments
@@ -2366,3 +2366,94 @@ def counter_bid_offer():
             return jsonify({'error': 'Bid not found'}), 404
     else:
         return jsonify({'error': 'Method not allowed'}), 405
+
+
+
+
+#needed to make account page work
+#probably needs to be on financial backend
+#idktho - Patrick
+
+@app.route('/api/member/current-bids', methods=['GET', 'POST'])
+def current_member_bids():
+    # check if the member is logged in, if not redirect them to log in
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+
+    # check if the member exists
+    member = Member.query.get(member_id)
+    if not member:
+        return jsonify({'message': 'Member not found'}), 404
+
+    # GET Request: returns all bid information based on the logged in member and their memberID
+    if request.method == 'GET':
+        bids = Bids.query.filter_by(memberID=member_id).all()
+        if not bids:
+            return jsonify({'message': 'No bids found for this member'}), 404
+        bid_info = [{'bidID': bid.bidID,
+                     'memberID': bid.memberID,
+                     'VIN_carID': bid.VIN_carID,
+                     'bidValue': bid.bidValue,
+                     'bidStatus': bid.bidStatus,
+                     'bidTimestamp': bid.bidTimestamp
+                     }
+                    for bid in bids]
+        return jsonify(bid_info), 200
+    elif request.method == 'POST':
+        # frontend needs to pass these values in for it to work
+        data = request.json
+        bid_id = data.get('bid_id') # these should work as a button accociated with the bid value/row
+        new_bid_value = data.get('new_bid_value')
+
+        if bid_id is None or new_bid_value is None:
+            return jsonify({'message': 'Bid ID and new Bid Value is required in the request'}), 400
+
+        # finds the denied bid and then copies all other relevant meta data in a nice manner to avoid stupid overworking things
+        denied_bid = Bids.query.filter_by(memberID=member_id, bidID=bid_id, bidStatus='Denied').first()
+        if denied_bid:
+            new_bid = Bids(memberID=member_id, VIN_carID=denied_bid.VIN_carID, bidValue=new_bid_value,
+                           bidStatus='Processing', bidTimestamp=datetime.now())
+            db.session.add(new_bid)
+            db.session.commit()
+            return jsonify({'message': 'New bid placed successfully'}), 201
+        else:
+            return jsonify({'message': 'Denied bid not found for this member with the provided bid ID'}), 404
+        
+        
+
+# this should be on the finacial end point 
+@app.route('/api/vehicle-purchase/new-bid-insert', methods=['POST'])
+def bid_insert_no_financing():
+    try:
+        # Extract data from the request
+        data = request.get_json()
+        required_fields = ['member_id', 'vin', 'bid_value', 'bid_status']
+        
+        # Check if all required fields are present
+        missing_fields = [field for field in required_fields if field not in data]
+        if missing_fields:
+            return jsonify({'message': f'Error: Missing fields - {", ".join(missing_fields)}'}), 400
+        
+        # Extract data
+        member_id = data['member_id']
+        vin = data['vin']
+        bid_value = data['bid_value']
+        bid_status = data['bid_status']
+        
+        # Create a new bid entry
+        new_bid = Bids(
+            memberID=member_id,
+            VIN_carID=vin,
+            bidValue=bid_value,
+            bidStatus=bid_status,
+            bidTimestamp=datetime.now()
+        )
+
+        db.session.add(new_bid)
+        db.session.commit()
+        return jsonify({'message': 'Bid successfully inserted.'}), 201
+    except Exception as e:
+        # Rollback the transaction in case of an error
+        db.session.rollback()
+        return jsonify({'message': f'Error: {str(e)}'}), 500

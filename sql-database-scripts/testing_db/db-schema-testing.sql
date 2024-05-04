@@ -22,7 +22,10 @@ DROP TABLE IF EXISTS Services;
 DROP TABLE IF EXISTS MemberAuditLog;
 DROP TABLE IF EXISTS EmployeeAuditLog;
 DROP TABLE IF EXISTS ServiceAppointmentEmployeeAssignments;
-DROP TABLE IF EXISTS checkoutcart;
+DROP TABLE IF EXISTS CheckoutCart;
+DROP TABLE IF EXISTS Warranty;
+DROP TABLE IF EXISTS WarrantyService;
+DROP TABLE IF EXISTS OrderHistory;
 
 
 CREATE TABLE IF NOT EXISTS Member (
@@ -133,7 +136,7 @@ CREATE TABLE IF NOT EXISTS ServiceAppointment (
     serviceID INT,
     appointment_date TIMESTAMP,
     comments TEXT,
-    status ENUM ('Scheduled', 'Done', 'Cancelled'),
+    status ENUM ('Scheduled', 'Done', 'Cancelled', 'Pending Confirmation'),
     last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (memberID) REFERENCES Member(memberID),
     FOREIGN KEY (VIN_carID) REFERENCES CarVINs(VIN_carID),
@@ -215,7 +218,7 @@ CREATE TABLE IF NOT EXISTS Purchases (
   `confirmationNumber` varchar(13) DEFAULT NULL,
   `purchaseType` enum('Vehicle/Add-on Purchase','Vehicle/Add-on Continuing Payment','Service Payment') DEFAULT NULL,
   `purchaseDate` timestamp NULL DEFAULT NULL,
-  `signature` enum('Yes','No') DEFAULT NULL,
+  `signature` enum('Yes','No', 'ONLYCUSTOMER') DEFAULT NULL,
   PRIMARY KEY (`purchaseID`),
   KEY `bidID` (`bidID`),
   KEY `VIN_carID` (`VIN_carID`),
@@ -233,7 +236,7 @@ CREATE TABLE IF NOT EXISTS Addons (
 );
 
 
-CREATE TABLE IF NOT EXISTS checkoutcart (
+CREATE TABLE IF NOT EXISTS CheckoutCart (
   `cart_item_id` int NOT NULL AUTO_INCREMENT,
   `memberID` int NOT NULL,
   `VIN_carID` varchar(45) DEFAULT NULL,
@@ -253,3 +256,37 @@ CREATE TABLE IF NOT EXISTS checkoutcart (
   CONSTRAINT `serviceID_FK` FOREIGN KEY (`serviceID`) REFERENCES Services(`serviceID`),
   CONSTRAINT `VIN_carID_FK` FOREIGN KEY (`VIN_carID`) REFERENCES CarInfo(`VIN_carID`)
 ) ;
+
+
+CREATE TABLE IF NOT EXISTS Warranty (
+  `Warranty_ID` int NOT NULL AUTO_INCREMENT,
+  `VIN_carID` varchar(17) DEFAULT NULL,
+  `addon_ID` int DEFAULT NULL,
+  PRIMARY KEY (`Warranty_ID`),
+  KEY `warranty_vinFK_idx` (`VIN_carID`),
+  KEY `warranty_addonFK_idx` (`addon_ID`),
+  CONSTRAINT `warranty_addonFK` FOREIGN KEY (`addon_ID`) REFERENCES Addons(`itemID`),
+  CONSTRAINT `warranty_vinFK` FOREIGN KEY (`VIN_carID`) REFERENCES CarVINs(`VIN_carID`)
+) ;
+
+CREATE TABLE IF NOT EXISTS WarrantyService (
+  `addon_ID` int NOT NULL,
+  `serviceID` int DEFAULT NULL,
+  PRIMARY KEY (`addon_ID`),
+  KEY `serviceFK_idx` (`serviceID`),
+  CONSTRAINT `addonFK` FOREIGN KEY (`addon_ID`) REFERENCES Addons(`itemID`),
+  CONSTRAINT `serviceFK` FOREIGN KEY (`serviceID`) REFERENCES Services(`serviceID`)
+);
+
+CREATE TABLE IF NOT EXISTS OrderHistory (
+  `order_item_ID` int NOT NULL AUTO_INCREMENT,
+  `memberID` int DEFAULT NULL,
+  `item_name` varchar(120) DEFAULT NULL,
+  `item_price` decimal(10,2) DEFAULT NULL,
+  `financed_amount` decimal(10,2) DEFAULT NULL,
+  `confirmationNumber` varchar(45) DEFAULT NULL,
+  `purchaseDate` datetime DEFAULT NULL,
+  PRIMARY KEY (`order_item_ID`),
+  KEY `order_memberFK_idx` (`memberID`),
+  CONSTRAINT `order_memberFK` FOREIGN KEY (`memberID`) REFERENCES Member(`memberID`)
+)
