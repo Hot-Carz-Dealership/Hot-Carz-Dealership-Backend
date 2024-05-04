@@ -2439,7 +2439,7 @@ def bid_insert_no_financing():
         member_id = data['member_id']
         vin = data['vin']
         bid_value = data['bid_value']
-        bid_status = data['bid_status']
+        bid_status = 'Processing'
         
         # Create a new bid entry
         new_bid = Bids(
