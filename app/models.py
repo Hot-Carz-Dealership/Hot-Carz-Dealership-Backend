@@ -200,7 +200,7 @@ class Addons(db.Model):
 
 class CheckoutCart(db.Model):
     # CheckoutCart table model
-    __tablename__ = 'Checkoutcart'
+    __tablename__ = 'CheckoutCart'
     
     cart_item_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     memberID = db.Column(db.Integer, db.ForeignKey('Member.memberID'), nullable=False)
