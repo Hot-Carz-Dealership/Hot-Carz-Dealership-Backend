@@ -1133,6 +1133,8 @@ def assign_service_appointments():
         # assign the appointment to the technician
         assignment = ServiceAppointmentEmployeeAssignments(appointment_id=appointment_id, employeeID=employee_id)
 
+    appointment.status = 'Scheduled'
+
     db.session.add(assignment)
     db.session.commit()
     return jsonify({'message': 'Appointment assigned successfully'}), 200
