@@ -2140,39 +2140,39 @@ def check_loan_eligibility(loan_amount: float, monthly_income: int) -> bool:
 
 '''Nobody was using this one anywhere'''
 
-# @app.route('/api/vehicle-purchase/get-financing', methods=['GET'])
-# # Returns the currently all of the currently logged in members loan
-# def get_financing():
-#     try:
-#         # Validate session
-#         member_id = session.get('member_session_id')
-#         if not member_id:
-#             return jsonify({'message': 'Invalid session'}), 401
+@app.route('/api/vehicle-purchase/get-financing', methods=['GET'])
+# Returns the currently all of the currently logged in members loan
+def get_financing():
+    try:
+        # Validate session
+        member_id = session.get('member_session_id')
+        if not member_id:
+            return jsonify({'message': 'Invalid session'}), 401
 
-#         # Query financing information for the current member
-#         financing_info = Financing.query.filter_by(memberID=member_id).all()
+        # Query financing information for the current member
+        financing_info = Financing.query.filter_by(memberID=member_id).all()
 
-#         # Check if any financing information is found
-#         if not financing_info:
-#             return jsonify({'message': 'No financing information found'}), 404
+        # Check if any financing information is found
+        if not financing_info:
+            return jsonify({'message': 'No financing information found'}), 404
 
-#         # Serialize the financing information
-#         serialized_data = []
-#         for financing in financing_info:
-#             serialized_data.append({
-#                 'VIN_carID': financing.VIN_carID,
-#                 'income': financing.income,
-#                 'credit_score': financing.credit_score,
-#                 'loan_total': financing.loan_total,
-#                 'down_payment': financing.down_payment,
-#                 'percentage': financing.percentage,
-#                 'monthly_payment_sum': financing.monthly_payment_sum,
-#                 'remaining_months': financing.remaining_months
-#             })
+        # Serialize the financing information
+        serialized_data = []
+        for financing in financing_info:
+            serialized_data.append({
+                'VIN_carID': financing.VIN_carID,
+                'income': financing.income,
+                'credit_score': financing.credit_score,
+                'loan_total': financing.loan_total,
+                'down_payment': financing.down_payment,
+                'percentage': financing.percentage,
+                'monthly_payment_sum': financing.monthly_payment_sum,
+                'remaining_months': financing.remaining_months
+            })
 
-#         return jsonify(serialized_data), 200
-#     except Exception as e:
-#         return jsonify({'message': f'Error: {str(e)}'}), 500
+        return jsonify(serialized_data), 200
+    except Exception as e:
+        return jsonify({'message': f'Error: {str(e)}'}), 500
 
 
 # Finally they hit the final check out
