@@ -355,8 +355,8 @@ INSERT INTO Bids (memberID, bidValue, bidStatus, bidTimestamp) VALUES
 (4, 17500.00, 'Confirmed', '2024-04-16 12:00:00'),
 (7, 18500.00, 'Confirmed', '2024-04-16 12:30:00'),
 (5, 19500.00, 'Confirmed', '2024-04-16 13:00:00'),
-(5, 15500.00, 'Confirmed', '2024-04-16 13:30:00');
-# (11, 0.00, 'None', NOW()); -- Placeholder bid table for vehicles bought at MSRP or finance without bidding.
+(5, 15500.00, 'Confirmed', '2024-04-16 13:30:00'),
+(11, 0.00, 'None', NOW()); -- Placeholder bid table for vehicles bought at MSRP or finance without bidding.
 
 
 INSERT INTO Purchases (bidID, VIN_carID, memberID, confirmationNumber, purchaseType, purchaseDate, signature) VALUES
@@ -388,23 +388,23 @@ INSERT INTO Purchases (bidID, VIN_carID, memberID, confirmationNumber, purchaseT
 (33, 'JH4DC54895S001234', 7, 'ZX8BZE7ATRXEK', 'Vehicle/Add-on Purchase', '2024-04-17 12:30:00', 'Yes'),
 (34, '3GTU2NEC7JG152638', 5, 'M0EXGD4APARTO', 'Vehicle/Add-on Purchase', '2024-04-17 12:30:00', 'Yes'),
 (35, '5N1AA0ND2EN467326', 5, 'X9TK4KEEE217Q', 'Vehicle/Add-on Purchase', '2024-04-17 12:30:00', 'Yes'),
-(NULL, 'WUATNAFG2EN786809', 10, 'B0NWTEUVG508W', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'), -- MSRP Purchases
-(NULL, '1B3CC5FBXAN551956', 1, '282AZ5YHJN1JE', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
-(NULL, '1G6DV1EP4F0840180', 2, 'BV2DMCY8OHBR5', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
-(NULL, '1D7RW3BK8BS446576', 3, 'BPMTAEYZU93BP', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
-(NULL, 'ZFBCFADH1EZ980832', 8, 'YISSKH1RI1J48', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
-(NULL, 'WAUNF98P37A160773', 9, 'OSPQVYE1U2E1R', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
-(NULL, '1FTMF1E85AK857700', 8, 'C9O5AROFHUPRF', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
-(NULL, '1FTEW1E8XAK386177', 4, 'AK6WBPYI7SZF9', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
-(NULL, 'WBAAX134X4P941020', 5, 'XE4G72OCA967D', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
-(NULL, 'WD3PE8CB6D5769421', 7, '1FHYDU3ZN9NI8', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
-(NULL, '1GYS4DKL7MR225532', 9, 'ATGVKC3Q9YH60', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
-(NULL, 'JTHKD5BH1C2538310', 4, 'QVL8UTJ0UH1NR', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'), -- financing at MSRP
-(NULL, 'WAULT58E03A107692', 5, 'T2R7NEXD6QZR6', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
-(NULL, '1G4HP54K74U724821', 10, 'AGPMB1MF7L44M', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
-(NULL, 'WBAVA37567N303400', 5, 'WBIP3NIR92YGI', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
-(NULL, '1C3BC4FBXBN521723', 6, '9MA2G0S65I7W0', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
-(NULL, 'SCFEBBAK9EG600978', 6, 'TBCWPEZCN9Y6Z', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes');
+(11, 'WUATNAFG2EN786809', 10, 'B0NWTEUVG508W', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'), -- MSRP Purchases
+(11, '1B3CC5FBXAN551956', 1, '282AZ5YHJN1JE', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
+(11, '1G6DV1EP4F0840180', 2, 'BV2DMCY8OHBR5', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
+(11, '1D7RW3BK8BS446576', 3, 'BPMTAEYZU93BP', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
+(11, 'ZFBCFADH1EZ980832', 8, 'YISSKH1RI1J48', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
+(11, 'WAUNF98P37A160773', 9, 'OSPQVYE1U2E1R', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
+(11, '1FTMF1E85AK857700', 8, 'C9O5AROFHUPRF', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
+(11, '1FTEW1E8XAK386177', 4, 'AK6WBPYI7SZF9', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
+(11, 'WBAAX134X4P941020', 5, 'XE4G72OCA967D', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
+(11, 'WD3PE8CB6D5769421', 7, '1FHYDU3ZN9NI8', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
+(11, '1GYS4DKL7MR225532', 9, 'ATGVKC3Q9YH60', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
+(11, 'JTHKD5BH1C2538310', 4, 'QVL8UTJ0UH1NR', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'), -- financing at MSRP
+(11, 'WAULT58E03A107692', 5, 'T2R7NEXD6QZR6', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
+(11, '1G4HP54K74U724821', 10, 'AGPMB1MF7L44M', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
+(11, 'WBAVA37567N303400', 5, 'WBIP3NIR92YGI', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
+(11, '1C3BC4FBXBN521723', 6, '9MA2G0S65I7W0', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes'),
+(11, 'SCFEBBAK9EG600978', 6, 'TBCWPEZCN9Y6Z', 'Vehicle/Add-on Purchase', '2024-02-12 11:34:00', 'Yes');
 
 
 -- add more for other purchase types

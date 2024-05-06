@@ -195,7 +195,7 @@ CREATE TABLE IF NOT EXISTS Bids (
   `memberID` int DEFAULT NULL,
   `VIN_carID` varchar(17) DEFAULT NULL,
   `bidValue` decimal(10,2) DEFAULT NULL,
-  `bidStatus` enum('Confirmed','Denied','Processing','None') DEFAULT NULL,
+  `bidStatus` enum('Confirmed', 'Denied', 'Processing', 'None', 'Member Processing') DEFAULT NULL,
   `bidTimestamp` timestamp NULL DEFAULT NULL,
   `last_updated_by` int DEFAULT '1',
   PRIMARY KEY (`bidID`),
