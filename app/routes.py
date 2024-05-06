@@ -1961,7 +1961,7 @@ def current_member_bids():
 
 
 
-
+# Copied
 def creditScoreGenerator(member_id: int, monthly_income: float) -> int:
     # Creates a random credit score based on id and income so that the same is always returned
     # Create a unique seed based on member_id and monthly_income
@@ -1973,7 +1973,7 @@ def creditScoreGenerator(member_id: int, monthly_income: float) -> int:
     # Generate a random credit score
     return random.randint(500, 850)
 
-
+# Copied
 def interest_rate(creditScore: int) -> int:
     # calculates the base interest rate
     if creditScore >= 750:
@@ -1985,12 +1985,13 @@ def interest_rate(creditScore: int) -> int:
     else:
         return 20
 
-
+# Copied
 def adjust_loan_with_downpayment(vehicle_cost, down_payment):
     # Recalculate the loan amount based on the new down_payment
     loan_amount = vehicle_cost - down_payment
     return loan_amount
 
+# Copied
 
 def calculateInterest(vehicleCost: int, monthlyIncome: int, creditscore: int) -> float:
     # generates the total amount financed after interest 
@@ -2001,6 +2002,7 @@ def calculateInterest(vehicleCost: int, monthlyIncome: int, creditscore: int) ->
     financing_loan_value = (final_financing_percentage / 100) * vehicleCost
     return round(financing_loan_value, 2)
 
+# Copied
 
 def check_loan_eligibility(loan_amount: float, monthly_income: int) -> bool:
     # Calculate yearly income from monthly income
@@ -2012,166 +2014,171 @@ def check_loan_eligibility(loan_amount: float, monthly_income: int) -> bool:
     else:
         return False  # User is not eligible for the loan
 
+'''MOVED AND SUCCESFULLY TESTED'''
 
-@app.route('/api/vehicle-purchase/apply-for-financing', methods=['POST'])
-# Route just to apply for financing and returns terms if user is eligible
-# This wont add to any tables yet,
-# we'll have the front end send back the same terms if users accepts in another route
-##The user will accept by typing in their name or initials(aka signing)
-def apply_for_financing():
-    try:
-        # customer auth for making sure they are logged in and have an account
-        member_id = session.get('member_session_id')
-        if member_id is None:
-            return jsonify({'message': 'Invalid session'}), 400
+# @app.route('/api/vehicle-purchase/apply-for-financing', methods=['POST'])
+# # Route just to apply for financing and returns terms if user is eligible
+# # This wont add to any tables yet,
+# # we'll have the front end send back the same terms if users accepts in another route
+# ##The user will accept by typing in their name or initials(aka signing)
+# def apply_for_financing():
+#     try:
+#         # customer auth for making sure they are logged in and have an account
+#         member_id = session.get('member_session_id')
+#         if member_id is None:
+#             return jsonify({'message': 'Invalid session'}), 400
 
-        # frontend needs to send these values to the backend
-        data = request.json
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
+#         # frontend needs to send these values to the backend
+#         data = request.json
+#         if not data:
+#             return jsonify({'error': 'No data provided'}), 400
 
-        Vin_carID = data.get('Vin_carID')
-        down_payment = float(data.get('down_payment'))
-        monthly_income = float(data.get('monthly_income'))
-        vehicle_cost = float(
-            data.get('vehicle_cost'))  # Front end can send this based on if the user won a bid or buying at MSRP
+#         Vin_carID = data.get('Vin_carID')
+#         down_payment = float(data.get('down_payment'))
+#         monthly_income = float(data.get('monthly_income'))
+#         vehicle_cost = float(
+#             data.get('vehicle_cost'))  # Front end can send this based on if the user won a bid or buying at MSRP
 
-        credit_score = creditScoreGenerator(member_id, monthly_income)
-        total_cost = adjust_loan_with_downpayment(vehicle_cost, down_payment)
-        finance_interest = calculateInterest(total_cost, monthly_income, credit_score)
+#         credit_score = creditScoreGenerator(member_id, monthly_income)
+#         total_cost = adjust_loan_with_downpayment(vehicle_cost, down_payment)
+#         finance_interest = calculateInterest(total_cost, monthly_income, credit_score)
 
-        # Loan eligibility
-        loan_eligibility = check_loan_eligibility(total_cost, monthly_income)
-        if not loan_eligibility:
-            return jsonify({
-                               'message': 'Your yearly income is not sufficient to take on this loan. Reapply with more down payment'}), 400
+#         # Loan eligibility
+#         loan_eligibility = check_loan_eligibility(total_cost, monthly_income)
+#         if not loan_eligibility:
+#             return jsonify({
+#                                'message': 'Your yearly income is not sufficient to take on this loan. Reapply with more down payment'}), 400
 
-        # downPayment_value = total_cost - financing_loan_amount
-        valueToPay_value = round(total_cost + finance_interest, 2)
-        paymentPerMonth_value = round(valueToPay_value / 48, 2)
+#         # downPayment_value = total_cost - financing_loan_amount
+#         valueToPay_value = round(total_cost + finance_interest, 2)
+#         paymentPerMonth_value = round(valueToPay_value / 48, 2)
 
-        # Create a dictionary with financing terms
-        financing_terms = {
-            'member_id': member_id,
-            'income': int(monthly_income) * 12,
-            'credit_score': credit_score,
-            'loan_total': valueToPay_value,
-            'down_payment': down_payment,
-            'percentage': interest_rate(credit_score),
-            'monthly_payment_sum': paymentPerMonth_value,
-            'remaining_months': 48,
-            'Vin_carID': Vin_carID,
-            'financed_amount': total_cost,
-            'interest_total': finance_interest
-        }
+#         # Create a dictionary with financing terms
+#         financing_terms = {
+#             'member_id': member_id,
+#             'income': int(monthly_income) * 12,
+#             'credit_score': credit_score,
+#             'loan_total': valueToPay_value,
+#             'down_payment': down_payment,
+#             'percentage': interest_rate(credit_score),
+#             'monthly_payment_sum': paymentPerMonth_value,
+#             'remaining_months': 48,
+#             'Vin_carID': Vin_carID,
+#             'financed_amount': total_cost,
+#             'interest_total': finance_interest
+#         }
 
-        # Return the financing terms as JSON
-        # Front End should save this somewhere
-        # If the user accepts by signing then use the /insert-financing route
+#         # Return the financing terms as JSON
+#         # Front End should save this somewhere
+#         # If the user accepts by signing then use the /insert-financing route
 
-        return jsonify({'financing_terms': financing_terms}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'message': f'Error: {str(e)}'}), 500
+#         return jsonify({'financing_terms': financing_terms}), 200
+#     except Exception as e:
+#         db.session.rollback()
+#         return jsonify({'message': f'Error: {str(e)}'}), 500
 
+'''MOVED AND SUCCESFULLY TESTED'''
 
-@app.route('/api/vehicle-purchase/insert-financing', methods=['POST'])
-# Use this route whenever the user accepts the loan to add it to the db
-def insert_financing():
-    try:
+# @app.route('/api/vehicle-purchase/insert-financing', methods=['POST'])
+# # Use this route whenever the user accepts the loan to add it to the db
+# def insert_financing():
+#     try:
 
-        # customer auth for making sure they are logged in and have an account
-        member_id = session.get('member_session_id')
-        if member_id is None:
-            return jsonify({'message': 'Invalid session'}), 400
+#         # customer auth for making sure they are logged in and have an account
+#         member_id = session.get('member_session_id')
+#         if member_id is None:
+#             return jsonify({'message': 'Invalid session'}), 400
 
-        # Validate required fields
-        data = request.json
-        required_fields = ['VIN_carID', 'income', 'credit_score', 'loan_total', 'down_payment', 'percentage',
-                           'monthly_payment_sum', 'remaining_months']
-        if not all(field in data for field in required_fields):
-            return jsonify({'message': 'Missing required fields'}), 400
+#         # Validate required fields
+#         data = request.json
+#         required_fields = ['VIN_carID', 'income', 'credit_score', 'loan_total', 'down_payment', 'percentage',
+#                            'monthly_payment_sum', 'remaining_months']
+#         if not all(field in data for field in required_fields):
+#             return jsonify({'message': 'Missing required fields'}), 400
 
-        # Retrieve data from the request
-        data = request.json
-        VIN_carID = data.get('VIN_carID')
-        income = data.get('income')
-        credit_score = data.get('credit_score')
-        loan_total = data.get('loan_total')
-        down_payment = data.get('down_payment')
-        percentage = data.get('percentage')
-        monthly_payment_sum = data.get('monthly_payment_sum')
-        remaining_months = data.get('remaining_months')
+#         # Retrieve data from the request
+#         data = request.json
+#         VIN_carID = data.get('VIN_carID')
+#         income = data.get('income')
+#         credit_score = data.get('credit_score')
+#         loan_total = data.get('loan_total')
+#         down_payment = data.get('down_payment')
+#         percentage = data.get('percentage')
+#         monthly_payment_sum = data.get('monthly_payment_sum')
+#         remaining_months = data.get('remaining_months')
 
-        if VIN_carID:
-            # Check if the provided VIN exists in the carinfo table
-            car = CarInfo.query.filter_by(VIN_carID=VIN_carID).first()
-            if not car:
-                return jsonify({'error': 'Car with provided VIN not found'}), 404
+#         if VIN_carID:
+#             # Check if the provided VIN exists in the carinfo table
+#             car = CarInfo.query.filter_by(VIN_carID=VIN_carID).first()
+#             if not car:
+#                 return jsonify({'error': 'Car with provided VIN not found'}), 404
 
-        # Insert data into the database
-        new_financing = Financing(
-            memberID=member_id,
-            VIN_carID=VIN_carID,
-            income=income,
-            credit_score=credit_score,
-            loan_total=loan_total,
-            down_payment=down_payment,
-            percentage=percentage,
-            monthly_payment_sum=monthly_payment_sum,
-            remaining_months=remaining_months
-        )
-        db.session.add(new_financing)
-        db.session.commit()
+#         # Insert data into the database
+#         new_financing = Financing(
+#             memberID=member_id,
+#             VIN_carID=VIN_carID,
+#             income=income,
+#             credit_score=credit_score,
+#             loan_total=loan_total,
+#             down_payment=down_payment,
+#             percentage=percentage,
+#             monthly_payment_sum=monthly_payment_sum,
+#             remaining_months=remaining_months
+#         )
+#         db.session.add(new_financing)
+#         db.session.commit()
 
-        return jsonify({'message': 'Financing information inserted successfully.'}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'message': f'Error: {str(e)}'}), 500
+#         return jsonify({'message': 'Financing information inserted successfully.'}), 200
+#     except Exception as e:
+#         db.session.rollback()
+#         return jsonify({'message': f'Error: {str(e)}'}), 500
 
 
 ## User get sent to add ons page
 ## Anything they add on that page gets added to the users cart
 
-@app.route('/api/vehicle-purchase/get-financing', methods=['GET'])
-# Returns the currently all of the currently logged in members loan
-def get_financing():
-    try:
-        # Validate session
-        member_id = session.get('member_session_id')
-        if not member_id:
-            return jsonify({'message': 'Invalid session'}), 401
 
-        # Query financing information for the current member
-        financing_info = Financing.query.filter_by(memberID=member_id).all()
+'''Nobody was using this one anywhere'''
 
-        # Check if any financing information is found
-        if not financing_info:
-            return jsonify({'message': 'No financing information found'}), 404
+# @app.route('/api/vehicle-purchase/get-financing', methods=['GET'])
+# # Returns the currently all of the currently logged in members loan
+# def get_financing():
+#     try:
+#         # Validate session
+#         member_id = session.get('member_session_id')
+#         if not member_id:
+#             return jsonify({'message': 'Invalid session'}), 401
 
-        # Serialize the financing information
-        serialized_data = []
-        for financing in financing_info:
-            serialized_data.append({
-                'VIN_carID': financing.VIN_carID,
-                'income': financing.income,
-                'credit_score': financing.credit_score,
-                'loan_total': financing.loan_total,
-                'down_payment': financing.down_payment,
-                'percentage': financing.percentage,
-                'monthly_payment_sum': financing.monthly_payment_sum,
-                'remaining_months': financing.remaining_months
-            })
+#         # Query financing information for the current member
+#         financing_info = Financing.query.filter_by(memberID=member_id).all()
 
-        return jsonify(serialized_data), 200
-    except Exception as e:
-        return jsonify({'message': f'Error: {str(e)}'}), 500
+#         # Check if any financing information is found
+#         if not financing_info:
+#             return jsonify({'message': 'No financing information found'}), 404
+
+#         # Serialize the financing information
+#         serialized_data = []
+#         for financing in financing_info:
+#             serialized_data.append({
+#                 'VIN_carID': financing.VIN_carID,
+#                 'income': financing.income,
+#                 'credit_score': financing.credit_score,
+#                 'loan_total': financing.loan_total,
+#                 'down_payment': financing.down_payment,
+#                 'percentage': financing.percentage,
+#                 'monthly_payment_sum': financing.monthly_payment_sum,
+#                 'remaining_months': financing.remaining_months
+#             })
+
+#         return jsonify(serialized_data), 200
+#     except Exception as e:
+#         return jsonify({'message': f'Error: {str(e)}'}), 500
 
 
 # Finally they hit the final check out
 # Display all the items in the cart with /api/member/cart
 
-
+# COPIED
 def confirmation_number_generation() -> str:
     try:
         total_chars = string.ascii_uppercase + string.digits
@@ -2181,238 +2188,241 @@ def confirmation_number_generation() -> str:
         print(f"Error generating confirmation number: {e}")
         return None
 
+'''MOVED AND SUCCESFULLY TESTED'''
 
-@app.route('/api/vehicle-purchase/make-purchase', methods=['POST'])
-# Route Where all purchases will be made for car,addons, or service center
-def make_purchase():
-    # here we deal with Purchases and Payments table    
-    try:
-        member_id = session.get('member_session_id')
-        if not member_id:
-            return jsonify({'message': 'Unauthorized access. Please log in.'}), 403
+# @app.route('/api/vehicle-purchase/make-purchase', methods=['POST'])
+# # Route Where all purchases will be made for car,addons, or service center
+# def make_purchase():
+#     # here we deal with Purchases and Payments table    
+#     try:
+#         member_id = session.get('member_session_id')
+#         if not member_id:
+#             return jsonify({'message': 'Unauthorized access. Please log in.'}), 403
 
-        data = request.json
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
+#         data = request.json
+#         if not data:
+#             return jsonify({'error': 'No data provided'}), 400
 
-        required_fields = ['routingNumber', 'bankAcctNumber', 'Amount Due Now', 'Financed Amount']
-        missing_fields = [field for field in required_fields if field not in data]
-        if missing_fields:
-            error_message = f'Missing required field(s): {", ".join(missing_fields)}'
-            return jsonify({'error': error_message}), 400
+#         required_fields = ['routingNumber', 'bankAcctNumber', 'Amount Due Now', 'Financed Amount']
+#         missing_fields = [field for field in required_fields if field not in data]
+#         if missing_fields:
+#             error_message = f'Missing required field(s): {", ".join(missing_fields)}'
+#             return jsonify({'error': error_message}), 400
 
-        # Gen a single confirmation number for the purchase
-        confirmation_number = confirmation_number_generation()
+#         # Gen a single confirmation number for the purchase
+#         confirmation_number = confirmation_number_generation()
 
-        # Retrieve cart items
-        cart_items = CheckoutCart.query.filter_by(memberID=member_id).all()
+#         # Retrieve cart items
+#         cart_items = CheckoutCart.query.filter_by(memberID=member_id).all()
 
-        # Extract data from JSON request
+#         # Extract data from JSON request
 
-        # Needed for purchases table
-        VIN_carID = None
-        addon_ID = None
-        serviceID = None
-        bidID = None
-        # purchaseType = None
+#         # Needed for purchases table
+#         VIN_carID = None
+#         addon_ID = None
+#         serviceID = None
+#         bidID = None
+#         # purchaseType = None
 
-        # Needed for payments table
-        financed_amount = Decimal(data.get('Financed Amount', 0))
-        valuePaid = Decimal(data.get('Amount Due Now', 0))
-        routingNumber = data.get('routingNumber')
-        bankAcctNumber = data.get('bankAcctNumber')
-        financingID = None
-        # Add validation on front end for routing and acct numbers
+#         # Needed for payments table
+#         financed_amount = Decimal(data.get('Financed Amount', 0))
+#         valuePaid = Decimal(data.get('Amount Due Now', 0))
+#         routingNumber = data.get('routingNumber')
+#         bankAcctNumber = data.get('bankAcctNumber')
+#         financingID = None
+#         # Add validation on front end for routing and acct numbers
 
-        # Lists to accumulate VINs and addon IDs
-        vin_with_addons = None
-        addons = []
+#         # Lists to accumulate VINs and addon IDs
+#         vin_with_addons = None
+#         addons = []
 
-        # Add cart items to the Purchases table
-        for item in cart_items:
-            bidID = None
-            addon_ID = item.addon_ID
-            # Check if VIN_carID exists in the bids table and get bidID if it does
-            VIN_carID = item.VIN_carID
-            if VIN_carID:
-                vin_with_addons = VIN_carID
-                bid = Bids.query.filter_by(VIN_carID=VIN_carID).first()
-                if bid:
-                    bidID = bid.bidID
-                if item.financed_amount:
-                    # looks up the financing id of the car being financed
-                    financing = Financing.query.filter_by(VIN_carID=VIN_carID).first()
-                    if financing:
-                        financingID = financing.financingID
-            # If the item is an addon, add addon to the lists
-            if addon_ID:
-                addons.append(addon_ID)
+#         # Add cart items to the Purchases table
+#         for item in cart_items:
+#             bidID = None
+#             addon_ID = item.addon_ID
+#             # Check if VIN_carID exists in the bids table and get bidID if it does
+#             VIN_carID = item.VIN_carID
+#             if VIN_carID:
+#                 vin_with_addons = VIN_carID
+#                 bid = Bids.query.filter_by(VIN_carID=VIN_carID).first()
+#                 if bid:
+#                     bidID = bid.bidID
+#                 if item.financed_amount:
+#                     # looks up the financing id of the car being financed
+#                     financing = Financing.query.filter_by(VIN_carID=VIN_carID).first()
+#                     if financing:
+#                         financingID = financing.financingID
+#             # If the item is an addon, add addon to the lists
+#             if addon_ID:
+#                 addons.append(addon_ID)
 
-            new_purchase = Purchases(
-                bidID=bidID,
-                memberID=member_id,
-                VIN_carID=VIN_carID,
-                addon_ID=item.addon_ID,
-                serviceID=item.serviceID,
-                confirmationNumber=confirmation_number,
-                purchaseType='Vehicle/Add-on Purchase' if not item.serviceID else 'Service Payment',
-                purchaseDate=datetime.now(),
-                signature='No'
-            )
-            # Check if provided IDs exist
-            if VIN_carID and not CarInfo.query.filter_by(VIN_carID=VIN_carID).first():
-                return jsonify({'error': 'Car with provided VIN not found'}), 404
-            elif addon_ID and not Addons.query.filter_by(itemID=addon_ID).first():
-                return jsonify({'error': 'Addon with provided ID not found'}), 404
-            elif serviceID and not Services.query.filter_by(serviceID=serviceID).first():
-                return jsonify({'error': 'Service with provided ID not found'}), 404
+#             new_purchase = Purchases(
+#                 bidID=bidID,
+#                 memberID=member_id,
+#                 VIN_carID=VIN_carID,
+#                 addon_ID=item.addon_ID,
+#                 serviceID=item.serviceID,
+#                 confirmationNumber=confirmation_number,
+#                 purchaseType='Vehicle/Add-on Purchase' if not item.serviceID else 'Service Payment',
+#                 purchaseDate=datetime.now(),
+#                 signature='No'
+#             )
+#             # Check if provided IDs exist
+#             if VIN_carID and not CarInfo.query.filter_by(VIN_carID=VIN_carID).first():
+#                 return jsonify({'error': 'Car with provided VIN not found'}), 404
+#             elif addon_ID and not Addons.query.filter_by(itemID=addon_ID).first():
+#                 return jsonify({'error': 'Addon with provided ID not found'}), 404
+#             elif serviceID and not Services.query.filter_by(serviceID=serviceID).first():
+#                 return jsonify({'error': 'Service with provided ID not found'}), 404
 
-            # Update CarInfo status to 'sold'
-            db.session.query(CarInfo).filter_by(VIN_carID=VIN_carID).update({'status': 'sold'})
-            # Update CarVINs purchase_status to 'Dealership - Purchased' and memberID to current memberID
-            db.session.query(CarVINs).filter_by(VIN_carID=VIN_carID).update(
-                {'purchase_status': 'Dealership - Purchased', 'memberID': member_id})
+#             # Update CarInfo status to 'sold'
+#             db.session.query(CarInfo).filter_by(VIN_carID=VIN_carID).update({'status': 'sold'})
+#             # Update CarVINs purchase_status to 'Dealership - Purchased' and memberID to current memberID
+#             db.session.query(CarVINs).filter_by(VIN_carID=VIN_carID).update(
+#                 {'purchase_status': 'Dealership - Purchased', 'memberID': member_id})
 
-            db.session.commit()
+#             db.session.commit()
 
-            db.session.add(new_purchase)
-            db.session.commit()
+#             db.session.add(new_purchase)
+#             db.session.commit()
 
-        # Create Warranty instances for each addon associated with the VIN
-        for addon in addons:
-            new_warranty = Warranty(
-                VIN_carID=vin_with_addons,
-                addon_ID=addon
-            )
-            db.session.add(new_warranty)
+#         # Create Warranty instances for each addon associated with the VIN
+#         for addon in addons:
+#             new_warranty = Warranty(
+#                 VIN_carID=vin_with_addons,
+#                 addon_ID=addon
+#             )
+#             db.session.add(new_warranty)
 
-        # Add cart items to the OrderHistory table
-        for item in cart_items:
-            new_order_history = OrderHistory(
-                memberID=member_id,
-                item_name=item.item_name,
-                item_price=item.item_price,
-                financed_amount=item.financed_amount,
-                confirmationNumber=confirmation_number,
-                purchaseDate=datetime.now()
-            )
-            db.session.add(new_order_history)
-            db.session.commit()
+#         # Add cart items to the OrderHistory table
+#         for item in cart_items:
+#             new_order_history = OrderHistory(
+#                 memberID=member_id,
+#                 item_name=item.item_name,
+#                 item_price=item.item_price,
+#                 financed_amount=item.financed_amount,
+#                 confirmationNumber=confirmation_number,
+#                 purchaseDate=datetime.now()
+#             )
+#             db.session.add(new_order_history)
+#             db.session.commit()
 
-        # Hash the bank info
-        routingNumber = bcrypt.hashpw(routingNumber.encode('utf-8'), bcrypt.gensalt())
-        bankAcctNumber = bcrypt.hashpw(bankAcctNumber.encode('utf-8'), bcrypt.gensalt())
+#         # Hash the bank info
+#         routingNumber = bcrypt.hashpw(routingNumber.encode('utf-8'), bcrypt.gensalt())
+#         bankAcctNumber = bcrypt.hashpw(bankAcctNumber.encode('utf-8'), bcrypt.gensalt())
 
-        new_payment = Payments(
-            paymentStatus='Completed',
-            valuePaid=valuePaid.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP),
-            valueToPay=financed_amount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP),
-            initialPurchase=datetime.now(),
-            lastPayment=datetime.now(),
-            routingNumber=routingNumber,
-            bankAcctNumber=bankAcctNumber,
-            memberID=member_id,
-            financingID=financingID
-        )
-        db.session.add(new_payment)
-        db.session.commit()
+#         new_payment = Payments(
+#             paymentStatus='Completed',
+#             valuePaid=valuePaid.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP),
+#             valueToPay=financed_amount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP),
+#             initialPurchase=datetime.now(),
+#             lastPayment=datetime.now(),
+#             routingNumber=routingNumber,
+#             bankAcctNumber=bankAcctNumber,
+#             memberID=member_id,
+#             financingID=financingID
+#         )
+#         db.session.add(new_payment)
+#         db.session.commit()
 
-        # payment stub generation can occur through the means of functions above with endpoints
-        # /api/member
-        # /api/payments
+#         # payment stub generation can occur through the means of functions above with endpoints
+#         # /api/member
+#         # /api/payments
 
-        # need to clear the cart after wards using delete cart route on front end
+#         # need to clear the cart after wards using delete cart route on front end
 
-        return jsonify({'message': 'Purchase made successfully.',
-                        'confirmation_number':confirmation_number}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': f'Error: {str(e)}'}), 500
+#         return jsonify({'message': 'Purchase made successfully.',
+#                         'confirmation_number':confirmation_number}), 200
+#     except Exception as e:
+#         db.session.rollback()
+#         return jsonify({'error': f'Error: {str(e)}'}), 500
+'''MOVED AND SUCCESFULLY TESTED'''
 
-@app.route('/api/member/order_history', methods=['GET'])
-# Route retrieves order history for a logged-in member, calculates subtotal, taxes, amount paid, and total amount financed for each order, and returns the formatted data as JSON.
-def order_history():
-    # Get the logged-in member ID
-    member_id = session.get('member_session_id')
-    if not member_id:
-        return jsonify({'message': 'Unauthorized access. Please log in.'}), 403
+# # @app.route('/api/member/order_history', methods=['GET'])
+# # # Route retrieves order history for a logged-in member, calculates subtotal, taxes, amount paid, and total amount financed for each order, and returns the formatted data as JSON.
+# # def order_history():
+#     # Get the logged-in member ID
+#     member_id = session.get('member_session_id')
+#     if not member_id:
+#         return jsonify({'message': 'Unauthorized access. Please log in.'}), 403
 
-    # Query to get all orders for the logged-in member
-    orders = OrderHistory.query.filter_by(memberID=member_id).all()
+#     # Query to get all orders for the logged-in member
+#     orders = OrderHistory.query.filter_by(memberID=member_id).all()
 
-    if not orders:
-        return jsonify({'message': 'No orders found for the logged-in member.'}), 404
+#     if not orders:
+#         return jsonify({'message': 'No orders found for the logged-in member.'}), 404
 
-    # Prepare dictionary to store order history data per confirmationNumber
-    order_history_data = {}
+#     # Prepare dictionary to store order history data per confirmationNumber
+#     order_history_data = {}
 
-    for order in orders:
-        confirmation_number = order.confirmationNumber
-        # If the confirmation number already exists in the dictionary, update the order details
-        if confirmation_number in order_history_data:
-            order_data = order_history_data[confirmation_number]
-            # Add item to the existing items list
-            order_data['items'].append({
-                'Item Name': order.item_name,
-                'Item Price': '{:.2f}'.format(float(order.item_price)),
-                'Financed Amount': '{:.2f}'.format(float(order.financed_amount))
-            })
-            # Update subtotal, taxes, amount paid, and total amount financed
-            order_data['Subtotal'] += float(order.item_price)
-            order_data['Taxes'] = round(order_data['Subtotal'] * 0.05, 2)
-            order_data['Amount Paid'] = round(order_data['Subtotal'] + order_data['Taxes'], 2)
-            order_data['Total Financed'] += float(order.financed_amount)
-        # If the confirmation number does not exist in the dictionary, create a new entry
-        else:
-            # Initialize order details
-            subtotal = float(order.item_price)  # Convert to float
-            taxes = round(subtotal * 0.05, 2)
-            amount_paid = round(subtotal + taxes, 2)
-            total_financed = float(order.financed_amount)
-            order_history_data[confirmation_number] = {
-                'Confirmation Number': confirmation_number,
-                'Subtotal': subtotal,
-                'Taxes': taxes,
-                'Amount Paid': amount_paid,
-                'Total Financed': total_financed,
-                'items': [
-                    {
-                        'Item Name': order.item_name,
-                        'Item Price': '{:.2f}'.format(float(order.item_price)),
-                        'Financed Amount': '{:.2f}'.format(float(order.financed_amount))
-                    }
-                ]
-            }
+#     for order in orders:
+#         confirmation_number = order.confirmationNumber
+#         # If the confirmation number already exists in the dictionary, update the order details
+#         if confirmation_number in order_history_data:
+#             order_data = order_history_data[confirmation_number]
+#             # Add item to the existing items list
+#             order_data['items'].append({
+#                 'Item Name': order.item_name,
+#                 'Item Price': '{:.2f}'.format(float(order.item_price)),
+#                 'Financed Amount': '{:.2f}'.format(float(order.financed_amount))
+#             })
+#             # Update subtotal, taxes, amount paid, and total amount financed
+#             order_data['Subtotal'] += float(order.item_price)
+#             order_data['Taxes'] = round(order_data['Subtotal'] * 0.05, 2)
+#             order_data['Amount Paid'] = round(order_data['Subtotal'] + order_data['Taxes'], 2)
+#             order_data['Total Financed'] += float(order.financed_amount)
+#         # If the confirmation number does not exist in the dictionary, create a new entry
+#         else:
+#             # Initialize order details
+#             subtotal = float(order.item_price)  # Convert to float
+#             taxes = round(subtotal * 0.05, 2)
+#             amount_paid = round(subtotal + taxes, 2)
+#             total_financed = float(order.financed_amount)
+#             order_history_data[confirmation_number] = {
+#                 'Confirmation Number': confirmation_number,
+#                 'Subtotal': subtotal,
+#                 'Taxes': taxes,
+#                 'Amount Paid': amount_paid,
+#                 'Total Financed': total_financed,
+#                 'items': [
+#                     {
+#                         'Item Name': order.item_name,
+#                         'Item Price': '{:.2f}'.format(float(order.item_price)),
+#                         'Financed Amount': '{:.2f}'.format(float(order.financed_amount))
+#                     }
+#                 ]
+#             }
 
-    # Convert dictionary values to list for JSON serialization
-    order_history_list = list(order_history_data.values())
+#     # Convert dictionary values to list for JSON serialization
+#     order_history_list = list(order_history_data.values())
 
-    # Format Subtotal, Taxes, and Amount Paid for each order
-    for order_data in order_history_list:
-        order_data['Subtotal'] = '{:.2f}'.format(float(order_data['Subtotal']))
-        order_data['Taxes'] = '{:.2f}'.format(float(order_data['Taxes']))
-        order_data['Amount Paid'] = '{:.2f}'.format(float(order_data['Amount Paid']))
-        order_data['Total Financed'] = '{:.2f}'.format(float(order_data['Total Financed']))
+#     # Format Subtotal, Taxes, and Amount Paid for each order
+#     for order_data in order_history_list:
+#         order_data['Subtotal'] = '{:.2f}'.format(float(order_data['Subtotal']))
+#         order_data['Taxes'] = '{:.2f}'.format(float(order_data['Taxes']))
+#         order_data['Amount Paid'] = '{:.2f}'.format(float(order_data['Amount Paid']))
+#         order_data['Total Financed'] = '{:.2f}'.format(float(order_data['Total Financed']))
 
-    return jsonify(order_history_list), 200
+#     return jsonify(order_history_list), 200
 
+'''MOVED AND BUT NOT TESTED'''
 #for manager to counter bid
-@app.route('/api/manager/counter_bid_offer', methods=['POST'])
-def counter_bid_offer():
-    if request.method == 'POST':
-        data = request.json
-        bid_id = data.get('bidID')
-        new_offer_price = data.get('newOfferPrice')
+# @app.route('/api/manager/counter_bid_offer', methods=['POST'])
+# def counter_bid_offer():
+#     if request.method == 'POST':
+#         data = request.json
+#         bid_id = data.get('bidID')
+#         new_offer_price = data.get('newOfferPrice')
 
-        # Fetch the bid from the database
-        bid = Bids.query.get(bid_id)
+#         # Fetch the bid from the database
+#         bid = Bids.query.get(bid_id)
 
-        if bid:
-            # Update the bid's offer price
-            bid.bidValue = new_offer_price
-            db.session.commit()
-            return jsonify({'message': 'Bid offer price updated successfully'})
-        else:
-            return jsonify({'error': 'Bid not found'}), 404
-    else:
-        return jsonify({'error': 'Method not allowed'}), 405
+#         if bid:
+#             # Update the bid's offer price
+#             bid.bidValue = new_offer_price
+#             db.session.commit()
+#             return jsonify({'message': 'Bid offer price updated successfully'})
+#         else:
+#             return jsonify({'error': 'Bid not found'}), 404
+#     else:
+#         return jsonify({'error': 'Method not allowed'}), 405
