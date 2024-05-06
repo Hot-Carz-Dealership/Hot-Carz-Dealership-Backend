@@ -1932,7 +1932,7 @@ def make_purchase():
                 confirmationNumber=confirmation_number,
                 purchaseType='Vehicle/Add-on Purchase' if not item.serviceID else 'Service Payment',
                 purchaseDate=datetime.now(),
-                signature='ONLYCUSTOMER'
+                signature='No'
             )
             # Check if provided IDs exist
             if VIN_carID and not CarInfo.query.filter_by(VIN_carID=VIN_carID).first():
