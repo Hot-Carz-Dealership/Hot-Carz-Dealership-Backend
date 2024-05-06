@@ -50,6 +50,9 @@ def forward_post_request(forward_route):
         return jsonify({'error': str(e)}), 500
 
 def forward_get_request(forward_route):
+    # Extract additional query parameters from the request
+    additional_params = {key: value for key, value in request.args.items() if key != 'route'}
+    
     # Check if a member is logged in
     member_id = session.get("member_session_id")
     if member_id:
@@ -61,16 +64,20 @@ def forward_get_request(forward_route):
             params = {'employee_id': employee_id}
         else:
             params = {}
+# Construct the full URL including additional query parameters
+    if additional_params:
+        full_url = forward_route + '&' + '&'.join([f"{key}={value}" for key, value in additional_params.items()])
+    else:
+        full_url = forward_route
 
     try:
-        response = requests.get(forward_route, params=params)
+        response = requests.get(full_url, params=params)
         response_data = response.json()
         return jsonify(response_data), response.status_code
     except requests.exceptions.RequestException as e:
         return jsonify({'error': str(e)}), 500
 
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+
 
 
 
