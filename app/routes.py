@@ -1906,13 +1906,12 @@ def current_member_bids():
             return jsonify({'message': 'Bid ID and new Bid Value is required in the request'}), 400
 
         # finds the denied bid and then copies all other relevant meta data in a nice manner to avoid stupid overworking things
-        denied_bid = Bids.query.filter_by(memberID=member_id, bidID=bid_id, bidStatus='Denied').first()
+        denied_bid = Bids.query.filter_by(memberID=member_id, bidID=bid_id).first()
         if denied_bid:
-            new_bid = Bids(memberID=member_id, VIN_carID=denied_bid.VIN_carID, bidValue=new_bid_value,
-                           bidStatus='Processing', bidTimestamp=datetime.now())
-            db.session.add(new_bid)
+            denied_bid.bidValue=new_bid_value
+            denied_bid.bidStatus='Member Processing'
             db.session.commit()
-            return jsonify({'message': 'New bid placed successfully'}), 201
+            return jsonify({'message': 'Bid updated successfully'}), 201
         else:
             return jsonify({'message': 'Denied bid not found for this member with the provided bid ID'}), 404
         
