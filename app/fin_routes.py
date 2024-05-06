@@ -64,7 +64,7 @@ def forward_get_request(forward_route):
         full_url = forward_route
 
     try:
-        response = requests.get(full_url, params=params)
+        response = requests.get(full_url, json=params)
         response_data = response.json()
         return jsonify(response_data), response.status_code
     except requests.exceptions.RequestException as e:
