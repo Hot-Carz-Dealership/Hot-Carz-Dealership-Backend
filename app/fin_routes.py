@@ -65,7 +65,11 @@ def forward_get_request(forward_route):
         else:
             params = {}
 # Construct the full URL including additional query parameters
-    full_url = forward_route + '&' + '&'.join([f"{key}={value}" for key, value in additional_params.items()])
+    if additional_params:
+        full_url = forward_route + '&' + '&'.join([f"{key}={value}" for key, value in additional_params.items()])
+    else:
+        full_url = forward_route
+
     try:
         response = requests.get(full_url, params=params)
         response_data = response.json()
