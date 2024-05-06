@@ -1909,7 +1909,7 @@ def current_member_bids():
         denied_bid = Bids.query.filter_by(memberID=member_id, bidID=bid_id).first()
         if denied_bid:
             denied_bid.bidValue=new_bid_value
-            denied_bid.bidStatus='Member Processing'
+            denied_bid.bidStatus='Processing'
             db.session.commit()
             return jsonify({'message': 'Bid updated successfully'}), 201
         else:
