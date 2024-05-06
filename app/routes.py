@@ -1633,9 +1633,334 @@ def get_cart():
         return jsonify({'error': str(e)}), 500
 
 
-## Need to find a way to apply for financing first
-## Then if theyre approved Show the terms
-## If not ask them to put in more downpayemnt
+@app.route('/api/member/delete_cart', methods=['DELETE'])
+# Route to Remove Entire Cart
+def delete_cart():
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+
+    # Check if the member exists
+    member = Member.query.get(member_id)
+    if not member:
+        return jsonify({'message': 'Member not found'}), 404
+
+    # Get all items in the cart of the logged-in member
+    cart_items = CheckoutCart.query.filter_by(memberID=member_id).all()
+
+    if not cart_items:
+        return jsonify({'error': 'Cart is already empty'}), 404
+
+    try:
+        # Delete all items from the cart
+        for item in cart_items:
+            db.session.delete(item)
+        db.session.commit()
+
+        return jsonify({'success': 'Cart deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/member/test_drive_data', methods=['GET'])
+# Gets the 
+def get_test_drive_data():
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+
+    # Query the TestDrive table to get test drive data for the current user
+    test_drives = TestDrive.query.filter_by(memberID=member_id).all()
+
+    # Initialize a list to store the results
+    result = []
+
+    # Iterate through each test drive record and gather the required data
+    for test_drive in test_drives:
+        # Query the CarInfo table to get additional information about the car
+        car_info = CarInfo.query.filter_by(VIN_carID=test_drive.VIN_carID).first()
+
+        # Create a dictionary containing the required data
+        test_drive_data = {
+            'testdrive_id': test_drive.testdrive_id,
+            'VIN_carID': test_drive.VIN_carID,
+            'appointment_date': test_drive.appointment_date.strftime("%Y-%m-%d %H:%M:%S"),
+            'confirmation': test_drive.confirmation,
+            'make': car_info.make,
+            'model': car_info.model,
+            'year': car_info.year
+        }
+
+        # Append the dictionary to the result list
+        result.append(test_drive_data)
+
+    # Return the result as JSON
+    return jsonify(result)
+
+
+@app.route('/api/manager/signature-waiting', methods=['GET']) # TEST DONE
+def get_awaiting_signature():
+    try:
+        # this gets the purchases, where only the customer signed so far.
+        purchases_waiting_signature = Purchases.query.filter_by(signature='No').all()
+
+        # Check if there are any purchases awaiting signature
+        if not purchases_waiting_signature:
+            return jsonify({'purchases_waiting_signature': []}), 200
+
+        # Serialize the purchases data
+        serialized_purchases = []
+        for purchase in purchases_waiting_signature:
+            serialized_purchase = {
+                'purchaseID': purchase.purchaseID,
+                'bidID': purchase.bidID,
+                'memberID': purchase.memberID,
+                'VIN_carID': purchase.VIN_carID,
+                'addon_ID': purchase.addon_ID,
+                'serviceID': purchase.serviceID,
+                'confirmationNumber': purchase.confirmationNumber,
+                'purchaseType': purchase.purchaseType,
+                'purchaseDate': purchase.purchaseDate,
+                'signature': purchase.signature
+            }
+            serialized_purchases.append(serialized_purchase)
+
+        return jsonify({'purchases_waiting_signature': serialized_purchases}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/manager/signature', methods=['POST']) # TEST DONE
+#this is the manager's response to the signature
+def update_signature():
+    try:
+        data = request.json
+        purchase_id = data.get('purchaseID')
+        signature_status = data.get('signature')
+
+        # Check if both parameters purchaseid and the signature status are provided
+        if purchase_id is None or signature_status is None:
+            return jsonify({'error': 'Both purchaseID and signature parameters are required.'}), 400
+
+        # check if the provided signature status is valid
+        if signature_status not in ['Yes', 'No']:
+            return jsonify({'error': 'Invalid signature status. Must be either "Yes" or "No"'}), 400
+
+
+        purchase = Purchases.query.get(purchase_id)
+        # Check if the purchase exists
+        if not purchase:
+            return jsonify({'error': 'Purchase not found'}), 404
+
+        # Update the signature status
+        purchase.signature = signature_status
+        db.session.commit()
+
+        return jsonify({'message': 'Signature updated successfully'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+#THIS ENDPOINT IS FOR THE MANAGER TO GET TEST DRIVES THAT ARE WAITING FOR CONFIRMATION AND ARE THE DAY AFTER TODAY AND LATER.
+@app.route('/api/pending_testdrives', methods=['GET']) # TEST DONE
+def get_pending_test_drives():
+    test_drive_info = []
+    tomorrow = datetime.now().date() + timedelta(days=1)
+
+    pending_test_drives = db.session.query(TestDrive, Member, CarInfo). \
+        join(Member, TestDrive.memberID == Member.memberID). \
+        join(CarInfo, TestDrive.VIN_carID == CarInfo.VIN_carID). \
+        filter(TestDrive.confirmation == 'Awaiting Confirmation'). \
+        filter(TestDrive.appointment_date >= tomorrow).all()
+
+    for test_drive, member, car in pending_test_drives:
+        test_drive_info.append({
+            'fullname': f"{member.first_name} {member.last_name}",
+            'phone': member.phone,
+            'car_id': test_drive.VIN_carID,
+            'car_make_model': f"{car.make} {car.model}",
+            'appointment_date': test_drive.appointment_date,
+            'confirmation': test_drive.confirmation,
+            'id': test_drive.testdrive_id
+        })
+
+    return jsonify(test_drive_info), 200
+
+# FOR MANAGER TO GET SERVICE APPOINTMENTS TO CONFIRM AND ASSIGN A TECHNICIAN TO.
+@app.route('/api/pending-service-appointments', methods=['GET']) # TEST DONE
+def pending_service_appointments():
+    try:
+        # Subquery to check for existence of appointment_id in ServiceAppointmentEmployeeAssignments
+        subquery = db.session.query(ServiceAppointmentEmployeeAssignments.appointment_id). \
+            filter(ServiceAppointmentEmployeeAssignments.appointment_id == ServiceAppointment.appointment_id). \
+            exists()
+
+        # Query service appointments without an entry in ServiceAppointmentEmployeeAssignments
+        pending_appointments = db.session.query(ServiceAppointment). \
+            filter(~subquery).filter(ServiceAppointment.status == "Pending Confirmation").all()
+
+        pending_appointments_info = []
+        for appointment in pending_appointments:
+            # Query Services table to get service name
+            service = Services.query.filter_by(serviceID=appointment.serviceID).first()
+            if service:
+                service_name = service.service_name
+            else:
+                service_name = "Service not found"
+
+            pending_appointments_info.append({
+                'appointment_id': appointment.appointment_id,
+                'memberID': appointment.memberID,
+                'VIN_carID': appointment.VIN_carID,
+                'serviceID': appointment.serviceID,
+                'appointment_date': appointment.appointment_date,
+                'comments': appointment.comments,
+                'status': appointment.status,
+                'last_modified': appointment.last_modified,
+                'service_name': service_name
+            })
+        return jsonify(pending_appointments_info), 200
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
+
+
+#I THINK THIS WAS MADE ALREADY,BUT IF NOT, FOR MANAGER TO GET INFO ABOUT A MEMBER
+@app.route('/api/manager/get_member', methods=['POST'])
+def get_member_by_id():
+    try:
+        # Get the member ID from the request JSON data
+        request_data = request.json
+        member_id = request_data.get('memberID')
+
+        # Validate the member ID
+        if not member_id:
+            return jsonify({'message': 'Member ID is required'}), 400
+
+        # Query the member from the database by ID
+        member = Member.query.filter_by(memberID=member_id).first()
+
+        # Check if the member exists
+        if not member:
+            return jsonify({'message': 'Member not found'}), 404
+
+        # Serialize the member data
+        member_info = {
+            'memberID': member.memberID,
+            'first_name': member.first_name,
+            'last_name': member.last_name,
+            'email': member.email,
+            'phone': member.phone,
+            'address': member.address,
+            'state': member.state,
+            'city': member.city,
+            'zipcode': member.zipcode,
+            'join_date': member.join_date
+        }
+
+        return jsonify(member_info), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+#needed to make account page work
+#probably needs to be on financial backend
+#idktho - Patrick
+
+@app.route('/api/member/current-bids', methods=['GET', 'POST'])
+def current_member_bids():
+    # check if the member is logged in, if not redirect them to log in
+    member_id = session.get('member_session_id')
+    if not member_id:
+        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
+
+    # check if the member exists
+    member = Member.query.get(member_id)
+    if not member:
+        return jsonify({'message': 'Member not found'}), 404
+
+    # GET Request: returns all bid information based on the logged in member and their memberID
+    if request.method == 'GET':
+        bids = Bids.query.filter_by(memberID=member_id).all()
+        if not bids:
+            return jsonify({'message': 'No bids found for this member'}), 404
+        bid_info = [{'bidID': bid.bidID,
+                     'memberID': bid.memberID,
+                     'VIN_carID': bid.VIN_carID,
+                     'bidValue': bid.bidValue,
+                     'bidStatus': bid.bidStatus,
+                     'bidTimestamp': bid.bidTimestamp
+                     }
+                    for bid in bids]
+        return jsonify(bid_info), 200
+    elif request.method == 'POST':
+        # frontend needs to pass these values in for it to work
+        data = request.json
+        bid_id = data.get('bid_id') # these should work as a button accociated with the bid value/row
+        new_bid_value = data.get('new_bid_value')
+
+        if bid_id is None or new_bid_value is None:
+            return jsonify({'message': 'Bid ID and new Bid Value is required in the request'}), 400
+
+        # finds the denied bid and then copies all other relevant meta data in a nice manner to avoid stupid overworking things
+        denied_bid = Bids.query.filter_by(memberID=member_id, bidID=bid_id, bidStatus='Denied').first()
+        if denied_bid:
+            new_bid = Bids(memberID=member_id, VIN_carID=denied_bid.VIN_carID, bidValue=new_bid_value,
+                           bidStatus='Processing', bidTimestamp=datetime.now())
+            db.session.add(new_bid)
+            db.session.commit()
+            return jsonify({'message': 'New bid placed successfully'}), 201
+        else:
+            return jsonify({'message': 'Denied bid not found for this member with the provided bid ID'}), 404
+        
+        
+
+''' Im Moving all the financial end point back to the stub. '''
+''' Anything Below Here will now be in the financial stub and should be working'''
+
+
+'''On the Fin Stub'''
+# # this should be on the finacial end point 
+# @app.route('/api/vehicle-purchase/new-bid-insert', methods=['POST'])
+# def bid_insert_no_financing():
+#     try:
+#         # Extract data from the request
+#         data = request.get_json()
+#         required_fields = ['member_id', 'vin', 'bid_value', 'bid_status']
+        
+#         # Check if all required fields are present
+#         missing_fields = [field for field in required_fields if field not in data]
+#         if missing_fields:
+#             return jsonify({'message': f'Error: Missing fields - {", ".join(missing_fields)}'}), 400
+        
+#         # Extract data
+#         member_id = data['member_id']
+#         vin = data['vin']
+#         bid_value = data['bid_value']
+#         bid_status = 'Processing'
+        
+#         # Create a new bid entry
+#         new_bid = Bids(
+#             memberID=member_id,
+#             VIN_carID=vin,
+#             bidValue=bid_value,
+#             bidStatus=bid_status,
+#             bidTimestamp=datetime.now()
+#         )
+
+#         db.session.add(new_bid)
+#         db.session.commit()
+#         return jsonify({'message': 'Bid successfully inserted.'}), 201
+#     except Exception as e:
+#         # Rollback the transaction in case of an error
+#         db.session.rollback()
+#         return jsonify({'message': f'Error: {str(e)}'}), 500
+
+
+
 
 def creditScoreGenerator(member_id: int, monthly_income: float) -> int:
     # Creates a random credit score based on id and income so that the same is always returned
@@ -2004,138 +2329,6 @@ def make_purchase():
         db.session.rollback()
         return jsonify({'error': f'Error: {str(e)}'}), 500
 
-
-@app.route('/api/member/delete_cart', methods=['DELETE'])
-# Route to Remove Entire Cart
-def delete_cart():
-    member_id = session.get('member_session_id')
-    if not member_id:
-        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
-
-    # Check if the member exists
-    member = Member.query.get(member_id)
-    if not member:
-        return jsonify({'message': 'Member not found'}), 404
-
-    # Get all items in the cart of the logged-in member
-    cart_items = CheckoutCart.query.filter_by(memberID=member_id).all()
-
-    if not cart_items:
-        return jsonify({'error': 'Cart is already empty'}), 404
-
-    try:
-        # Delete all items from the cart
-        for item in cart_items:
-            db.session.delete(item)
-        db.session.commit()
-
-        return jsonify({'success': 'Cart deleted successfully'}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/member/test_drive_data', methods=['GET'])
-# Gets the 
-def get_test_drive_data():
-    member_id = session.get('member_session_id')
-    if not member_id:
-        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
-
-    # Query the TestDrive table to get test drive data for the current user
-    test_drives = TestDrive.query.filter_by(memberID=member_id).all()
-
-    # Initialize a list to store the results
-    result = []
-
-    # Iterate through each test drive record and gather the required data
-    for test_drive in test_drives:
-        # Query the CarInfo table to get additional information about the car
-        car_info = CarInfo.query.filter_by(VIN_carID=test_drive.VIN_carID).first()
-
-        # Create a dictionary containing the required data
-        test_drive_data = {
-            'testdrive_id': test_drive.testdrive_id,
-            'VIN_carID': test_drive.VIN_carID,
-            'appointment_date': test_drive.appointment_date.strftime("%Y-%m-%d %H:%M:%S"),
-            'confirmation': test_drive.confirmation,
-            'make': car_info.make,
-            'model': car_info.model,
-            'year': car_info.year
-        }
-
-        # Append the dictionary to the result list
-        result.append(test_drive_data)
-
-    # Return the result as JSON
-    return jsonify(result)
-
-
-@app.route('/api/manager/signature-waiting', methods=['GET']) # TEST DONE
-def get_awaiting_signature():
-    try:
-        # this gets the purchases, where only the customer signed so far.
-        purchases_waiting_signature = Purchases.query.filter_by(signature='No').all()
-
-        # Check if there are any purchases awaiting signature
-        if not purchases_waiting_signature:
-            return jsonify({'purchases_waiting_signature': []}), 200
-
-        # Serialize the purchases data
-        serialized_purchases = []
-        for purchase in purchases_waiting_signature:
-            serialized_purchase = {
-                'purchaseID': purchase.purchaseID,
-                'bidID': purchase.bidID,
-                'memberID': purchase.memberID,
-                'VIN_carID': purchase.VIN_carID,
-                'addon_ID': purchase.addon_ID,
-                'serviceID': purchase.serviceID,
-                'confirmationNumber': purchase.confirmationNumber,
-                'purchaseType': purchase.purchaseType,
-                'purchaseDate': purchase.purchaseDate,
-                'signature': purchase.signature
-            }
-            serialized_purchases.append(serialized_purchase)
-
-        return jsonify({'purchases_waiting_signature': serialized_purchases}), 200
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/manager/signature', methods=['POST']) # TEST DONE
-#this is the manager's response to the signature
-def update_signature():
-    try:
-        data = request.json
-        purchase_id = data.get('purchaseID')
-        signature_status = data.get('signature')
-
-        # Check if both parameters purchaseid and the signature status are provided
-        if purchase_id is None or signature_status is None:
-            return jsonify({'error': 'Both purchaseID and signature parameters are required.'}), 400
-
-        # check if the provided signature status is valid
-        if signature_status not in ['Yes', 'No']:
-            return jsonify({'error': 'Invalid signature status. Must be either "Yes" or "No"'}), 400
-
-
-        purchase = Purchases.query.get(purchase_id)
-        # Check if the purchase exists
-        if not purchase:
-            return jsonify({'error': 'Purchase not found'}), 404
-
-        # Update the signature status
-        purchase.signature = signature_status
-        db.session.commit()
-
-        return jsonify({'message': 'Signature updated successfully'}), 200
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
 @app.route('/api/member/order_history', methods=['GET'])
 # Route retrieves order history for a logged-in member, calculates subtotal, taxes, amount paid, and total amount financed for each order, and returns the formatted data as JSON.
 def order_history():
@@ -2203,106 +2396,6 @@ def order_history():
 
     return jsonify(order_history_list), 200
 
-#THIS ENDPOINT IS FOR THE MANAGER TO GET TEST DRIVES THAT ARE WAITING FOR CONFIRMATION AND ARE THE DAY AFTER TODAY AND LATER.
-@app.route('/api/pending_testdrives', methods=['GET']) # TEST DONE
-def get_pending_test_drives():
-    test_drive_info = []
-    tomorrow = datetime.now().date() + timedelta(days=1)
-
-    pending_test_drives = db.session.query(TestDrive, Member, CarInfo). \
-        join(Member, TestDrive.memberID == Member.memberID). \
-        join(CarInfo, TestDrive.VIN_carID == CarInfo.VIN_carID). \
-        filter(TestDrive.confirmation == 'Awaiting Confirmation'). \
-        filter(TestDrive.appointment_date >= tomorrow).all()
-
-    for test_drive, member, car in pending_test_drives:
-        test_drive_info.append({
-            'fullname': f"{member.first_name} {member.last_name}",
-            'phone': member.phone,
-            'car_id': test_drive.VIN_carID,
-            'car_make_model': f"{car.make} {car.model}",
-            'appointment_date': test_drive.appointment_date,
-            'confirmation': test_drive.confirmation,
-            'id': test_drive.testdrive_id
-        })
-
-    return jsonify(test_drive_info), 200
-
-# FOR MANAGER TO GET SERVICE APPOINTMENTS TO CONFIRM AND ASSIGN A TECHNICIAN TO.
-@app.route('/api/pending-service-appointments', methods=['GET']) # TEST DONE
-def pending_service_appointments():
-    try:
-        # Subquery to check for existence of appointment_id in ServiceAppointmentEmployeeAssignments
-        subquery = db.session.query(ServiceAppointmentEmployeeAssignments.appointment_id). \
-            filter(ServiceAppointmentEmployeeAssignments.appointment_id == ServiceAppointment.appointment_id). \
-            exists()
-
-        # Query service appointments without an entry in ServiceAppointmentEmployeeAssignments
-        pending_appointments = db.session.query(ServiceAppointment). \
-            filter(~subquery).filter(ServiceAppointment.status == "Pending Confirmation").all()
-
-        pending_appointments_info = []
-        for appointment in pending_appointments:
-            # Query Services table to get service name
-            service = Services.query.filter_by(serviceID=appointment.serviceID).first()
-            if service:
-                service_name = service.service_name
-            else:
-                service_name = "Service not found"
-
-            pending_appointments_info.append({
-                'appointment_id': appointment.appointment_id,
-                'memberID': appointment.memberID,
-                'VIN_carID': appointment.VIN_carID,
-                'serviceID': appointment.serviceID,
-                'appointment_date': appointment.appointment_date,
-                'comments': appointment.comments,
-                'status': appointment.status,
-                'last_modified': appointment.last_modified,
-                'service_name': service_name
-            })
-        return jsonify(pending_appointments_info), 200
-    except Exception as e:
-        return jsonify({'message': str(e)}), 500
-
-
-#I THINK THIS WAS MADE ALREADY,BUT IF NOT, FOR MANAGER TO GET INFO ABOUT A MEMBER
-@app.route('/api/manager/get_member', methods=['POST'])
-def get_member_by_id():
-    try:
-        # Get the member ID from the request JSON data
-        request_data = request.json
-        member_id = request_data.get('memberID')
-
-        # Validate the member ID
-        if not member_id:
-            return jsonify({'message': 'Member ID is required'}), 400
-
-        # Query the member from the database by ID
-        member = Member.query.filter_by(memberID=member_id).first()
-
-        # Check if the member exists
-        if not member:
-            return jsonify({'message': 'Member not found'}), 404
-
-        # Serialize the member data
-        member_info = {
-            'memberID': member.memberID,
-            'first_name': member.first_name,
-            'last_name': member.last_name,
-            'email': member.email,
-            'phone': member.phone,
-            'address': member.address,
-            'state': member.state,
-            'city': member.city,
-            'zipcode': member.zipcode,
-            'join_date': member.join_date
-        }
-
-        return jsonify(member_info), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
 #for manager to counter bid
 @app.route('/api/manager/counter_bid_offer', methods=['POST'])
 def counter_bid_offer():
@@ -2323,99 +2416,3 @@ def counter_bid_offer():
             return jsonify({'error': 'Bid not found'}), 404
     else:
         return jsonify({'error': 'Method not allowed'}), 405
-
-
-
-
-#needed to make account page work
-#probably needs to be on financial backend
-#idktho - Patrick
-
-@app.route('/api/member/current-bids', methods=['GET', 'POST'])
-def current_member_bids():
-    # check if the member is logged in, if not redirect them to log in
-    member_id = session.get('member_session_id')
-    if not member_id:
-        return jsonify({'message': 'Unauthorized access. Please log in.'}), 401
-
-    # check if the member exists
-    member = Member.query.get(member_id)
-    if not member:
-        return jsonify({'message': 'Member not found'}), 404
-
-    # GET Request: returns all bid information based on the logged in member and their memberID
-    if request.method == 'GET':
-        bids = Bids.query.filter_by(memberID=member_id).all()
-        if not bids:
-            return jsonify({'message': 'No bids found for this member'}), 404
-        bid_info = [{'bidID': bid.bidID,
-                     'memberID': bid.memberID,
-                     'VIN_carID': bid.VIN_carID,
-                     'bidValue': bid.bidValue,
-                     'bidStatus': bid.bidStatus,
-                     'bidTimestamp': bid.bidTimestamp
-                     }
-                    for bid in bids]
-        return jsonify(bid_info), 200
-    elif request.method == 'POST':
-        # frontend needs to pass these values in for it to work
-        data = request.json
-        bid_id = data.get('bid_id') # these should work as a button accociated with the bid value/row
-        new_bid_value = data.get('new_bid_value')
-
-        if bid_id is None or new_bid_value is None:
-            return jsonify({'message': 'Bid ID and new Bid Value is required in the request'}), 400
-
-        # finds the denied bid and then copies all other relevant meta data in a nice manner to avoid stupid overworking things
-        denied_bid = Bids.query.filter_by(memberID=member_id, bidID=bid_id, bidStatus='Denied').first()
-        if denied_bid:
-            new_bid = Bids(memberID=member_id, VIN_carID=denied_bid.VIN_carID, bidValue=new_bid_value,
-                           bidStatus='Processing', bidTimestamp=datetime.now())
-            db.session.add(new_bid)
-            db.session.commit()
-            return jsonify({'message': 'New bid placed successfully'}), 201
-        else:
-            return jsonify({'message': 'Denied bid not found for this member with the provided bid ID'}), 404
-        
-        
-
-''' Im Moving all the financial end point back to the stub. '''
-''' Anything Below Here will now be in the financial stub and should be working'''
-
-
-'''On the Fin Stub'''
-# # this should be on the finacial end point 
-# @app.route('/api/vehicle-purchase/new-bid-insert', methods=['POST'])
-# def bid_insert_no_financing():
-#     try:
-#         # Extract data from the request
-#         data = request.get_json()
-#         required_fields = ['member_id', 'vin', 'bid_value', 'bid_status']
-        
-#         # Check if all required fields are present
-#         missing_fields = [field for field in required_fields if field not in data]
-#         if missing_fields:
-#             return jsonify({'message': f'Error: Missing fields - {", ".join(missing_fields)}'}), 400
-        
-#         # Extract data
-#         member_id = data['member_id']
-#         vin = data['vin']
-#         bid_value = data['bid_value']
-#         bid_status = 'Processing'
-        
-#         # Create a new bid entry
-#         new_bid = Bids(
-#             memberID=member_id,
-#             VIN_carID=vin,
-#             bidValue=bid_value,
-#             bidStatus=bid_status,
-#             bidTimestamp=datetime.now()
-#         )
-
-#         db.session.add(new_bid)
-#         db.session.commit()
-#         return jsonify({'message': 'Bid successfully inserted.'}), 201
-#     except Exception as e:
-#         # Rollback the transaction in case of an error
-#         db.session.rollback()
-#         return jsonify({'message': f'Error: {str(e)}'}), 500
