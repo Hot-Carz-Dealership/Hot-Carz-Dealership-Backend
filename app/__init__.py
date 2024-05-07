@@ -17,8 +17,8 @@ app = Flask(__name__)
 if os.getenv('FLASK_ENV') == 'testing':
     app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+mysqlconnector://root:UUNaDUpaHzvdMkfieWerXOpyTTyHaxlI@viaduct.proxy.rlwy.net:39073/dealership_testing"
 else:
-    #app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+mysqlconnector://root:aGGeAzhlGdyhqpkesCDkjgcyKXHYXEuK@viaduct.proxy.rlwy.net:20836/dealership_backend"
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:password@localhost/dealership_backend'
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+mysqlconnector://root:aGGeAzhlGdyhqpkesCDkjgcyKXHYXEuK@viaduct.proxy.rlwy.net:20836/dealership_backend"
+    
 
 # Load the configuration
 app.config.from_object(Config)
