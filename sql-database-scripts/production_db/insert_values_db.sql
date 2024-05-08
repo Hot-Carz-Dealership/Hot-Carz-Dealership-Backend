@@ -11,7 +11,7 @@ INSERT INTO Member (first_name, last_name, email, phone, address, city, state, z
 ('Michelle', 'Lopez', 'michelle.lopez@example.com', '8901234567', '707 Cedar St', 'Orlando', 'FL', '89012', '2024-04-04 17:00:00'),
 ('James', 'Taylor', 'james.taylor@example.com', '9012345678', '909 Pine St', 'San Diego', 'CA', '90123', '2024-04-02 18:00:00'),
 ('Emma', 'Garcia', 'emma.garcia@example.com', '0123456789', '111 Walnut St', 'Albany', 'NY', '01234', '2024-04-02 19:00:00'),
-('PLACEHOLDER', 'PLACEHOLDER', 'PLACEHOLDER@example.com', '0000000000', '123 Sesame Street', 'Cincinnati', 'OH', '00000', NOW());  -- bids has a placeholder for memberID for customers that buy without bidding, this is meant as a placeholder for customer who do not BID ONLY to be referenced in the BID table
+('Place', 'Holder', 'PHold@example.com', '0000000000', '123 Sesame Street', 'Cincinnati', 'OH', '00000', NOW());  -- bids has a placeholder for memberID for customers that buy without bidding, this is meant as a placeholder for customer who do not BID ONLY to be referenced in the BID table
 -- add city for the members -> (DONE)
 
 INSERT INTO CarVINs(VIN_carID, purchase_status, memberID) VALUES
