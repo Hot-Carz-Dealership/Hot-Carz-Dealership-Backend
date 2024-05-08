@@ -524,3 +524,64 @@ VALUES
 ( 2, 'Interior Protection Packages', 500, 0, 'B1R3VA8OPI45L', '2024-04-30 00:51'),
 ( 2, 'Paint Protection Film/Ceramic Coating', 1200, 0, 'B1R3VA8OPI45L', '2024-04-30 00:51'),
 ( 2, 'Towing Packages', 1000, 0, 'B1R3VA8OPI45L', '2024-04-30 00:51');
+
+INSERT INTO Purchases (bidID, VIN_carID, memberID, confirmationNumber, purchaseType, purchaseDate, signature) VALUES
+-- January 2023
+(1, NULL, 3, 'ABCD123456', 'Vehicle/Add-on Purchase', '2023-01-01 09:00:00', 'Yes'),
+(2, NULL, 4, 'EFGH789012', 'Vehicle/Add-on Purchase', '2023-01-15 10:30:00', 'Yes'),
+(3, NULL, 5, 'IJKL345678', 'Vehicle/Add-on Purchase', '2023-01-20 14:45:00', 'Yes'),
+
+-- February 2023
+(4, NULL, 6, 'MNOP901234', 'Vehicle/Add-on Purchase', '2023-02-03 11:15:00', 'Yes'),
+(5, NULL, 7, 'QRST567890', 'Vehicle/Add-on Purchase', '2023-02-10 13:00:00', 'Yes'),
+(6, NULL, 8, 'UVWX123456', 'Vehicle/Add-on Purchase', '2023-02-18 15:30:00', 'Yes'),
+
+-- March 2023
+(7, NULL, 9, 'YZAB789012', 'Vehicle/Add-on Purchase', '2023-03-05 09:45:00', 'Yes'),
+(8, NULL, 10, 'CDEF345678', 'Vehicle/Add-on Purchase', '2023-03-14 12:00:00', 'Yes'),
+(9, NULL, 3, 'GHIJ901234', 'Vehicle/Add-on Purchase', '2023-03-22 14:15:00', 'Yes'),
+
+-- April 2023
+(10, NULL, 4, 'KLMN567890', 'Vehicle/Add-on Purchase', '2023-04-08 10:30:00', 'Yes'),
+(11, NULL, 5, 'OPQR123456', 'Vehicle/Add-on Purchase', '2023-04-17 11:45:00', 'Yes'),
+(12, NULL, 6, 'STUV789012', 'Vehicle/Add-on Purchase', '2023-04-25 13:00:00', 'Yes'),
+
+-- May 2023
+(13, NULL, 7, 'WXYZ345678', 'Vehicle/Add-on Purchase', '2023-05-03 14:15:00', 'Yes'),
+(14, NULL, 8, '1234 567890', 'Vehicle/Add-on Purchase', '2023-05-12 16:30:00', 'Yes'),
+(15, NULL, 9, '5678 901234', 'Vehicle/Add-on Purchase', '2023-05-21 09:45:00', 'Yes'),
+
+-- June 2023
+(16, NULL, 10, '9012 345678', 'Vehicle/Add-on Purchase', '2023-06-02 12:00:00', 'Yes'),
+(17, NULL, 3, 'ABCD 567890', 'Vehicle/Add-on Purchase', '2023-06-11 14:15:00', 'Yes'),
+(18, NULL, 4, 'EFGH 901234', 'Vehicle/Add-on Purchase', '2023-06-20 16:30:00', 'Yes'),
+
+-- July 2023
+(19, NULL, 5, 'IJKL 345678', 'Vehicle/Add-on Purchase', '2023-07-07 09:45:00', 'Yes'),
+(20, NULL, 6, 'MNOP 567890', 'Vehicle/Add-on Purchase', '2023-07-15 12:00:00', 'Yes'),
+(21, NULL, 7, 'QRST 901234', 'Vehicle/Add-on Purchase', '2023-07-24 14:15:00', 'Yes'),
+
+-- August 2023
+(22, NULL, 8, 'UVWX 345678', 'Vehicle/Add-on Purchase', '2023-08-04 16:30:00', 'Yes'),
+(23, NULL, 9, 'YZAB 567890', 'Vehicle/Add-on Purchase', '2023-08-13 09:45:00', 'Yes'),
+(24, NULL, 10, 'CDEF 901234', 'Vehicle/Add-on Purchase', '2023-08-22 12:00:00', 'Yes'),
+
+-- September 2023
+(25, NULL, 3, 'GHIJ 345678', 'Vehicle/Add-on Purchase', '2023-09-05 14:15:00', 'Yes'),
+(26, NULL, 4, 'KLMN 567890', 'Vehicle/Add-on Purchase', '2023-09-14 16:30:00', 'Yes'),
+(27, NULL, 5, 'OPQR 901234', 'Vehicle/Add-on Purchase', '2023-09-23 09:45:00', 'Yes'),
+
+-- October 2023
+(28, NULL, 6, 'STUV 345678', 'Vehicle/Add-on Purchase', '2023-10-01 12:00:00', 'Yes'),
+(29, NULL, 7, 'WXYZ 567890', 'Vehicle/Add-on Purchase', '2023-10-10 14:15:00', 'Yes'),
+(30, NULL, 8, '1234 901234', 'Vehicle/Add-on Purchase', '2023-10-19 16:30:00', 'Yes'),
+
+-- November 2023
+(31, NULL, 9, '5678 345678', 'Vehicle/Add-on Purchase', '2023-11-06 09:45:00', 'Yes'),
+(32, NULL, 10, '9012 567890', 'Vehicle/Add-on Purchase', '2023-11-15 12:00:00', 'Yes'),
+(33, NULL, 3, 'ABCD 901234', 'Vehicle/Add-on Purchase', '2023-11-24 14:15:00', 'Yes'),
+
+-- December 2023
+(34, NULL, 4, 'EFGH 345678', 'Vehicle/Add-on Purchase', '2023-12-03 16:30:00', 'Yes'),
+(35, NULL, 5, 'IJKL 567890', 'Vehicle/Add-on Purchase', '2023-12-12 09:45:00', 'Yes'),
+(36, NULL, 6, 'MNOP 901234', 'Vehicle/Add-on Purchase', '2023-12-21 12:00:00', 'Yes');
