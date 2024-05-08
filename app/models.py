@@ -1,5 +1,6 @@
 # app/models.py
 
+
 from . import db
 from sqlalchemy import Enum, ForeignKey
 
